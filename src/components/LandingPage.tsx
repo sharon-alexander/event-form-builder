@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { assetUrl } from "../config";
 
 interface MediaItem {
   type: "image" | "video";
@@ -9,20 +10,16 @@ interface MediaItem {
   alt: string;
 }
 
-/**
- * Replace these with your own photos / videos. Images and videos can be mixed.
- * For videos, use a direct file URL (e.g. an .mp4) and optionally a poster image.
- */
 const VENUE_NAME = "Pearl Box Townhouse";
 
 const ABOUT_BLURB =
   "A landmark townhouse reimagined for unforgettable gatherings. From intimate dinners in the salon to full-buyout celebrations across all three floors, our team handles every detail — florals, lighting, production and more — so you can simply enjoy the moment.";
 
 const GALLERY_MEDIA: MediaItem[] = [
-  { type: "image", src: "https://picsum.photos/id/1058/1200/800", alt: "The salon set for a seated dinner" },
-  { type: "image", src: "https://picsum.photos/id/1080/1200/800", alt: "Cocktail reception in the parlor" },
-  { type: "image", src: "https://picsum.photos/id/431/1200/800", alt: "Attic lounge with ambient lighting" },
-  { type: "image", src: "https://picsum.photos/id/225/1200/800", alt: "Full townhouse celebration" },
+  { type: "image", src: assetUrl("/gallery/salon.png"), alt: "The salon with red velvet seating" },
+  { type: "image", src: assetUrl("/gallery/attic.png"), alt: "The attic lounge with wood paneling" },
+  { type: "image", src: assetUrl("/gallery/staircase.png"), alt: "Mirrored staircase" },
+  { type: "image", src: assetUrl("/gallery/staircase-detail.png"), alt: "Staircase detail with red lighting" },
 ];
 
 interface LandingPageProps {
