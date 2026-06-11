@@ -86,8 +86,9 @@ export default function App() {
 
   return (
     <div className="px-4 py-8 sm:px-6">
-      {/* Honeypot */}
-      <div aria-hidden="true" className="absolute left-[-9999px]">
+      {/* Honeypot — visually hidden via sr-only (avoids the horizontal overflow
+          an off-screen left:-9999px element can cause, especially on mobile) */}
+      <div aria-hidden="true" className="sr-only">
         <input
           tabIndex={-1}
           autoComplete="off"

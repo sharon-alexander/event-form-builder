@@ -9,7 +9,25 @@ import cssInjectedByJsPlugin from "vite-plugin-css-injected-by-js";
 const isWidget = process.env.BUILD_TARGET === "widget";
 
 export default defineConfig(({ command }) => ({
-  plugins: [react(), cssInjectedByJsPlugin()],
+  plugins: [
+    react(),
+    cssInjectedByJsPlugin(
+      isWidget
+        ? {
+            // For the embeddable widget, DON'T inject the bundle's CSS into the
+            // host page's <head>. Tailwind's preflight resets bare element
+            // selectors (body, *, img, svg, ...) and would otherwise restyle the
+            // surrounding Squarespace page (e.g. collapsing the embedding
+            // container's width). Capture the CSS instead so main.tsx can inject
+            // it into a shadow root, fully isolating it from the host page.
+            injectCodeFunction: (cssCode: string) => {
+              (globalThis as Record<string, unknown>)["__ROSCIOLI_EFB_CSS__"] =
+                cssCode;
+            },
+          }
+        : undefined,
+    ),
+  ],
   // In library/IIFE mode Vite doesn't auto-replace process.env.NODE_ENV, so React
   // would otherwise bundle its (larger, slower) development build. Force production
   // for any build to ship the optimized React.
