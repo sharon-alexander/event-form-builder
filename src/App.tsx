@@ -82,8 +82,10 @@ export default function App() {
     );
   }
 
+  const isReviewStep = step === TOTAL_STEPS - 1;
+
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+    <div className={`mx-auto px-4 py-8 sm:px-6 ${isReviewStep ? "max-w-2xl" : "max-w-5xl"}`}>
       {/* Honeypot */}
       <div aria-hidden="true" className="absolute left-[-9999px]">
         <input
@@ -95,19 +97,23 @@ export default function App() {
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+      <div
+        className={`grid grid-cols-1 gap-8${isReviewStep ? "" : " lg:grid-cols-[minmax(0,1fr)_300px]"}`}
+      >
         <div>
           <ProgressBar currentStep={step} totalSteps={TOTAL_STEPS} />
 
-          {/* Collapsible summary for smaller screens */}
-          <details className="mb-6 rounded-xl border border-brand-100 bg-brand-50/60 lg:hidden">
-            <summary className="cursor-pointer list-none px-4 py-3 text-sm font-medium text-brand-700">
-              View your event summary
-            </summary>
-            <div className="px-2 pb-2">
-              <EventSummary data={data} />
-            </div>
-          </details>
+          {/* Collapsible summary for smaller screens (hidden on review — full recap is in the step) */}
+          {!isReviewStep && (
+            <details className="mb-6 rounded-xl border border-brand-100 bg-brand-50/60 lg:hidden">
+              <summary className="cursor-pointer list-none px-4 py-3 text-sm font-medium text-brand-700">
+                View your event summary
+              </summary>
+              <div className="px-2 pb-2">
+                <EventSummary data={data} />
+              </div>
+            </details>
+          )}
 
           {step === 0 && <EventTypeStep data={data} onChange={update} onNext={next} />}
           {step === 1 && <EventCategoryStep data={data} onChange={update} onNext={next} onBack={back} />}
@@ -131,12 +137,14 @@ export default function App() {
           )}
         </div>
 
-        {/* Sticky summary sidebar for large screens */}
-        <aside className="hidden lg:block">
-          <div className="sticky top-8">
-            <EventSummary data={data} />
-          </div>
-        </aside>
+        {/* Sticky summary sidebar for large screens (hidden on review step) */}
+        {!isReviewStep && (
+          <aside className="hidden lg:block">
+            <div className="sticky top-8">
+              <EventSummary data={data} />
+            </div>
+          </aside>
+        )}
       </div>
     </div>
   );
