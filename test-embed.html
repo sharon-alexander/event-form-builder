@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Widget Embed Test</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* Simulates a Squarespace page with its own styles */
+      body {
+        margin: 0;
+        font-family: Georgia, serif;
+        background: #1a1a1a;
+        color: #fff;
+      }
+      .site-header {
+        padding: 20px 40px;
+        background: #111;
+        border-bottom: 1px solid #333;
+        font-size: 14px;
+        color: #888;
+      }
+      .site-content {
+        /* Change this max-width to test different Squarespace column widths */
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 40px 20px;
+      }
+      .site-content.full-width {
+        max-width: 100%;
+      }
+      .site-footer {
+        padding: 20px 40px;
+        background: #111;
+        border-top: 1px solid #333;
+        font-size: 12px;
+        color: #666;
+        text-align: center;
+      }
+      .width-toggle {
+        margin-top: 10px;
+        display: flex;
+        gap: 8px;
+      }
+      .width-toggle button {
+        padding: 4px 12px;
+        background: #333;
+        color: #ccc;
+        border: 1px solid #555;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+      }
+      .width-toggle button:hover { background: #444; }
+    </style>
+  </head>
+  <body>
+    <div class="site-header">
+      Simulated Squarespace Header
+      <div class="width-toggle">
+        <span style="color:#666">Container width:</span>
+        <button onclick="document.querySelector('.site-content').style.maxWidth='600px'">600px (narrow)</button>
+        <button onclick="document.querySelector('.site-content').style.maxWidth='960px'">960px (default)</button>
+        <button onclick="document.querySelector('.site-content').style.maxWidth='1200px'">1200px (wide)</button>
+        <button onclick="document.querySelector('.site-content').style.maxWidth='100%'">Full width</button>
+      </div>
+    </div>
+
+    <div class="site-content">
+      <!-- This is exactly what you'd paste in a Squarespace Code Block -->
+      <div id="roscioli-event-form"></div>
+      <script src="./dist/event-form.iife.js"></script>
+    </div>
+
+    <div class="site-footer">Simulated Squarespace Footer</div>
+  </body>
+</html>

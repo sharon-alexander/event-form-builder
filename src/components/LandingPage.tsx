@@ -31,7 +31,7 @@ export default function LandingPage({ onStart }: LandingPageProps) {
   const active = GALLERY_MEDIA[activeIndex];
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
+    <div className="px-4 py-10 sm:px-6">
       <div className="text-center">
         <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">
           Private Events
@@ -39,7 +39,7 @@ export default function LandingPage({ onStart }: LandingPageProps) {
         <h1 className="font-display text-4xl font-semibold text-gray-900 sm:text-5xl">
           {VENUE_NAME}
         </h1>
-        <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-gray-600">
+        <p className="mt-4 text-base leading-relaxed text-gray-600">
           {ABOUT_BLURB}
         </p>
       </div>

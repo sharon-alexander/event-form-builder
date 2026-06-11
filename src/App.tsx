@@ -66,7 +66,7 @@ export default function App() {
 
   if (submitted) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-12 text-center sm:px-6">
+      <div className="px-4 py-12 text-center sm:px-6">
         <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
           <svg className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -85,7 +85,7 @@ export default function App() {
   const isReviewStep = step === TOTAL_STEPS - 1;
 
   return (
-    <div className={`mx-auto px-4 py-8 sm:px-6 ${isReviewStep ? "max-w-2xl" : "max-w-5xl"}`}>
+    <div className="px-4 py-8 sm:px-6">
       {/* Honeypot */}
       <div aria-hidden="true" className="absolute left-[-9999px]">
         <input
