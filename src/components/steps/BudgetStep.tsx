@@ -1,5 +1,5 @@
 import type { FormData } from "../../types";
-import { BUDGET_OPTIONS } from "../../types";
+import { useLocationConfig } from "../../context/LocationContext";
 import FormStep from "../FormStep";
 
 interface Props {
@@ -10,6 +10,8 @@ interface Props {
 }
 
 export default function BudgetStep({ data, onChange, onNext, onBack }: Props) {
+  const { budgetOptions } = useLocationConfig();
+
   return (
     <FormStep
       title="What's your budget?"
@@ -19,7 +21,7 @@ export default function BudgetStep({ data, onChange, onNext, onBack }: Props) {
       nextDisabled={!data.budget}
     >
       <div className="grid grid-cols-2 gap-4">
-        {BUDGET_OPTIONS.map((b) => (
+        {budgetOptions.map((b) => (
           <button
             key={b.value}
             type="button"

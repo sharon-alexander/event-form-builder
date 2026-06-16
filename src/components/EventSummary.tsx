@@ -2,11 +2,10 @@ import type { FormData } from "../types";
 import {
   EVENT_CATEGORIES,
   EVENT_FORMATS,
-  BUDGET_OPTIONS,
-  VENUE_SPACES,
   SERVICE_OPTIONS,
   REFERRAL_SOURCES,
 } from "../types";
+import { useLocationConfig } from "../context/LocationContext";
 
 interface EventSummaryProps {
   data: FormData;
@@ -21,7 +20,9 @@ interface SummaryRow {
   value: string;
 }
 
-function buildRows(data: FormData): SummaryRow[] {
+export default function EventSummary({ data }: EventSummaryProps) {
+  const location = useLocationConfig();
+
   const rows: SummaryRow[] = [];
 
   if (data.bookingType) {
@@ -68,11 +69,11 @@ function buildRows(data: FormData): SummaryRow[] {
   }
 
   if (data.budget) {
-    rows.push({ title: "Budget", value: label(BUDGET_OPTIONS, data.budget) });
+    rows.push({ title: "Budget", value: label(location.budgetOptions, data.budget) });
   }
 
   if (data.venueSpace) {
-    rows.push({ title: "Space", value: label(VENUE_SPACES, data.venueSpace) });
+    rows.push({ title: "Space", value: label(location.venueSpaces, data.venueSpace) });
   }
 
   if (data.timingFlexible) {
@@ -117,12 +118,6 @@ function buildRows(data: FormData): SummaryRow[] {
   if (name) {
     rows.push({ title: "Name", value: name });
   }
-
-  return rows;
-}
-
-export default function EventSummary({ data }: EventSummaryProps) {
-  const rows = buildRows(data);
 
   return (
     <div className="rounded-2xl border border-brand-100 bg-brand-50/60 p-5">

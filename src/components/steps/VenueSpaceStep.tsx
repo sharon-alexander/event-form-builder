@@ -1,5 +1,5 @@
 import type { FormData } from "../../types";
-import { VENUE_SPACES } from "../../types";
+import { useLocationConfig } from "../../context/LocationContext";
 import FormStep from "../FormStep";
 
 interface Props {
@@ -10,6 +10,8 @@ interface Props {
 }
 
 export default function VenueSpaceStep({ data, onChange, onNext, onBack }: Props) {
+  const { venueSpaces } = useLocationConfig();
+
   return (
     <FormStep
       title="Where would you like to host?"
@@ -19,7 +21,7 @@ export default function VenueSpaceStep({ data, onChange, onNext, onBack }: Props
       nextDisabled={!data.venueSpace}
     >
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {VENUE_SPACES.map((v) => (
+        {venueSpaces.map((v) => (
           <button
             key={v.value}
             type="button"

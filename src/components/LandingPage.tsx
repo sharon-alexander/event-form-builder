@@ -1,46 +1,26 @@
 import { useState } from "react";
-import { assetUrl } from "../config";
-
-interface MediaItem {
-  type: "image" | "video";
-  /** For images: the image URL. For videos: the video file URL (mp4/webm). */
-  src: string;
-  /** Optional poster image shown for videos before playback. */
-  poster?: string;
-  alt: string;
-}
-
-const VENUE_NAME = "Pearl Box Townhouse";
-
-const ABOUT_BLURB =
-  "A landmark townhouse reimagined for unforgettable gatherings. From intimate dinners in the salon to full-buyout celebrations across all three floors, our team handles every detail — florals, lighting, production and more — so you can simply enjoy the moment.";
-
-const GALLERY_MEDIA: MediaItem[] = [
-  { type: "image", src: assetUrl("/gallery/salon.png"), alt: "The salon with red velvet seating" },
-  { type: "image", src: assetUrl("/gallery/attic.png"), alt: "The attic lounge with wood paneling" },
-  { type: "image", src: assetUrl("/gallery/staircase.png"), alt: "Mirrored staircase" },
-  { type: "image", src: assetUrl("/gallery/staircase-detail.png"), alt: "Staircase detail with red lighting" },
-];
+import { useLocationConfig } from "../context/LocationContext";
 
 interface LandingPageProps {
   onStart: () => void;
 }
 
 export default function LandingPage({ onStart }: LandingPageProps) {
+  const location = useLocationConfig();
   const [activeIndex, setActiveIndex] = useState(0);
-  const active = GALLERY_MEDIA[activeIndex];
+  const active = location.galleryMedia[activeIndex];
 
   return (
     <div className="px-4 py-10 sm:px-6">
       <div className="text-center">
         <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">
-          Private Events
+          {location.formTitle}
         </p>
         <h1 className="font-display text-4xl font-semibold text-gray-900 sm:text-5xl">
-          {VENUE_NAME}
+          {location.name}
         </h1>
         <p className="mt-4 text-base leading-relaxed text-gray-600">
-          {ABOUT_BLURB}
+          {location.aboutBlurb}
         </p>
       </div>
 
@@ -67,9 +47,9 @@ export default function LandingPage({ onStart }: LandingPageProps) {
             )}
           </div>
 
-          {GALLERY_MEDIA.length > 1 && (
+          {location.galleryMedia.length > 1 && (
             <div className="mt-3 grid grid-cols-4 gap-3">
-              {GALLERY_MEDIA.map((item, i) => (
+              {location.galleryMedia.map((item, i) => (
                 <button
                   key={item.src}
                   type="button"

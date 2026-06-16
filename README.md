@@ -1,6 +1,19 @@
 # Event Form Builder
 
-A multi-step private event inquiry form that submits leads directly to Tripleseat. Built as an embeddable widget for Squarespace (or any website).
+A multi-step private event inquiry form that submits leads directly to Tripleseat. Built as an embeddable widget for Squarespace (or any website). Supports multiple locations, each with its own venue spaces, images, budget options, and Tripleseat credentials.
+
+## Locations
+
+| Location | ID | Preview URL |
+|---|---|---|
+| Pearl Box Townhouse | `pearl-box` | `/?location=pearl-box` (default) |
+| Roscioli | `roscioli` | `/?location=roscioli` |
+| Tokyo Record Bar | `tokyo-record-bar` | `/?location=tokyo-record-bar` |
+
+Location is resolved in this order:
+1. `data-location` attribute on the mount element (best for embeds)
+2. `?location=` query parameter (handy for previewing)
+3. Falls back to `pearl-box`
 
 ## Quick Start
 
@@ -10,30 +23,48 @@ cp .env.example .env   # then fill in your Tripleseat keys
 npm run dev             # http://localhost:5173
 ```
 
+Preview a specific location during development:
+
+```
+http://localhost:5173/?location=roscioli
+http://localhost:5173/?location=tokyo-record-bar
+```
+
 ## Tripleseat Setup
 
-Before deploying, you need a few things from your Tripleseat account:
+Each location needs its own Tripleseat credentials. From your Tripleseat account:
 
-1. **Public API Key** (required) — Go to **Settings → Lead Forms → View Setup Codes → API Endpoint**. Copy the public key from the URL after `?public_key=`.
+1. **Public API Key** — Go to **Settings → Lead Forms → View Setup Codes → API Endpoint**. Copy the public key from the URL after `?public_key=`.
 
-2. **Lead Form ID** (optional) — Links submissions to a specific lead form for tracking. Find yours at:
+2. **Lead Form ID** — Links submissions to a specific lead form. Find yours at:
    ```
    https://api.tripleseat.com/v1/lead_forms.xml?public_key=YOUR_KEY
    ```
 
-3. **Location ID** (optional, only if you have multiple locations) — Find yours at:
+3. **Location ID** — Find yours at:
    ```
    https://api.tripleseat.com/v1/locations.xml?public_key=YOUR_KEY
    ```
 
-4. **Disable spam detection on the lead form** — Go to **Settings → Lead Forms → Edit** on the relevant form and uncheck "Enable Spam Detection on Embedded Forms" (the widget includes its own honeypot protection).
+4. **Disable spam detection on each lead form** — Go to **Settings → Lead Forms → Edit** on the relevant form and uncheck "Enable Spam Detection on Embedded Forms" (the widget includes its own honeypot protection).
 
 Add your keys to `.env`:
 
 ```env
-VITE_TRIPLESEAT_PUBLIC_KEY=your_public_key_here
-VITE_TRIPLESEAT_LEAD_FORM_ID=123
-VITE_TRIPLESEAT_LOCATION_ID=456
+# Pearl Box Townhouse
+VITE_PEARL_BOX_TRIPLESEAT_PUBLIC_KEY=your_key
+VITE_PEARL_BOX_TRIPLESEAT_LEAD_FORM_ID=123
+VITE_PEARL_BOX_TRIPLESEAT_LOCATION_ID=456
+
+# Roscioli
+VITE_ROSCIOLI_TRIPLESEAT_PUBLIC_KEY=your_key
+VITE_ROSCIOLI_TRIPLESEAT_LEAD_FORM_ID=789
+VITE_ROSCIOLI_TRIPLESEAT_LOCATION_ID=012
+
+# Tokyo Record Bar
+VITE_TRB_TRIPLESEAT_PUBLIC_KEY=your_key
+VITE_TRB_TRIPLESEAT_LEAD_FORM_ID=345
+VITE_TRB_TRIPLESEAT_LOCATION_ID=678
 ```
 
 ## Build
@@ -58,13 +89,15 @@ The repo includes a `vercel.json` and is ready to deploy as-is.
 1. Push this repo to GitHub.
 2. In Vercel, **Add New → Project** and import the repo. Vercel auto-detects the Vite framework and uses `npm run build` → `dist/`.
 3. **Add your Tripleseat keys as Environment Variables** (Project → Settings → Environment Variables). The `.env` file is gitignored, so the build needs these set in Vercel:
-   - `VITE_TRIPLESEAT_PUBLIC_KEY`
-   - `VITE_TRIPLESEAT_LEAD_FORM_ID`
-   - `VITE_TRIPLESEAT_LOCATION_ID`
+   - `VITE_PEARL_BOX_TRIPLESEAT_PUBLIC_KEY`, `VITE_PEARL_BOX_TRIPLESEAT_LEAD_FORM_ID`, `VITE_PEARL_BOX_TRIPLESEAT_LOCATION_ID`
+   - `VITE_ROSCIOLI_TRIPLESEAT_PUBLIC_KEY`, `VITE_ROSCIOLI_TRIPLESEAT_LEAD_FORM_ID`, `VITE_ROSCIOLI_TRIPLESEAT_LOCATION_ID`
+   - `VITE_TRB_TRIPLESEAT_PUBLIC_KEY`, `VITE_TRB_TRIPLESEAT_LEAD_FORM_ID`, `VITE_TRB_TRIPLESEAT_LOCATION_ID`
 
    These are read at **build time**, so after changing them, trigger a redeploy.
-4. Deploy. Live deployment:
-   - **Preview:** https://event-form-builder.vercel.app/
+4. Deploy. Live URLs:
+   - **Pearl Box:** https://event-form-builder.vercel.app/?location=pearl-box
+   - **Roscioli:** https://event-form-builder.vercel.app/?location=roscioli
+   - **Tokyo Record Bar:** https://event-form-builder.vercel.app/?location=tokyo-record-bar
    - **Embed script:** https://event-form-builder.vercel.app/event-form.iife.js
 
 > Any other static host works too (Netlify, GitHub Pages, S3 + CloudFront) — just serve the `dist/` folder.
@@ -76,11 +109,20 @@ Requires a Squarespace **Core plan or higher** (custom JavaScript isn't allowed 
 Add a **Code Block** to the page (Add Block → Code → set the dropdown to **HTML**) with:
 
 ```html
-<div id="roscioli-event-form"></div>
+<div id="roscioli-event-form" data-location="pearl-box"></div>
 <script src="https://event-form-builder.vercel.app/event-form.iife.js"></script>
 ```
 
+Change `data-location` to `roscioli` or `tokyo-record-bar` for the other venues.
+
 > Note: Squarespace often blocks scripts while you're logged into the editor. Test in an **incognito window** or via **Preview in Safe Mode**, not the editor preview.
+
+## Adding a New Location
+
+1. Create a new config file in `src/locations/` (use an existing one as a template).
+2. Register it in `src/locations/index.ts`.
+3. Add its Tripleseat env vars to `.env` and Vercel.
+4. Drop gallery images into `public/gallery/<location-id>/`.
 
 ## Form Steps
 

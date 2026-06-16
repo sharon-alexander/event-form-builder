@@ -1,17 +1,34 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
+import { LocationProvider } from "./context/LocationContext";
+import { getLocation } from "./locations";
 import "./index.css";
 
 const MOUNT_ID = "roscioli-event-form";
 
-// In the embeddable widget build, the bundle's CSS is captured onto this global
-// (see vite.config.ts) instead of being injected into the host page's <head>.
 const CSS_GLOBAL = "__ROSCIOLI_EFB_CSS__";
+
+/**
+ * Resolve which location config to use:
+ *  1. `data-location` attribute on the mount element (best for embeds)
+ *  2. `?location=` query parameter (handy for standalone preview)
+ *  3. Falls back to the default location
+ */
+function resolveLocationId(container: HTMLElement): string | null {
+  const fromAttr = container.getAttribute("data-location");
+  if (fromAttr) return fromAttr;
+
+  const params = new URLSearchParams(window.location.search);
+  return params.get("location");
+}
 
 function mount() {
   const container = document.getElementById(MOUNT_ID);
   if (!container) return;
+
+  const locationId = resolveLocationId(container);
+  const locationConfig = getLocation(locationId);
 
   const widgetCss = (globalThis as Record<string, unknown>)[CSS_GLOBAL] as
     | string
@@ -19,10 +36,6 @@ function mount() {
 
   let mountPoint: HTMLElement = container;
 
-  // When CSS was captured (widget build), render inside a shadow root so
-  // Tailwind's global resets stay contained and never leak onto the host page.
-  // Otherwise (dev / standalone preview) Vite injects CSS into <head> as usual
-  // and we mount directly into the container.
   if (widgetCss) {
     const shadow =
       container.shadowRoot ?? container.attachShadow({ mode: "open" });
@@ -36,7 +49,9 @@ function mount() {
   const root = ReactDOM.createRoot(mountPoint);
   root.render(
     <React.StrictMode>
-      <App />
+      <LocationProvider config={locationConfig}>
+        <App />
+      </LocationProvider>
     </React.StrictMode>,
   );
 }

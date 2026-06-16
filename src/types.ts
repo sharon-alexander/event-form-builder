@@ -14,20 +14,6 @@ export type EventFormat =
   | "seated_and_standing"
   | "not_sure";
 
-export type BudgetRange =
-  | "under_5k"
-  | "5k_7k"
-  | "7k_9k"
-  | "10k_plus";
-
-export type VenueSpace =
-  | "first_floor_salon"
-  | "second_floor_parlor"
-  | "third_floor_attic"
-  | "parlor_and_attic"
-  | "full_buyout"
-  | "not_sure";
-
 export type ServiceInterest =
   | "florals"
   | "lighting"
@@ -65,9 +51,11 @@ export interface FormData {
   backupDate: string;
   flexibleDatePreferences: FlexibleDatePreferences;
 
-  budget: BudgetRange | null;
+  /** Venue space value — options are location-specific, so this is a free string. */
+  budget: string | null;
 
-  venueSpace: VenueSpace | null;
+  /** Budget range value — options are location-specific, so this is a free string. */
+  venueSpace: string | null;
 
   startTime: string;
   endTime: string;
@@ -132,21 +120,7 @@ export const INITIAL_FORM_DATA: FormData = {
   submittingOnBehalf: false,
 };
 
-export const VENUE_SPACES: { value: VenueSpace; label: string; price: string }[] = [
-  { value: "first_floor_salon", label: "1st Floor Salon", price: "Starting at $3,000" },
-  { value: "second_floor_parlor", label: "2nd Floor Parlor", price: "Starting at $4,000" },
-  { value: "third_floor_attic", label: "3rd Floor Attic", price: "Starting at $3,500" },
-  { value: "parlor_and_attic", label: "Parlor & Attic", price: "Starting at $6,500" },
-  { value: "full_buyout", label: "Full Townhouse Buyout", price: "Starting at $10,000" },
-  { value: "not_sure", label: "Not Sure Yet", price: "We'll help you decide" },
-];
-
-export const BUDGET_OPTIONS: { value: BudgetRange; label: string }[] = [
-  { value: "under_5k", label: "Less than $5,000" },
-  { value: "5k_7k", label: "$5,000 – $7,000" },
-  { value: "7k_9k", label: "$7,000 – $9,000" },
-  { value: "10k_plus", label: "$10,000+" },
-];
+/* ── Shared option lists (same across all locations) ────────────────── */
 
 export const EVENT_CATEGORIES: { value: EventCategory; label: string }[] = [
   { value: "birthday", label: "Birthday" },

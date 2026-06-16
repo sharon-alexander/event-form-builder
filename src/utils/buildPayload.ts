@@ -2,18 +2,16 @@ import type { FormData } from "../types";
 import {
   EVENT_CATEGORIES,
   EVENT_FORMATS,
-  BUDGET_OPTIONS,
-  VENUE_SPACES,
   SERVICE_OPTIONS,
   REFERRAL_SOURCES,
 } from "../types";
-import { REFERRAL_SOURCE_IDS, REFERRAL_OTHER_SOURCE_ID } from "../config";
+import type { LocationConfig } from "../locations";
 
 function labelFor(list: { value: string; label: string }[], val: string | null): string {
   return list.find((i) => i.value === val)?.label ?? "";
 }
 
-function buildAdditionalInfo(data: FormData): string {
+function buildAdditionalInfo(data: FormData, location: LocationConfig): string {
   const lines: string[] = [];
 
   if (data.guestCount !== null) {
@@ -22,8 +20,8 @@ function buildAdditionalInfo(data: FormData): string {
   lines.push(`Headcount May Change: ${data.headcountMayChange ? "Yes" : "No"}`);
 
   lines.push(`Format: ${labelFor(EVENT_FORMATS, data.eventFormat)}`);
-  lines.push(`Budget: ${labelFor(BUDGET_OPTIONS, data.budget)}`);
-  lines.push(`Venue Space: ${labelFor(VENUE_SPACES, data.venueSpace)}`);
+  lines.push(`Budget: ${labelFor(location.budgetOptions, data.budget)}`);
+  lines.push(`Venue Space: ${labelFor(location.venueSpaces, data.venueSpace)}`);
 
   if (data.datesFlexible) {
     lines.push("Dates Flexible: Yes");
@@ -84,13 +82,12 @@ export interface TripleseatLeadPayload {
     referral_source_id?: number;
     referral_source_other?: string;
   };
-  // lead_form_id is a top-level parameter, sibling to `lead` (per Tripleseat API).
   lead_form_id?: number;
 }
 
 export function buildPayload(
   data: FormData,
-  opts?: { locationId?: number; leadFormId?: number },
+  location: LocationConfig,
 ): TripleseatLeadPayload {
   const eventDescription =
     data.eventCategory === "other"
@@ -105,7 +102,7 @@ export function buildPayload(
     guest_count: data.guestCount ?? 0,
     event_description: eventDescription,
     event_style: data.bookingType === "large_party" ? "largeparty" : "onpremise",
-    additional_information: buildAdditionalInfo(data),
+    additional_information: buildAdditionalInfo(data, location),
   };
 
   if (data.company.trim()) lead.company = data.company.trim();
@@ -120,13 +117,13 @@ export function buildPayload(
     if (data.endTime) lead.end_time = data.endTime;
   }
 
-  if (opts?.locationId) lead.location_id = opts.locationId;
+  if (location.tripleseat.locationId) {
+    lead.location_id = location.tripleseat.locationId;
+  }
 
   if (data.referralSource) {
-    lead.referral_source_id = REFERRAL_SOURCE_IDS[data.referralSource];
-    // "Other" / "Blog/Press" map to the native "Other" source, which accepts
-    // free text via referral_source_other.
-    if (lead.referral_source_id === REFERRAL_OTHER_SOURCE_ID) {
+    lead.referral_source_id = location.referralSourceIds[data.referralSource];
+    if (lead.referral_source_id === location.referralOtherSourceId) {
       const otherText =
         data.referralSource === "other"
           ? data.referralSourceOther
@@ -136,7 +133,9 @@ export function buildPayload(
   }
 
   const payload: TripleseatLeadPayload = { lead };
-  if (opts?.leadFormId) payload.lead_form_id = opts.leadFormId;
+  if (location.tripleseat.leadFormId) {
+    payload.lead_form_id = location.tripleseat.leadFormId;
+  }
 
   return payload;
 }

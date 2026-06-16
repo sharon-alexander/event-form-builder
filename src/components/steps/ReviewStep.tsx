@@ -2,11 +2,10 @@ import type { FormData } from "../../types";
 import {
   EVENT_CATEGORIES,
   EVENT_FORMATS,
-  BUDGET_OPTIONS,
-  VENUE_SPACES,
   SERVICE_OPTIONS,
   REFERRAL_SOURCES,
 } from "../../types";
+import { useLocationConfig } from "../../context/LocationContext";
 import FormStep from "../FormStep";
 
 interface Props {
@@ -31,6 +30,8 @@ function Row({ title, value }: { title: string; value: string }) {
 }
 
 export default function ReviewStep({ data, onSubmit, onBack, isSubmitting, error }: Props) {
+  const location = useLocationConfig();
+
   const bookingLabel =
     data.bookingType === "private_event" ? "Private Event" : "Large Party Booking";
 
@@ -75,8 +76,8 @@ export default function ReviewStep({ data, onSubmit, onBack, isSubmitting, error
         <Row title="Event Type" value={categoryLabel} />
         <Row title="Format" value={label(EVENT_FORMATS, data.eventFormat)} />
         <Row title="Date" value={dateDisplay} />
-        <Row title="Budget" value={label(BUDGET_OPTIONS, data.budget)} />
-        <Row title="Venue Space" value={label(VENUE_SPACES, data.venueSpace)} />
+        <Row title="Budget" value={label(location.budgetOptions, data.budget)} />
+        <Row title="Venue Space" value={label(location.venueSpaces, data.venueSpace)} />
         <Row title="Timing" value={timingDisplay} />
         <Row title="Services" value={servicesDisplay} />
         <Row

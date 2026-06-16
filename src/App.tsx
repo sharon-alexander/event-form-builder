@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import type { FormData } from "./types";
 import { INITIAL_FORM_DATA } from "./types";
-import { TRIPLESEAT_CONFIG } from "./config";
+import { useLocationConfig } from "./context/LocationContext";
 import { buildPayload } from "./utils/buildPayload";
 import { submitLead } from "./api/tripleseat";
 import LandingPage from "./components/LandingPage";
@@ -23,6 +23,8 @@ import ReviewStep from "./components/steps/ReviewStep";
 const TOTAL_STEPS = 12;
 
 export default function App() {
+  const location = useLocationConfig();
+
   const [started, setStarted] = useState(false);
   const [step, setStep] = useState(0);
   const [data, setData] = useState<FormData>(INITIAL_FORM_DATA);
@@ -30,7 +32,6 @@ export default function App() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
-  // Honeypot — hidden field to catch bots
   const [honeypot, setHoneypot] = useState("");
 
   const update = useCallback((patch: Partial<FormData>) => {
@@ -41,24 +42,21 @@ export default function App() {
   const back = useCallback(() => setStep((s) => Math.max(s - 1, 0)), []);
 
   const handleSubmit = useCallback(async () => {
-    if (honeypot) return; // bot detected
+    if (honeypot) return;
 
     setIsSubmitting(true);
     setSubmitError(null);
 
     try {
-      const payload = buildPayload(data, {
-        locationId: TRIPLESEAT_CONFIG.locationId,
-        leadFormId: TRIPLESEAT_CONFIG.leadFormId,
-      });
-      await submitLead(payload);
+      const payload = buildPayload(data, location);
+      await submitLead(payload, location.tripleseat);
       setSubmitted(true);
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
-  }, [data, honeypot]);
+  }, [data, honeypot, location]);
 
   if (!started) {
     return <LandingPage onStart={() => setStarted(true)} />;
@@ -86,8 +84,6 @@ export default function App() {
 
   return (
     <div className="px-4 py-8 sm:px-6">
-      {/* Honeypot — visually hidden via sr-only (avoids the horizontal overflow
-          an off-screen left:-9999px element can cause, especially on mobile) */}
       <div aria-hidden="true" className="sr-only">
         <input
           tabIndex={-1}
@@ -104,7 +100,6 @@ export default function App() {
         <div>
           <ProgressBar currentStep={step} totalSteps={TOTAL_STEPS} />
 
-          {/* Collapsible summary for smaller screens (hidden on review — full recap is in the step) */}
           {!isReviewStep && (
             <details className="mb-6 rounded-xl border border-brand-100 bg-brand-50/60 lg:hidden">
               <summary className="cursor-pointer list-none px-4 py-3 text-sm font-medium text-brand-700">
@@ -138,7 +133,6 @@ export default function App() {
           )}
         </div>
 
-        {/* Sticky summary sidebar for large screens (hidden on review step) */}
         {!isReviewStep && (
           <aside className="hidden lg:block">
             <div className="sticky top-8">
