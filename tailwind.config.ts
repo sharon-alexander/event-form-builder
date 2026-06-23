@@ -5,23 +5,25 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Backed by CSS variables (defaults in src/index.css) so each location
+        // can override its brand palette at runtime via src/theme/theme.ts.
         brand: {
-          50: "#faf5f0",
-          100: "#f0e4d6",
-          200: "#e0c6a8",
-          300: "#cda275",
-          400: "#be844f",
-          500: "#b07038",
-          600: "#9a5a2e",
-          700: "#7d4528",
-          800: "#673a26",
-          900: "#573222",
-          950: "#311810",
+          50: "rgb(var(--brand-50) / <alpha-value>)",
+          100: "rgb(var(--brand-100) / <alpha-value>)",
+          200: "rgb(var(--brand-200) / <alpha-value>)",
+          300: "rgb(var(--brand-300) / <alpha-value>)",
+          400: "rgb(var(--brand-400) / <alpha-value>)",
+          500: "rgb(var(--brand-500) / <alpha-value>)",
+          600: "rgb(var(--brand-600) / <alpha-value>)",
+          700: "rgb(var(--brand-700) / <alpha-value>)",
+          800: "rgb(var(--brand-800) / <alpha-value>)",
+          900: "rgb(var(--brand-900) / <alpha-value>)",
+          950: "rgb(var(--brand-950) / <alpha-value>)",
         },
       },
       fontFamily: {
-        sans: ['"Inter"', "system-ui", "sans-serif"],
-        display: ['"Playfair Display"', "Georgia", "serif"],
+        sans: ['var(--font-sans, "Inter")', "system-ui", "sans-serif"],
+        display: ['var(--font-display, "Playfair Display")', "Georgia", "serif"],
       },
     },
   },

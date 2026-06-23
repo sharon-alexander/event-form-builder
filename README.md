@@ -1,6 +1,8 @@
 # Event Form Builder
 
-A multi-step private event inquiry form that submits leads directly to Tripleseat. Built as an embeddable widget for Squarespace (or any website). Supports multiple locations, each with its own venue spaces, images, budget options, and Tripleseat credentials.
+A multi-step private event inquiry form that submits leads directly to Tripleseat. Built as an embeddable widget for Squarespace (or any website). Supports multiple locations, each with its own venue spaces, images, budget options, theme, and Tripleseat credentials.
+
+Locations are managed through a **CMS admin dashboard** (`/admin`) backed by Supabase. The public form loads its config from Supabase at runtime, and falls back to the bundled TypeScript configs in `src/locations/` if Supabase isn't configured. See [CMS Admin Dashboard](#cms-admin-dashboard).
 
 ## Locations
 
@@ -19,7 +21,7 @@ Location is resolved in this order:
 
 ```bash
 npm install
-cp .env.example .env   # then fill in your Tripleseat keys
+cp .env.example .env   # then fill in your Supabase + Tripleseat keys
 npm run dev             # http://localhost:5173
 ```
 
@@ -29,6 +31,48 @@ Preview a specific location during development:
 http://localhost:5173/?location=roscioli
 http://localhost:5173/?location=tokyo-record-bar
 ```
+
+The admin dashboard runs at:
+
+```
+http://localhost:5173/admin.html   (or /admin in production)
+```
+
+## CMS Admin Dashboard
+
+Admins sign in at `/admin` to manage the event forms for their restaurant
+**group** (organization). Each org's super-admin can see and edit every form
+that belongs to their org; the public (anon) role can only read published forms.
+
+What you can edit per form:
+
+- **Content** — venue name, URL slug, eyebrow label, about blurb
+- **Gallery** — upload/reorder/remove images and videos (stored in Supabase Storage), edit alt text
+- **Venues & Budgets** — the venue space and budget range options
+- **Theme** — brand color (a full palette is derived from it) and body/heading fonts, with a live preview
+- **Advanced** — Tripleseat credentials (referral source IDs are resolved automatically from Tripleseat)
+- **Publish** — toggle a form live; "Preview" opens `/?location=<slug>`
+
+### Supabase setup
+
+The backend (database, auth, storage) lives in Supabase. Full setup,
+migrations, and the seed script are documented in
+[`supabase/README.md`](supabase/README.md). In short:
+
+1. Create a Supabase project and run the SQL in `supabase/migrations/`.
+2. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to `.env` (and Vercel).
+3. Seed the launch data and create an admin login:
+   ```bash
+   node supabase/seed/seed.mjs
+   ```
+
+### Theming
+
+The Tailwind `brand` palette is backed by CSS variables whose defaults live in
+`src/index.css`. A form's saved `theme` (brand color + fonts) is applied at
+runtime by `src/theme/theme.ts` — so unedited forms look exactly as before, and
+edited ones restyle automatically. Custom fonts must also be loaded on the
+embedding page (the standalone preview already loads Inter + Playfair Display).
 
 ## Tripleseat Setup
 
@@ -78,6 +122,7 @@ This runs two builds into `dist/`:
 | File | Purpose |
 |---|---|
 | `index.html` + `assets/` | A standalone preview page — open it to use the form directly (great for testing or sharing a link). |
+| `admin.html` | The CMS admin dashboard (served at `/admin`). |
 | `event-form.iife.js` | The embeddable widget (CSS inlined) for Squarespace and other sites. |
 
 You can also run them individually with `npm run build:app` and `npm run build:widget`.
@@ -88,16 +133,16 @@ The repo includes a `vercel.json` and is ready to deploy as-is.
 
 1. Push this repo to GitHub.
 2. In Vercel, **Add New → Project** and import the repo. Vercel auto-detects the Vite framework and uses `npm run build` → `dist/`.
-3. **Add your Tripleseat keys as Environment Variables** (Project → Settings → Environment Variables). The `.env` file is gitignored, so the build needs these set in Vercel:
-   - `VITE_PEARL_BOX_TRIPLESEAT_PUBLIC_KEY`, `VITE_PEARL_BOX_TRIPLESEAT_LEAD_FORM_ID`, `VITE_PEARL_BOX_TRIPLESEAT_LOCATION_ID`
-   - `VITE_ROSCIOLI_TRIPLESEAT_PUBLIC_KEY`, `VITE_ROSCIOLI_TRIPLESEAT_LEAD_FORM_ID`, `VITE_ROSCIOLI_TRIPLESEAT_LOCATION_ID`
-   - `VITE_TRB_TRIPLESEAT_PUBLIC_KEY`, `VITE_TRB_TRIPLESEAT_LEAD_FORM_ID`, `VITE_TRB_TRIPLESEAT_LOCATION_ID`
+3. **Add your Environment Variables** (Project → Settings → Environment Variables). The `.env` file is gitignored, so the build needs these set in Vercel:
+   - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (powers the CMS + runtime config)
+   - Optional Tripleseat fallbacks for the bundled configs: `VITE_PEARL_BOX_TRIPLESEAT_*`, `VITE_ROSCIOLI_TRIPLESEAT_*`, `VITE_TRB_TRIPLESEAT_*`
 
-   These are read at **build time**, so after changing them, trigger a redeploy.
+   These are read at **build time**, so after changing them, trigger a redeploy. (Tripleseat credentials managed in the dashboard are stored in Supabase and don't require a redeploy.)
 4. Deploy. Live URLs:
    - **Pearl Box:** https://event-form-builder.vercel.app/?location=pearl-box
    - **Roscioli:** https://event-form-builder.vercel.app/?location=roscioli
    - **Tokyo Record Bar:** https://event-form-builder.vercel.app/?location=tokyo-record-bar
+   - **Admin dashboard:** https://event-form-builder.vercel.app/admin
    - **Embed script:** https://event-form-builder.vercel.app/event-form.iife.js
 
 > Any other static host works too (Netlify, GitHub Pages, S3 + CloudFront) — just serve the `dist/` folder.
@@ -119,10 +164,17 @@ Change `data-location` to `roscioli` or `tokyo-record-bar` for the other venues.
 
 ## Adding a New Location
 
-1. Create a new config file in `src/locations/` (use an existing one as a template).
-2. Register it in `src/locations/index.ts`.
-3. Add its Tripleseat env vars to `.env` and Vercel.
-4. Drop gallery images into `public/gallery/<location-id>/`.
+Once Supabase is set up, the preferred way is through the dashboard:
+
+1. Go to `/admin`, sign in, and click **New form**.
+2. Fill in the Content, Gallery, Venues & Budgets, Theme, and Advanced tabs.
+3. Toggle **Published** and save.
+
+To add a location to another **group**, create the organization and its admin in
+Supabase first (see [`supabase/README.md`](supabase/README.md)).
+
+> The bundled TypeScript configs in `src/locations/` remain only as a fallback
+> for when Supabase isn't configured.
 
 ## Form Steps
 

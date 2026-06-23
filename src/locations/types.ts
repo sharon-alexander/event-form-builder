@@ -50,8 +50,7 @@ export interface LocationConfig {
 
   /**
    * Maps each referral source value to a Tripleseat referral_source_id.
-   * IDs are site-specific — confirm via:
-   *   https://api.tripleseat.com/v1/sites.json?public_key=YOUR_KEY
+   * Populated at runtime via resolveReferralSources() — not CMS-editable.
    */
   referralSourceIds: Record<string, number>;
 

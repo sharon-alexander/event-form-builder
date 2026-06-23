@@ -2,6 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Default brand palette + fonts. `:host` covers the embeddable widget, whose
+   styles are injected into a shadow root (where `:root` doesn't match).
+   src/theme/theme.ts overrides these per location at runtime. */
+:root,
+:host {
+  --brand-50: 250 245 240;
+  --brand-100: 240 228 214;
+  --brand-200: 224 198 168;
+  --brand-300: 205 162 117;
+  --brand-400: 190 132 79;
+  --brand-500: 176 112 56;
+  --brand-600: 154 90 46;
+  --brand-700: 125 69 40;
+  --brand-800: 103 58 38;
+  --brand-900: 87 50 34;
+  --brand-950: 49 24 16;
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-display: "Playfair Display", Georgia, serif;
+}
+
 @layer base {
   *,
   *::before,
