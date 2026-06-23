@@ -65,6 +65,10 @@ export default function AdvancedTab({ draft, update }: Props) {
           <label className="efb-label" htmlFor="apiBaseUrl">
             API base URL
           </label>
+          <p className="mb-1 text-xs text-gray-400">
+            Leave blank to use the default (<code className="text-gray-500">https://api.tripleseat.com/v1</code>).
+            Only change this if Tripleseat provides a different endpoint.
+          </p>
           <input
             id="apiBaseUrl"
             className="efb-input font-mono"
