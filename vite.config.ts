@@ -1,5 +1,5 @@
 import { fileURLToPath } from "node:url";
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import cssInjectedByJsPlugin from "vite-plugin-css-injected-by-js";
 
@@ -11,9 +11,42 @@ const resolveRoot = (p: string) => fileURLToPath(new URL(p, import.meta.url));
 // `npm run build` runs both, emitting everything into dist/.
 const isWidget = process.env.BUILD_TARGET === "widget";
 
+/**
+ * Dev-server routing that mirrors vercel.json:
+ *   /           → redirect to /admin.html
+ *   /admin      → serve admin.html
+ *   /form/:slug → serve index.html (form reads slug from pathname)
+ */
+function formPathRouting(): Plugin {
+  return {
+    name: "form-path-routing",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const url = req.url ?? "";
+        const pathname = url.split("?")[0] ?? "";
+
+        if (pathname === "/") {
+          res.statusCode = 302;
+          res.setHeader("Location", "/admin");
+          res.end();
+          return;
+        }
+
+        if (pathname === "/admin" || pathname === "/admin/") {
+          req.url = "/admin.html";
+        } else if (pathname.startsWith("/form/") || pathname === "/form") {
+          req.url = "/index.html";
+        }
+        next();
+      });
+    },
+  };
+}
+
 export default defineConfig(({ command }) => ({
   plugins: [
     react(),
+    formPathRouting(),
     // Only the embeddable widget needs JS-injected CSS. For the standard pages
     // (index.html + admin.html) Vite emits normal <link> stylesheets, which also
     // avoids ambiguity about which entry hosts the injection code.

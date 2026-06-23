@@ -21,15 +21,16 @@
   <body>
     <!--
       Location is resolved in this order:
-        1. data-location attribute on the mount element
-        2. ?location= query parameter
-        3. Default (pearl-box)
+        1. data-location attribute on the mount element (embeds)
+        2. /form/:slug pathname (standalone pages)
+        3. ?location= query parameter (convenience / dev)
+      No default — standalone pages show "Form not found" without a slug.
 
       Examples:
         <div id="roscioli-event-form" data-location="roscioli"></div>
-        http://localhost:5173/?location=tokyo-record-bar
+        http://localhost:5173/form/tokyo-record-bar
 
-      Valid location IDs: pearl-box, roscioli, tokyo-record-bar
+      Valid bundled location IDs: pearl-box, roscioli, tokyo-record-bar
     -->
     <div id="roscioli-event-form"></div>
     <script type="module" src="/src/main.tsx"></script>

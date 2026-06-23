@@ -2,7 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import { LocationProvider } from "./context/LocationContext";
-import { getLocation } from "./locations";
+import { getLocation, tryGetLocation } from "./locations";
 import type { LocationConfig } from "./locations";
 import { fetchLocationBySlug } from "./locations/fromDb";
 import { resolveReferralSources } from "./api/resolveReferralSources";
@@ -16,12 +16,15 @@ const CSS_GLOBAL = "__ROSCIOLI_EFB_CSS__";
 /**
  * Resolve which location to load:
  *  1. `data-location` attribute on the mount element (best for embeds)
- *  2. `?location=` query parameter (handy for standalone preview)
- *  3. Falls back to the default location
+ *  2. `/form/:slug` pathname (standalone pages)
+ *  3. `?location=` query parameter (convenience / dev)
  */
 function resolveLocationId(container: HTMLElement): string | null {
   const fromAttr = container.getAttribute("data-location");
   if (fromAttr) return fromAttr;
+
+  const match = window.location.pathname.match(/^\/form\/([^/]+)/);
+  if (match?.[1]) return decodeURIComponent(match[1]);
 
   const params = new URLSearchParams(window.location.search);
   return params.get("location");
@@ -30,6 +33,18 @@ function resolveLocationId(container: HTMLElement): string | null {
 function LoadingState() {
   return (
     <div className="px-4 py-16 text-center text-sm text-gray-400">Loading…</div>
+  );
+}
+
+function NotFoundState() {
+  return (
+    <div className="px-4 py-16 text-center">
+      <h1 className="text-lg font-semibold text-gray-900">Form not found</h1>
+      <p className="mt-2 text-sm text-gray-500">
+        The event form you&apos;re looking for doesn&apos;t exist or hasn&apos;t
+        been published yet.
+      </p>
+    </div>
   );
 }
 
@@ -55,6 +70,8 @@ async function mount() {
     mountPoint = appRoot;
   }
 
+  const isWidget = !!widgetCss;
+
   const root = ReactDOM.createRoot(mountPoint);
   root.render(
     <React.StrictMode>
@@ -62,20 +79,42 @@ async function mount() {
     </React.StrictMode>,
   );
 
+  // On standalone pages (/form/:slug), a missing slug means "not found".
+  // Widgets (embeds) can still fall back to the default location.
+  if (!slug && !isWidget) {
+    root.render(
+      <React.StrictMode>
+        <NotFoundState />
+      </React.StrictMode>,
+    );
+    return;
+  }
+
   // Prefer live config from Supabase; fall back to the bundled TS config so the
   // form still works if Supabase is unconfigured or unreachable.
-  let config: LocationConfig;
+  let config: LocationConfig | null = null;
   let theme: ThemeTokens | null = null;
   try {
     const resolved = await fetchLocationBySlug(slug);
     if (resolved) {
       config = resolved.config;
       theme = resolved.theme;
-    } else {
-      config = getLocation(slug);
     }
   } catch {
-    config = getLocation(slug);
+    // Supabase unavailable — try bundled configs below.
+  }
+
+  if (!config) {
+    config = isWidget ? getLocation(slug) : tryGetLocation(slug);
+  }
+
+  if (!config) {
+    root.render(
+      <React.StrictMode>
+        <NotFoundState />
+      </React.StrictMode>,
+    );
+    return;
   }
 
   try {

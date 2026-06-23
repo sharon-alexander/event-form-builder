@@ -8,14 +8,16 @@ Locations are managed through a **CMS admin dashboard** (`/admin`) backed by Sup
 
 | Location | ID | Preview URL |
 |---|---|---|
-| Pearl Box Townhouse | `pearl-box` | `/?location=pearl-box` (default) |
-| Roscioli | `roscioli` | `/?location=roscioli` |
-| Tokyo Record Bar | `tokyo-record-bar` | `/?location=tokyo-record-bar` |
+| Pearl Box Townhouse | `pearl-box` | `/form/pearl-box` |
+| Roscioli | `roscioli` | `/form/roscioli` |
+| Tokyo Record Bar | `tokyo-record-bar` | `/form/tokyo-record-bar` |
 
 Location is resolved in this order:
 1. `data-location` attribute on the mount element (best for embeds)
-2. `?location=` query parameter (handy for previewing)
-3. Falls back to `pearl-box`
+2. `/form/:slug` pathname (standalone pages)
+3. `?location=` query parameter (convenience / dev)
+
+Standalone pages with no slug (or an unknown slug) show a "Form not found" message instead of defaulting to a location.
 
 ## Quick Start
 
@@ -28,15 +30,18 @@ npm run dev             # http://localhost:5173
 Preview a specific location during development:
 
 ```
-http://localhost:5173/?location=roscioli
-http://localhost:5173/?location=tokyo-record-bar
+http://localhost:5173/form/roscioli
+http://localhost:5173/form/tokyo-record-bar
 ```
 
 The admin dashboard runs at:
 
 ```
-http://localhost:5173/admin.html   (or /admin in production)
+http://localhost:5173/admin   (or /admin.html)
 ```
+
+The root URL (`/`) redirects to `/admin` in production. In dev, navigate
+directly to `/admin` or `/form/<slug>`.
 
 ## CMS Admin Dashboard
 
@@ -51,7 +56,7 @@ What you can edit per form:
 - **Venues & Budgets** — the venue space and budget range options
 - **Theme** — brand color (a full palette is derived from it) and body/heading fonts, with a live preview
 - **Advanced** — Tripleseat credentials (referral source IDs are resolved automatically from Tripleseat)
-- **Publish** — toggle a form live; "Preview" opens `/?location=<slug>`
+- **Publish** — toggle a form live; "Preview" opens `/form/<slug>`
 
 ### Supabase setup
 
@@ -139,9 +144,9 @@ The repo includes a `vercel.json` and is ready to deploy as-is.
 
    These are read at **build time**, so after changing them, trigger a redeploy. (Tripleseat credentials managed in the dashboard are stored in Supabase and don't require a redeploy.)
 4. Deploy. Live URLs:
-   - **Pearl Box:** https://event-form-builder.vercel.app/?location=pearl-box
-   - **Roscioli:** https://event-form-builder.vercel.app/?location=roscioli
-   - **Tokyo Record Bar:** https://event-form-builder.vercel.app/?location=tokyo-record-bar
+   - **Pearl Box:** https://event-form-builder.vercel.app/form/pearl-box
+   - **Roscioli:** https://event-form-builder.vercel.app/form/roscioli
+   - **Tokyo Record Bar:** https://event-form-builder.vercel.app/form/tokyo-record-bar
    - **Admin dashboard:** https://event-form-builder.vercel.app/admin
    - **Embed script:** https://event-form-builder.vercel.app/event-form.iife.js
 

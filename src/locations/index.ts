@@ -24,6 +24,14 @@ export function getLocation(id: string | null | undefined): LocationConfig {
   return LOCATIONS[DEFAULT_LOCATION_ID]!;
 }
 
+/** Like getLocation but returns null when the slug isn't a bundled location. */
+export function tryGetLocation(
+  id: string | null | undefined,
+): LocationConfig | null {
+  if (id && id in LOCATIONS) return LOCATIONS[id]!;
+  return null;
+}
+
 export function getAllLocations(): LocationConfig[] {
   return Object.values(LOCATIONS);
 }

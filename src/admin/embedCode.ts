@@ -16,5 +16,5 @@ export function buildEmbedCode(slug: string): string {
 }
 
 export function buildPreviewUrl(slug: string): string {
-  return `${getPublicSiteUrl()}/?location=${encodeURIComponent(slug)}`;
+  return `${getPublicSiteUrl()}/form/${encodeURIComponent(slug)}`;
 }

@@ -34,7 +34,7 @@ export default function FormsListPage() {
     if (!name) return;
     const suggested = slugify(name);
     const slug = window.prompt(
-      "URL slug (lowercase, used in ?location=). Must be globally unique.",
+      "URL slug (lowercase, used in /form/<slug>). Must be globally unique.",
       suggested,
     );
     if (!slug) return;
@@ -116,15 +116,12 @@ export default function FormsListPage() {
                   <span className="truncate font-medium text-gray-900">{form.name}</span>
                   <StatusBadge published={form.published} />
                 </div>
-                <p className="mt-0.5 truncate text-xs text-gray-400">
-                  Slug: {form.slug}
-                </p>
               </div>
               <RowMenu
                 form={form}
                 onEdit={() => navigate(`/forms/${form.id}`)}
                 onPreview={() =>
-                  window.open(`/?location=${encodeURIComponent(form.slug)}`, "_blank")
+                  window.open(`/form/${encodeURIComponent(form.slug)}`, "_blank")
                 }
                 onTogglePublish={() => handleTogglePublish(form)}
                 onDelete={() => handleDelete(form)}

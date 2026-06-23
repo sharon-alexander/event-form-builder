@@ -39,7 +39,7 @@ export default function ContentTab({ draft, update }: Props) {
             }
           />
           <p className="mt-1 text-xs text-gray-400">
-            Used in <code>?location={draft.slug || "slug"}</code> and embeds. Must be unique.
+            Used in <code>/form/{draft.slug || "slug"}</code> and embeds. Must be unique.
           </p>
         </div>
       </div>
