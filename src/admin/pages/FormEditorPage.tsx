@@ -18,6 +18,9 @@ import GalleryTab from "../components/editor/GalleryTab";
 import OptionsTab from "../components/editor/OptionsTab";
 import ThemeTab from "../components/editor/ThemeTab";
 import AdvancedTab from "../components/editor/AdvancedTab";
+import EmbedTab from "../components/editor/EmbedTab";
+import PublishToggle from "../components/PublishToggle";
+import { buildPreviewUrl } from "../embedCode";
 
 /** The editable subset of a location, with arrays/objects guaranteed non-null. */
 export interface EditableLocation {
@@ -38,6 +41,7 @@ const TABS = [
   { id: "gallery", label: "Gallery" },
   { id: "options", label: "Venues & Budgets" },
   { id: "theme", label: "Theme" },
+  { id: "embed", label: "Embed" },
   { id: "advanced", label: "Advanced" },
 ] as const;
 
@@ -126,7 +130,7 @@ export default function FormEditorPage() {
   }
 
   const previewUrl = useMemo(
-    () => (draft ? `/?location=${encodeURIComponent(draft.slug)}` : "/"),
+    () => (draft ? buildPreviewUrl(draft.slug) : "/"),
     [draft],
   );
 
@@ -155,15 +159,10 @@ export default function FormEditorPage() {
             {draft.name}
           </h1>
           <div className="flex items-center gap-3">
-            <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-gray-700">
-              <input
-                type="checkbox"
-                checked={draft.published}
-                onChange={(e) => update({ published: e.target.checked })}
-                className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
-              />
-              Published
-            </label>
+            <PublishToggle
+              published={draft.published}
+              onChange={(published) => update({ published })}
+            />
             <a
               href={previewUrl}
               target="_blank"
@@ -217,6 +216,7 @@ export default function FormEditorPage() {
         )}
         {tab === "options" && <OptionsTab draft={draft} update={update} />}
         {tab === "theme" && <ThemeTab draft={draft} update={update} />}
+        {tab === "embed" && <EmbedTab draft={draft} />}
         {tab === "advanced" && <AdvancedTab draft={draft} update={update} />}
       </div>
 
