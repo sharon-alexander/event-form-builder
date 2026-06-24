@@ -9,6 +9,8 @@ export interface VenueSpaceOption {
   value: string;
   label: string;
   price: string;
+  /** Photos and videos shown when viewing this venue space in the form */
+  galleryMedia?: MediaItem[];
 }
 
 export interface BudgetOption {

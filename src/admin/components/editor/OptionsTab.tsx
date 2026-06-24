@@ -1,9 +1,13 @@
 import type { BudgetOption, VenueSpaceOption } from "../../../locations/types";
 import type { EditableLocation } from "../../pages/FormEditorPage";
+import { collectFormMedia } from "../../utils/formMediaLibrary";
+import VenueGalleryEditor from "./VenueGalleryEditor";
 
 interface Props {
   draft: EditableLocation;
   update: (patch: Partial<EditableLocation>) => void;
+  orgId: string | null;
+  onError: (msg: string) => void;
 }
 
 function slugifyValue(s: string): string {
@@ -24,9 +28,10 @@ function withGeneratedValues<T extends { value: string; label: string }>(
   }));
 }
 
-export default function OptionsTab({ draft, update }: Props) {
+export default function OptionsTab({ draft, update, orgId, onError }: Props) {
   const venues = draft.venue_spaces;
   const budgets = draft.budget_options;
+  const libraryMedia = collectFormMedia(draft);
 
   function setVenues(next: VenueSpaceOption[]) {
     update({ venue_spaces: withGeneratedValues(next) });
@@ -42,7 +47,8 @@ export default function OptionsTab({ draft, update }: Props) {
           <div>
             <h2 className="text-sm font-semibold text-gray-900">Venue spaces</h2>
             <p className="mt-0.5 text-xs text-gray-400">
-              Options shown on the venue selection step, with starting prices.
+              Options shown on the venue selection step, with starting prices and optional
+              photo/video galleries.
             </p>
           </div>
           <button
@@ -60,36 +66,51 @@ export default function OptionsTab({ draft, update }: Props) {
           {venues.map((v, i) => (
             <div
               key={i}
-              className="flex items-center gap-3 rounded-xl border border-slate-200 p-3"
+              className="space-y-3 rounded-xl border border-slate-200 p-3"
             >
-              <input
-                className="efb-input min-w-0 flex-1 py-2"
-                placeholder="Name (e.g. 1st Floor Salon)"
-                value={v.label}
-                onChange={(e) => {
-                  const label = e.target.value;
+              <div className="flex items-center gap-3">
+                <input
+                  className="efb-input min-w-0 flex-1 py-2"
+                  placeholder="Name (e.g. 1st Floor Salon)"
+                  value={v.label}
+                  onChange={(e) => {
+                    const label = e.target.value;
+                    setVenues(
+                      venues.map((row, idx) =>
+                        idx === i ? { ...row, label } : row,
+                      ),
+                    );
+                  }}
+                />
+                <input
+                  className="efb-input min-w-0 flex-1 py-2"
+                  placeholder="Price (e.g. Starting at $3,000)"
+                  value={v.price}
+                  onChange={(e) =>
+                    setVenues(
+                      venues.map((row, idx) =>
+                        idx === i ? { ...row, price: e.target.value } : row,
+                      ),
+                    )
+                  }
+                />
+                <IconButton label="Remove" onClick={() => setVenues(venues.filter((_, idx) => idx !== i))} destructive>
+                  <TrashIcon />
+                </IconButton>
+              </div>
+              <VenueGalleryEditor
+                label={v.label}
+                media={v.galleryMedia ?? []}
+                libraryMedia={libraryMedia}
+                onChange={(galleryMedia) =>
                   setVenues(
-                    venues.map((row, idx) =>
-                      idx === i ? { ...row, label } : row,
-                    ),
-                  );
-                }}
-              />
-              <input
-                className="efb-input min-w-0 flex-1 py-2"
-                placeholder="Price (e.g. Starting at $3,000)"
-                value={v.price}
-                onChange={(e) =>
-                  setVenues(
-                    venues.map((row, idx) =>
-                      idx === i ? { ...row, price: e.target.value } : row,
-                    ),
+                    venues.map((row, idx) => (idx === i ? { ...row, galleryMedia } : row)),
                   )
                 }
+                orgId={orgId}
+                slug={draft.slug}
+                onError={onError}
               />
-              <IconButton label="Remove" onClick={() => setVenues(venues.filter((_, idx) => idx !== i))} destructive>
-                <TrashIcon />
-              </IconButton>
             </div>
           ))}
           {venues.length === 0 && <EmptyHint label="venue spaces" />}

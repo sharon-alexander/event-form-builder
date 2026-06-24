@@ -16,9 +16,31 @@ const pearlBox: LocationConfig = {
   ],
 
   venueSpaces: [
-    { value: "first_floor_salon", label: "1st Floor Salon", price: "Starting at $3,000" },
-    { value: "second_floor_parlor", label: "2nd Floor Parlor", price: "Starting at $4,000" },
-    { value: "third_floor_attic", label: "3rd Floor Attic", price: "Starting at $3,500" },
+    {
+      value: "first_floor_salon",
+      label: "1st Floor Salon",
+      price: "Starting at $3,000",
+      galleryMedia: [
+        { type: "image", src: assetUrl("/gallery/pearl-box/salon.png"), alt: "The salon with red velvet seating" },
+      ],
+    },
+    {
+      value: "second_floor_parlor",
+      label: "2nd Floor Parlor",
+      price: "Starting at $4,000",
+      galleryMedia: [
+        { type: "image", src: assetUrl("/gallery/pearl-box/staircase.png"), alt: "Mirrored staircase" },
+        { type: "image", src: assetUrl("/gallery/pearl-box/staircase-detail.png"), alt: "Staircase detail with red lighting" },
+      ],
+    },
+    {
+      value: "third_floor_attic",
+      label: "3rd Floor Attic",
+      price: "Starting at $3,500",
+      galleryMedia: [
+        { type: "image", src: assetUrl("/gallery/pearl-box/attic.png"), alt: "The attic lounge with wood paneling" },
+      ],
+    },
     { value: "parlor_and_attic", label: "Parlor & Attic", price: "Starting at $6,500" },
     { value: "full_buyout", label: "Full Townhouse Buyout", price: "Starting at $10,000" },
     { value: "not_sure", label: "Not Sure Yet", price: "We'll help you decide" },

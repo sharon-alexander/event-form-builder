@@ -1,7 +1,9 @@
 import { useRef, useState } from "react";
 import type { MediaItem } from "../../../locations/types";
 import { uploadGalleryFile } from "../../api";
+import { collectFormMedia } from "../../utils/formMediaLibrary";
 import type { EditableLocation } from "../../pages/FormEditorPage";
+import MediaPicker from "./MediaPicker";
 
 interface Props {
   draft: EditableLocation;
@@ -13,8 +15,10 @@ interface Props {
 export default function GalleryTab({ draft, update, orgId, onError }: Props) {
   const fileInput = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const media = draft.gallery_media;
+  const libraryMedia = collectFormMedia(draft);
 
   function setMedia(next: MediaItem[]) {
     update({ gallery_media: next });
@@ -34,6 +38,11 @@ export default function GalleryTab({ draft, update, orgId, onError }: Props) {
     const next = [...media];
     [next[index], next[target]] = [next[target]!, next[index]!];
     setMedia(next);
+  }
+
+  function addExisting(item: MediaItem) {
+    if (media.some((m) => m.src === item.src)) return;
+    setMedia([...media, item]);
   }
 
   async function handleFiles(files: FileList | null) {
@@ -71,14 +80,25 @@ export default function GalleryTab({ draft, update, orgId, onError }: Props) {
             Images (and videos) shown on the landing page, in order.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => fileInput.current?.click()}
-          disabled={uploading}
-          className="efb-btn-primary px-4 py-2"
-        >
-          {uploading ? "Uploading…" : "Upload"}
-        </button>
+        <div className="flex gap-2">
+          {libraryMedia.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setPickerOpen((v) => !v)}
+              className="efb-btn-secondary px-4 py-2"
+            >
+              {pickerOpen ? "Cancel" : "Choose existing"}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => fileInput.current?.click()}
+            disabled={uploading}
+            className="efb-btn-primary px-4 py-2"
+          >
+            {uploading ? "Uploading…" : "Upload"}
+          </button>
+        </div>
         <input
           ref={fileInput}
           type="file"
@@ -88,6 +108,15 @@ export default function GalleryTab({ draft, update, orgId, onError }: Props) {
           onChange={(e) => handleFiles(e.target.files)}
         />
       </div>
+
+      {pickerOpen && (
+        <MediaPicker
+          library={libraryMedia}
+          selected={media}
+          onSelect={addExisting}
+          onClose={() => setPickerOpen(false)}
+        />
+      )}
 
       {media.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-300 p-10 text-center text-sm text-gray-400">

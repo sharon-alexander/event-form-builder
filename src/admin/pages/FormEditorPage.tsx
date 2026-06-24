@@ -214,7 +214,9 @@ export default function FormEditorPage() {
         {tab === "gallery" && (
           <GalleryTab draft={draft} update={update} orgId={orgId} onError={setError} />
         )}
-        {tab === "options" && <OptionsTab draft={draft} update={update} />}
+        {tab === "options" && (
+          <OptionsTab draft={draft} update={update} orgId={orgId} onError={setError} />
+        )}
         {tab === "theme" && <ThemeTab draft={draft} update={update} />}
         {tab === "embed" && <EmbedTab draft={draft} />}
         {tab === "advanced" && <AdvancedTab draft={draft} update={update} />}
