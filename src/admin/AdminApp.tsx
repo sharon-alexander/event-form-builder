@@ -2,10 +2,13 @@ import { HashRouter, Navigate, Route, Routes } from "react-router-dom";
 import { isSupabaseConfigured } from "../lib/supabase";
 import { AuthProvider } from "./auth";
 import RequireAuth from "./components/RequireAuth";
+import RequireSuperAdmin from "./components/RequireSuperAdmin";
 import AdminLayout from "./components/AdminLayout";
 import LoginPage from "./pages/LoginPage";
+import SetPasswordPage from "./pages/SetPasswordPage";
 import FormsListPage from "./pages/FormsListPage";
 import FormEditorPage from "./pages/FormEditorPage";
+import UsersPage from "./pages/UsersPage";
 
 export default function AdminApp() {
   if (!isSupabaseConfigured) {
@@ -17,6 +20,7 @@ export default function AdminApp() {
       <HashRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/set-password" element={<SetPasswordPage />} />
           <Route
             element={
               <RequireAuth>
@@ -26,6 +30,14 @@ export default function AdminApp() {
           >
             <Route path="/" element={<FormsListPage />} />
             <Route path="/forms/:id" element={<FormEditorPage />} />
+            <Route
+              path="/users"
+              element={
+                <RequireSuperAdmin>
+                  <UsersPage />
+                </RequireSuperAdmin>
+              }
+            />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

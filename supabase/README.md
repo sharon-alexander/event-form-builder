@@ -22,6 +22,7 @@ supabase db push           # if you use the CLI with this folder linked
 # or, manually:
 psql "$SUPABASE_DB_URL" -f migrations/0001_init.sql
 psql "$SUPABASE_DB_URL" -f migrations/0002_storage.sql
+psql "$SUPABASE_DB_URL" -f migrations/0003_admin_users.sql
 ```
 
 This creates the `organizations`, `profiles`, and `locations` tables with Row
@@ -47,6 +48,53 @@ node supabase/seed/seed.mjs
 The script is idempotent — re-running upserts the org and locations by slug.
 
 ## 4. Adding more admins / organizations
+
+### Via the CMS (recommended)
+
+Super-admins see a **Users** page in the admin dashboard (`/admin#/users`).
+From there they can:
+
+- Invite a colleague by email (the invitee receives a link to set their password)
+- Assign roles: `super_admin` (can manage users) or `editor` (forms only)
+- Remove users from the organization
+
+This requires deploying the Edge Functions below and configuring Auth redirect URLs.
+
+### Deploy Edge Functions
+
+Install the [Supabase CLI](https://supabase.com/docs/guides/cli), link your
+project, then:
+
+```bash
+supabase functions deploy invite-admin
+supabase functions deploy remove-admin
+
+# Secrets used by the invite function (set per environment):
+supabase secrets set ADMIN_SET_PASSWORD_URL="https://yoursite.com/admin.html#/set-password"
+```
+
+For local development, use:
+
+```
+http://localhost:5173/admin.html#/set-password
+```
+
+`SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` are
+provided automatically to Edge Functions by Supabase.
+
+### Configure Auth redirect URLs
+
+In the Supabase dashboard under **Authentication → URL Configuration**:
+
+- **Site URL:** your production admin URL (e.g.
+  `https://event-form-builder.vercel.app/admin.html`)
+- **Redirect URLs:** add both dev and prod set-password URLs:
+  - `http://localhost:5173/admin.html#/set-password`
+  - `https://yoursite.com/admin.html#/set-password`
+
+Confirm **Authentication → Email Templates → Invite user** is enabled.
+
+### Manual fallback
 
 - **Another admin in an existing org:** create the user in **Authentication →
   Users**, then insert a `profiles` row linking their `id` to the `org_id`.

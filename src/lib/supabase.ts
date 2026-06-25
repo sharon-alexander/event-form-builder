@@ -9,7 +9,12 @@ export const isSupabaseConfigured = Boolean(url && anonKey);
 
 /** Shared browser client, or `null` when Supabase isn't configured. */
 export const supabase: SupabaseClient | null = isSupabaseConfigured
-  ? createClient(url!, anonKey!)
+  ? createClient(url!, anonKey!, {
+      auth: {
+        detectSessionInUrl: true,
+        flowType: "pkce",
+      },
+    })
   : null;
 
 /** Returns the client or throws — use in the admin app where Supabase is required. */

@@ -9,11 +9,17 @@ import {
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 
+export type AdminRole = "super_admin" | "editor";
+
 export interface Profile {
   id: string;
   org_id: string;
-  role: string;
+  role: AdminRole;
   email: string | null;
+}
+
+export function isSuperAdmin(profile: Profile | null | undefined): boolean {
+  return profile?.role === "super_admin";
 }
 
 export interface Organization {
