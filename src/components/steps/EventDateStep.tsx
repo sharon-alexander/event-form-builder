@@ -1,15 +1,17 @@
-import type { FormData } from "../../types";
 import { MONTHS, DAYS_OF_WEEK } from "../../types";
 import FormStep from "../FormStep";
+import type { StepProps } from "./stepProps";
 
-interface Props {
-  data: FormData;
-  onChange: (patch: Partial<FormData>) => void;
-  onNext: () => void;
-  onBack: () => void;
-}
-
-export default function EventDateStep({ data, onChange, onNext, onBack }: Props) {
+export default function EventDateStep({
+  data,
+  onChange,
+  onNext,
+  onBack,
+  nextLabel,
+  moreDetails,
+  title = "When are you thinking?",
+  subtitle = "Pick a date or let us know your flexibility.",
+}: StepProps) {
   const toggleMonth = (m: string) => {
     const current = data.flexibleDatePreferences.preferredMonths;
     const next = current.includes(m) ? current.filter((x) => x !== m) : [...current, m];
@@ -32,10 +34,12 @@ export default function EventDateStep({ data, onChange, onNext, onBack }: Props)
 
   return (
     <FormStep
-      title="When are you thinking?"
-      subtitle="Pick a date or let us know your flexibility."
+      title={title}
+      subtitle={subtitle}
+      moreDetails={moreDetails}
       onNext={onNext}
       onBack={onBack}
+      nextLabel={nextLabel}
       nextDisabled={!isValid}
     >
       <div className="space-y-5">
@@ -46,9 +50,7 @@ export default function EventDateStep({ data, onChange, onNext, onBack }: Props)
             onChange={(e) => onChange({ datesFlexible: e.target.checked })}
             className="h-4 w-4 rounded border-brand-300 text-brand-600 focus:ring-brand-500"
           />
-          <span className="text-sm font-medium text-gray-700">
-            My dates are flexible
-          </span>
+          <span className="text-sm font-medium text-gray-700">My dates are flexible</span>
         </label>
 
         {!data.datesFlexible ? (

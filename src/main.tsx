@@ -30,6 +30,38 @@ function resolveLocationId(container: HTMLElement): string | null {
   return params.get("location");
 }
 
+/**
+ * Resolve a promise but never hang the initial render: if it doesn't settle in
+ * time (e.g. a slow/stalled network request), fall back to `fallback` so the
+ * form can render from bundled config instead of getting stuck on "Loading…".
+ */
+function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return new Promise((resolve) => {
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        resolve(fallback);
+      }
+    }, ms);
+    promise
+      .then((value) => {
+        if (!settled) {
+          settled = true;
+          clearTimeout(timer);
+          resolve(value);
+        }
+      })
+      .catch(() => {
+        if (!settled) {
+          settled = true;
+          clearTimeout(timer);
+          resolve(fallback);
+        }
+      });
+  });
+}
+
 function LoadingState() {
   return (
     <div className="px-4 py-16 text-center text-sm text-gray-400">Loading…</div>
@@ -95,7 +127,7 @@ async function mount() {
   let config: LocationConfig | null = null;
   let theme: ThemeTokens | null = null;
   try {
-    const resolved = await fetchLocationBySlug(slug);
+    const resolved = await withTimeout(fetchLocationBySlug(slug), 8000, null);
     if (resolved) {
       config = resolved.config;
       theme = resolved.theme;
@@ -118,12 +150,18 @@ async function mount() {
   }
 
   try {
-    const referral = await resolveReferralSources(config.tripleseat, config.name);
-    config = {
-      ...config,
-      referralSourceIds: referral.referralSourceIds,
-      referralOtherSourceId: referral.referralOtherSourceId,
-    };
+    const referral = await withTimeout(
+      resolveReferralSources(config.tripleseat, config.name),
+      8000,
+      null,
+    );
+    if (referral) {
+      config = {
+        ...config,
+        referralSourceIds: referral.referralSourceIds,
+        referralOtherSourceId: referral.referralOtherSourceId,
+      };
+    }
   } catch {
     // Keep referral IDs from the bundled/DB config if the Tripleseat lookup fails.
   }

@@ -1,14 +1,16 @@
-import type { FormData } from "../../types";
 import FormStep from "../FormStep";
+import type { StepProps } from "./stepProps";
 
-interface Props {
-  data: FormData;
-  onChange: (patch: Partial<FormData>) => void;
-  onNext: () => void;
-  onBack: () => void;
-}
-
-export default function ContactInfoStep({ data, onChange, onNext, onBack }: Props) {
+export default function ContactStep({
+  data,
+  onChange,
+  onNext,
+  onBack,
+  nextLabel = "Review & Submit",
+  moreDetails,
+  title = "Your details",
+  subtitle = "Tell us a bit about yourself so we can get in touch.",
+}: StepProps) {
   const isValid =
     data.firstName.trim() !== "" &&
     data.lastName.trim() !== "" &&
@@ -17,11 +19,12 @@ export default function ContactInfoStep({ data, onChange, onNext, onBack }: Prop
 
   return (
     <FormStep
-      title="Your details"
-      subtitle="Tell us a bit about yourself so we can get in touch."
+      title={title}
+      subtitle={subtitle}
+      moreDetails={moreDetails}
       onNext={onNext}
       onBack={onBack}
-      nextLabel="Review & Submit"
+      nextLabel={nextLabel}
       nextDisabled={!isValid}
     >
       <div className="space-y-4">

@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import type { LocationRow } from "../../locations/fromDb";
 import { useAuth } from "../auth";
 import { createLocation, deleteLocation, listLocations, updateLocation } from "../api";
+import CreateFormModal from "../components/CreateFormModal";
+import { DEFAULT_FORM_STEPS } from "../constants/defaultFormSteps";
 
 export default function FormsListPage() {
   const { org } = useAuth();
@@ -11,6 +13,8 @@ export default function FormsListPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -28,24 +32,23 @@ export default function FormsListPage() {
     void load();
   }, [load]);
 
-  async function handleCreate() {
+  async function handleCreate(name: string, slug: string) {
     if (!org) return;
-    const name = window.prompt("Name for the new event form (e.g. \"Downtown Loft\")");
-    if (!name) return;
-    const suggested = slugify(name);
-    const slug = window.prompt(
-      "URL slug (lowercase, used in /form/<slug>). Must be globally unique.",
-      suggested,
-    );
-    if (!slug) return;
 
     setCreating(true);
-    setError(null);
+    setCreateError(null);
     try {
-      await createLocation(org.id, { name: name.trim(), slug: slugify(slug) });
+      const created = await createLocation(org.id, {
+        name,
+        slug,
+        form_steps: DEFAULT_FORM_STEPS,
+        timing_style: "standard",
+      });
+      setCreateModalOpen(false);
       await load();
+      navigate(`/forms/${created.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create form.");
+      setCreateError(err instanceof Error ? err.message : "Failed to create form.");
     } finally {
       setCreating(false);
     }
@@ -83,11 +86,13 @@ export default function FormsListPage() {
         </div>
         <button
           type="button"
-          onClick={handleCreate}
-          disabled={creating}
+          onClick={() => {
+            setCreateError(null);
+            setCreateModalOpen(true);
+          }}
           className="efb-btn-primary"
         >
-          {creating ? "Creating…" : "New form"}
+          New form
         </button>
       </div>
 
@@ -130,6 +135,14 @@ export default function FormsListPage() {
           ))}
         </ul>
       )}
+
+      <CreateFormModal
+        open={createModalOpen}
+        onClose={() => !creating && setCreateModalOpen(false)}
+        onCreate={handleCreate}
+        creating={creating}
+        error={createError}
+      />
     </div>
   );
 }
@@ -258,12 +271,4 @@ function StatusBadge({ published }: { published: boolean }) {
       Draft
     </span>
   );
-}
-
-function slugify(s: string): string {
-  return s
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
 }

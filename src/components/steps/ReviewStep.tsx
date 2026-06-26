@@ -4,6 +4,7 @@ import {
   EVENT_FORMATS,
   SERVICE_OPTIONS,
   REFERRAL_SOURCES,
+  MEAL_SERVICE_OPTIONS,
 } from "../../types";
 import { useLocationConfig } from "../../context/LocationContext";
 import FormStep from "../FormStep";
@@ -44,9 +45,14 @@ export default function ReviewStep({ data, onSubmit, onBack, isSubmitting, error
     ? `Flexible — Months: ${data.flexibleDatePreferences.preferredMonths.join(", ") || "Any"}; Days: ${data.flexibleDatePreferences.preferredDays.join(", ") || "Any"}`
     : `${data.eventDate}${data.backupDate ? ` (backup: ${data.backupDate})` : ""}`;
 
-  const timingDisplay = data.timingFlexible
-    ? "Flexible"
-    : `${data.startTime} – ${data.endTime}`;
+  const timingDisplay =
+    location.timingStyle === "meal_service" && data.mealService
+      ? data.startTime
+        ? `${label(MEAL_SERVICE_OPTIONS, data.mealService)} at ${data.startTime}`
+        : label(MEAL_SERVICE_OPTIONS, data.mealService)
+      : data.timingFlexible
+        ? "Flexible"
+        : `${data.startTime} – ${data.endTime}`;
 
   const servicesDisplay =
     data.services.length > 0
@@ -68,27 +74,37 @@ export default function ReviewStep({ data, onSubmit, onBack, isSubmitting, error
       isSubmitting={isSubmitting}
     >
       <dl className="divide-y divide-gray-100">
-        <Row title="Booking Type" value={bookingLabel} />
-        <Row
-          title="Headcount"
-          value={`${data.guestCount?.toString() ?? "—"}${data.headcountMayChange ? " (may change)" : ""}`}
-        />
-        <Row title="Event Type" value={categoryLabel} />
-        <Row title="Format" value={label(EVENT_FORMATS, data.eventFormat)} />
-        <Row title="Date" value={dateDisplay} />
-        <Row title="Budget" value={label(location.budgetOptions, data.budget)} />
-        <Row title="Venue Space" value={label(location.venueSpaces, data.venueSpace)} />
-        <Row title="Timing" value={timingDisplay} />
-        <Row title="Services" value={servicesDisplay} />
-        <Row
-          title="Other Venues"
-          value={
-            data.consideringOtherVenues
-              ? `Yes — ${data.otherVenuesDetails}`
-              : "No"
-          }
-        />
-        <Row title="Referral" value={referralDisplay} />
+        {data.bookingType && <Row title="Booking Type" value={bookingLabel} />}
+        {data.guestCount && (
+          <Row
+            title="Headcount"
+            value={`${data.guestCount}${data.headcountMayChange ? " (may change)" : ""}`}
+          />
+        )}
+        {data.eventCategory && <Row title="Event Type" value={categoryLabel} />}
+        {data.eventFormat && <Row title="Format" value={label(EVENT_FORMATS, data.eventFormat)} />}
+        {dateDisplay && <Row title="Date" value={dateDisplay} />}
+        {data.budget && <Row title="Budget" value={label(location.budgetOptions, data.budget)} />}
+        {data.venueSpace && (
+          <Row title="Venue Space" value={label(location.venueSpaces, data.venueSpace)} />
+        )}
+        {(data.startTime || data.timingFlexible || data.mealService) && (
+          <Row title="Timing" value={timingDisplay} />
+        )}
+        {location.steps.includes("services") && (
+          <Row title="Services" value={servicesDisplay} />
+        )}
+        {data.consideringOtherVenues !== null && (
+          <Row
+            title="Other Venues"
+            value={
+              data.consideringOtherVenues
+                ? `Yes — ${data.otherVenuesDetails}`
+                : "No"
+            }
+          />
+        )}
+        {data.referralSource && <Row title="Referral" value={referralDisplay} />}
         <Row title="Name" value={`${data.firstName} ${data.lastName}`} />
         <Row title="Email" value={data.email} />
         <Row title="Phone" value={data.phone} />
@@ -97,9 +113,7 @@ export default function ReviewStep({ data, onSubmit, onBack, isSubmitting, error
           <Row title="Site Visit Dates" value={data.preferredSiteVisitDates} />
         )}
         {data.additionalNotes && <Row title="Notes" value={data.additionalNotes} />}
-        {data.submittingOnBehalf && (
-          <Row title="On Behalf of Client" value="Yes" />
-        )}
+        {data.submittingOnBehalf && <Row title="On Behalf of Client" value="Yes" />}
       </dl>
 
       {error && (

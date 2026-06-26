@@ -53,6 +53,21 @@ const pearlBox: LocationConfig = {
     { value: "10k_plus", label: "$10,000+" },
   ],
 
+  steps: [
+    "headcount",
+    "event_type",
+    "event_format",
+    "event_date",
+    "budget",
+    "venue_space",
+    "timing",
+    "services",
+    "other_venues_referral",
+    "contact",
+  ],
+
+  timingStyle: "standard",
+
   tripleseat: {
     publicKey: import.meta.env.VITE_PEARL_BOX_TRIPLESEAT_PUBLIC_KEY ?? "",
     leadFormId: import.meta.env.VITE_PEARL_BOX_TRIPLESEAT_LEAD_FORM_ID

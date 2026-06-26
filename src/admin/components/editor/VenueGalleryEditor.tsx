@@ -24,7 +24,6 @@ export default function VenueGalleryEditor({
 }: Props) {
   const fileInput = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
-  const [expanded, setExpanded] = useState(media.length > 0);
   const [pickerOpen, setPickerOpen] = useState(false);
 
   function remove(index: number) {
@@ -49,7 +48,6 @@ export default function VenueGalleryEditor({
         });
       }
       onChange([...media, ...uploaded]);
-      setExpanded(true);
     } catch (err) {
       onError(err instanceof Error ? err.message : "Upload failed.");
     } finally {
@@ -61,44 +59,44 @@ export default function VenueGalleryEditor({
   function addExisting(item: MediaItem) {
     if (media.some((m) => m.src === item.src)) return;
     onChange([...media, item]);
-    setExpanded(true);
   }
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <button
-          type="button"
-          onClick={() => setExpanded((v) => !v)}
-          className="text-xs font-medium text-brand-700 hover:text-brand-800"
-        >
-          {expanded ? "Hide" : "Show"} gallery
-          {media.length > 0 && (
-            <span className="ml-1 text-gray-400">({media.length})</span>
-          )}
-        </button>
-        <div className="flex gap-2">
-          {libraryMedia.length > 0 && (
-            <button
-              type="button"
-              onClick={() => {
-                setPickerOpen((v) => !v);
-                setExpanded(true);
-              }}
-              className="efb-btn-secondary px-2 py-1 text-xs"
-            >
-              {pickerOpen ? "Cancel" : "Choose existing"}
-            </button>
-          )}
+    <details className="rounded-lg border border-slate-200 bg-slate-50/50 p-3" open={media.length > 0}>
+      <summary className="cursor-pointer list-none text-xs font-medium text-brand-700 marker:content-none">
+        <span className="flex items-center justify-between gap-2">
+          <span>
+            Photos &amp; videos
+            {media.length > 0 && (
+              <span className="ml-1 font-normal text-gray-400">({media.length} on form)</span>
+            )}
+          </span>
+          <span className="text-gray-400">Edit</span>
+        </span>
+      </summary>
+      <p className="mt-2 text-xs text-gray-400">
+        Photos appear on the venue step when added here. This panel only expands the editor — it does
+        not hide photos from the public form.
+      </p>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        {libraryMedia.length > 0 && (
           <button
             type="button"
-            onClick={() => fileInput.current?.click()}
-            disabled={uploading}
+            onClick={() => setPickerOpen((v) => !v)}
             className="efb-btn-secondary px-2 py-1 text-xs"
           >
-            {uploading ? "Uploading…" : "Upload"}
+            {pickerOpen ? "Cancel" : "Choose existing"}
           </button>
-        </div>
+        )}
+        <button
+          type="button"
+          onClick={() => fileInput.current?.click()}
+          disabled={uploading}
+          className="efb-btn-secondary px-2 py-1 text-xs"
+        >
+          {uploading ? "Uploading…" : "Upload"}
+        </button>
         <input
           ref={fileInput}
           type="file"
@@ -118,44 +116,42 @@ export default function VenueGalleryEditor({
         />
       )}
 
-      {expanded && (
-        <div className="mt-3 space-y-2">
-          {media.length === 0 ? (
-            <p className="text-xs text-gray-400">
-              No photos or videos for {label || "this space"} yet.
-            </p>
-          ) : (
-            media.map((item, i) => (
-              <div key={`${item.src}-${i}`} className="flex items-center gap-2">
-                <div className="h-12 w-16 shrink-0 overflow-hidden rounded-md bg-slate-100">
-                  {item.type === "video" ? (
-                    <video src={item.src} className="h-full w-full object-cover" />
-                  ) : (
-                    <img src={item.src} alt={item.alt} className="h-full w-full object-cover" />
-                  )}
-                </div>
-                <input
-                  className="efb-input min-w-0 flex-1 py-1.5 text-xs"
-                  placeholder="Alt text"
-                  value={item.alt}
-                  onChange={(e) =>
-                    onChange(media.map((m, idx) => (idx === i ? { ...m, alt: e.target.value } : m)))
-                  }
-                />
-                <button
-                  type="button"
-                  aria-label="Remove"
-                  onClick={() => remove(i)}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-red-200 text-red-500 hover:bg-red-50"
-                >
-                  <TrashIcon />
-                </button>
+      <div className="mt-3 space-y-2">
+        {media.length === 0 ? (
+          <p className="text-xs text-gray-400">
+            No photos or videos for {label || "this space"} yet.
+          </p>
+        ) : (
+          media.map((item, i) => (
+            <div key={`${item.src}-${i}`} className="flex items-center gap-2">
+              <div className="h-12 w-16 shrink-0 overflow-hidden rounded-md bg-slate-100">
+                {item.type === "video" ? (
+                  <video src={item.src} className="h-full w-full object-cover" />
+                ) : (
+                  <img src={item.src} alt={item.alt} className="h-full w-full object-cover" />
+                )}
               </div>
-            ))
-          )}
-        </div>
-      )}
-    </div>
+              <input
+                className="efb-input min-w-0 flex-1 py-1.5 text-xs"
+                placeholder="Alt text"
+                value={item.alt}
+                onChange={(e) =>
+                  onChange(media.map((m, idx) => (idx === i ? { ...m, alt: e.target.value } : m)))
+                }
+              />
+              <button
+                type="button"
+                aria-label="Remove"
+                onClick={() => remove(i)}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-red-200 text-red-500 hover:bg-red-50"
+              >
+                <TrashIcon />
+              </button>
+            </div>
+          ))
+        )}
+      </div>
+    </details>
   );
 }
 

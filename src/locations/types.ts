@@ -9,7 +9,6 @@ export interface VenueSpaceOption {
   value: string;
   label: string;
   price: string;
-  /** Photos and videos shown when viewing this venue space in the form */
   galleryMedia?: MediaItem[];
 }
 
@@ -17,6 +16,33 @@ export interface BudgetOption {
   value: string;
   label: string;
 }
+
+export interface InfoPageSection {
+  heading?: string;
+  body?: string;
+  bullets?: string[];
+}
+
+export interface InfoPageConfig {
+  title: string;
+  intro?: string;
+  sections?: InfoPageSection[];
+}
+
+export type TimingStyle = "standard" | "meal_service";
+
+export type StepId =
+  | "event_type"
+  | "headcount"
+  | "event_format"
+  | "event_date"
+  | "budget"
+  | "venue_space"
+  | "timing"
+  | "services"
+  | "info_acknowledge"
+  | "other_venues_referral"
+  | "contact";
 
 export interface TripleseatConfig {
   publicKey: string;
@@ -26,36 +52,29 @@ export interface TripleseatConfig {
 }
 
 export interface LocationConfig {
-  /** URL-safe slug used for routing and data attributes, e.g. "pearl-box" */
   id: string;
-
-  /** Display name shown in the form header, e.g. "Pearl Box Townhouse" */
   name: string;
-
-  /** Small label above the venue name, e.g. "Private Events" */
   formTitle: string;
-
-  /** Paragraph shown on the landing page below the venue name */
   aboutBlurb: string;
-
-  /** Gallery media items shown on the landing page */
   galleryMedia: MediaItem[];
-
-  /** Venue space options for the VenueSpaceStep */
   venueSpaces: VenueSpaceOption[];
-
-  /** Budget range options for the BudgetStep */
   budgetOptions: BudgetOption[];
 
-  /** Tripleseat API credentials and IDs for lead submission */
+  /** Ordered list of form steps for this location. */
+  steps: StepId[];
+
+  /** Optional read-only "More Details" text shown below each step's inputs. */
+  stepMoreDetails?: Partial<Record<StepId, string>>;
+
+  timingStyle?: TimingStyle;
+
+  /** Content for the info acknowledgement step (Roscioli). */
+  infoPage?: InfoPageConfig;
+
+  /** Override labels/copy for specific steps. */
+  stepCopy?: Partial<Record<StepId, { title?: string; subtitle?: string }>>;
+
   tripleseat: TripleseatConfig;
-
-  /**
-   * Maps each referral source value to a Tripleseat referral_source_id.
-   * Populated at runtime via resolveReferralSources() — not CMS-editable.
-   */
   referralSourceIds: Record<string, number>;
-
-  /** The Tripleseat referral_source_id that represents "Other" (free text). */
   referralOtherSourceId: number;
 }

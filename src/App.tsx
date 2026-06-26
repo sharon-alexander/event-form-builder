@@ -4,26 +4,16 @@ import { INITIAL_FORM_DATA } from "./types";
 import { useLocationConfig } from "./context/LocationContext";
 import { buildPayload } from "./utils/buildPayload";
 import { submitLead } from "./api/tripleseat";
+import { getStepProps, renderStep } from "./form/renderStep";
 import LandingPage from "./components/LandingPage";
 import ProgressBar from "./components/ProgressBar";
 import EventSummary from "./components/EventSummary";
-import EventTypeStep from "./components/steps/EventTypeStep";
-import EventCategoryStep from "./components/steps/EventCategoryStep";
-import EventFormatStep from "./components/steps/EventFormatStep";
-import EventDateStep from "./components/steps/EventDateStep";
-import BudgetStep from "./components/steps/BudgetStep";
-import VenueSpaceStep from "./components/steps/VenueSpaceStep";
-import TimingStep from "./components/steps/TimingStep";
-import ServicesStep from "./components/steps/ServicesStep";
-import OtherVenuesStep from "./components/steps/OtherVenuesStep";
-import ReferralStep from "./components/steps/ReferralStep";
-import ContactInfoStep from "./components/steps/ContactInfoStep";
 import ReviewStep from "./components/steps/ReviewStep";
-
-const TOTAL_STEPS = 12;
 
 export default function App() {
   const location = useLocationConfig();
+  const formSteps = location.steps;
+  const totalSteps = formSteps.length + 1;
 
   const [started, setStarted] = useState(false);
   const [step, setStep] = useState(0);
@@ -31,14 +21,13 @@ export default function App() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
-
   const [honeypot, setHoneypot] = useState("");
 
   const update = useCallback((patch: Partial<FormData>) => {
     setData((prev) => ({ ...prev, ...patch }));
   }, []);
 
-  const next = useCallback(() => setStep((s) => Math.min(s + 1, TOTAL_STEPS - 1)), []);
+  const next = useCallback(() => setStep((s) => Math.min(s + 1, totalSteps - 1)), [totalSteps]);
   const back = useCallback(() => setStep((s) => Math.max(s - 1, 0)), []);
 
   const handleSubmit = useCallback(async () => {
@@ -80,7 +69,17 @@ export default function App() {
     );
   }
 
-  const isReviewStep = step === TOTAL_STEPS - 1;
+  const isReviewStep = step === formSteps.length;
+  const currentStepId = formSteps[step];
+  const isLastFormStep = step === formSteps.length - 1;
+
+  const stepBase = {
+    data,
+    onChange: update,
+    onNext: next,
+    onBack: step > 0 ? back : undefined,
+    nextLabel: isLastFormStep ? "Review & Submit" : undefined,
+  };
 
   return (
     <div className="px-4 py-8 sm:px-6">
@@ -98,7 +97,7 @@ export default function App() {
         className={`grid grid-cols-1 gap-8${isReviewStep ? "" : " lg:grid-cols-[minmax(0,1fr)_300px]"}`}
       >
         <div>
-          <ProgressBar currentStep={step} totalSteps={TOTAL_STEPS} />
+          <ProgressBar currentStep={step} totalSteps={totalSteps} />
 
           {!isReviewStep && (
             <details className="mb-6 rounded-xl border border-brand-100 bg-brand-50/60 lg:hidden">
@@ -111,18 +110,7 @@ export default function App() {
             </details>
           )}
 
-          {step === 0 && <EventTypeStep data={data} onChange={update} onNext={next} />}
-          {step === 1 && <EventCategoryStep data={data} onChange={update} onNext={next} onBack={back} />}
-          {step === 2 && <EventFormatStep data={data} onChange={update} onNext={next} onBack={back} />}
-          {step === 3 && <EventDateStep data={data} onChange={update} onNext={next} onBack={back} />}
-          {step === 4 && <BudgetStep data={data} onChange={update} onNext={next} onBack={back} />}
-          {step === 5 && <VenueSpaceStep data={data} onChange={update} onNext={next} onBack={back} />}
-          {step === 6 && <TimingStep data={data} onChange={update} onNext={next} onBack={back} />}
-          {step === 7 && <ServicesStep data={data} onChange={update} onNext={next} onBack={back} />}
-          {step === 8 && <OtherVenuesStep data={data} onChange={update} onNext={next} onBack={back} />}
-          {step === 9 && <ReferralStep data={data} onChange={update} onNext={next} onBack={back} />}
-          {step === 10 && <ContactInfoStep data={data} onChange={update} onNext={next} onBack={back} />}
-          {step === 11 && (
+          {isReviewStep ? (
             <ReviewStep
               data={data}
               onSubmit={handleSubmit}
@@ -130,7 +118,9 @@ export default function App() {
               isSubmitting={isSubmitting}
               error={submitError}
             />
-          )}
+          ) : currentStepId ? (
+            renderStep(currentStepId, getStepProps(location, currentStepId, stepBase))
+          ) : null}
         </div>
 
         {!isReviewStep && (

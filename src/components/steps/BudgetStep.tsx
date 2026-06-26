@@ -1,26 +1,30 @@
-import type { FormData } from "../../types";
 import { useLocationConfig } from "../../context/LocationContext";
 import FormStep from "../FormStep";
+import type { StepProps } from "./stepProps";
 
-interface Props {
-  data: FormData;
-  onChange: (patch: Partial<FormData>) => void;
-  onNext: () => void;
-  onBack: () => void;
-}
-
-export default function BudgetStep({ data, onChange, onNext, onBack }: Props) {
+export default function BudgetStep({
+  data,
+  onChange,
+  onNext,
+  onBack,
+  nextLabel,
+  moreDetails,
+  title = "What's your budget?",
+  subtitle = "This helps us recommend the right experience.",
+}: StepProps) {
   const { budgetOptions } = useLocationConfig();
 
   return (
     <FormStep
-      title="What's your budget?"
-      subtitle="Select the range that best fits your event."
+      title={title}
+      subtitle={subtitle}
+      moreDetails={moreDetails}
       onNext={onNext}
       onBack={onBack}
+      nextLabel={nextLabel}
       nextDisabled={!data.budget}
     >
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {budgetOptions.map((b) => (
           <button
             key={b.value}

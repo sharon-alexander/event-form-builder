@@ -9,7 +9,6 @@ const roscioli: LocationConfig = {
     "An iconic Italian dining destination where tradition meets modern hospitality. Host your next event in our storied space — from intimate wine dinners to celebratory gatherings — with world-class food and service at every turn.",
 
   galleryMedia: [
-    // Replace with actual Roscioli venue images
     { type: "image", src: assetUrl("/gallery/roscioli/dining-room.png"), alt: "Main dining room" },
     { type: "image", src: assetUrl("/gallery/roscioli/wine-room.png"), alt: "Wine room" },
     { type: "image", src: assetUrl("/gallery/roscioli/bar.png"), alt: "Bar area" },
@@ -30,6 +29,40 @@ const roscioli: LocationConfig = {
     { value: "15k_plus", label: "$15,000+" },
   ],
 
+  steps: [
+    "event_type",
+    "event_date",
+    "headcount",
+    "budget",
+    "timing",
+    "venue_space",
+    "info_acknowledge",
+    "other_venues_referral",
+    "contact",
+  ],
+
+  timingStyle: "meal_service",
+
+  infoPage: {
+    title: "Food & Beverage Service",
+    intro: "Your event coordinator will work with you to select both food and beverage options.",
+    sections: [
+      {
+        heading: "Food:",
+        bullets: [
+          "Our menu changes seasonally.",
+          "We accommodate most dietary restrictions or allergies.",
+        ],
+      },
+      {
+        heading: "Beverages:",
+        bullets: [
+          "We do not provide liquor or offer cocktails due to our license.",
+        ],
+      },
+    ],
+  },
+
   tripleseat: {
     publicKey: import.meta.env.VITE_ROSCIOLI_TRIPLESEAT_PUBLIC_KEY ?? "",
     leadFormId: import.meta.env.VITE_ROSCIOLI_TRIPLESEAT_LEAD_FORM_ID
@@ -41,7 +74,6 @@ const roscioli: LocationConfig = {
     apiBaseUrl: "https://api.tripleseat.com/v1",
   },
 
-  // Confirm these IDs via Tripleseat API for the Roscioli site
   referralSourceIds: {
     instagram: 6,
     tiktok: 11888,

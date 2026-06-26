@@ -1,8 +1,10 @@
 import type { ReactNode } from "react";
+import StepMoreDetails from "./StepMoreDetails";
 
 interface FormStepProps {
   title: string;
   subtitle?: string;
+  moreDetails?: string;
   children: ReactNode;
   onNext: () => void;
   onBack?: () => void;
@@ -14,6 +16,7 @@ interface FormStepProps {
 export default function FormStep({
   title,
   subtitle,
+  moreDetails,
   children,
   onNext,
   onBack,
@@ -32,15 +35,14 @@ export default function FormStep({
         )}
       </div>
 
-      <div className="flex-1">{children}</div>
+      <div className="flex-1">
+        {children}
+        <StepMoreDetails content={moreDetails} />
+      </div>
 
       <div className="mt-8 flex items-center justify-between gap-4">
         {onBack ? (
-          <button
-            type="button"
-            onClick={onBack}
-            className="efb-btn-secondary"
-          >
+          <button type="button" onClick={onBack} className="efb-btn-secondary">
             Back
           </button>
         ) : (

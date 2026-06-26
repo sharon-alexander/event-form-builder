@@ -14,6 +14,8 @@ export type EventFormat =
   | "seated_and_standing"
   | "not_sure";
 
+export type MealService = "lunch" | "dinner";
+
 export type ServiceInterest =
   | "florals"
   | "lighting"
@@ -51,17 +53,17 @@ export interface FormData {
   backupDate: string;
   flexibleDatePreferences: FlexibleDatePreferences;
 
-  /** Venue space value — options are location-specific, so this is a free string. */
   budget: string | null;
-
-  /** Budget range value — options are location-specific, so this is a free string. */
   venueSpace: string | null;
 
   startTime: string;
   endTime: string;
   timingFlexible: boolean;
+  mealService: MealService | null;
 
   services: ServiceInterest[];
+
+  infoAcknowledged: boolean;
 
   consideringOtherVenues: boolean | null;
   otherVenuesDetails: string;
@@ -95,14 +97,16 @@ export const INITIAL_FORM_DATA: FormData = {
   flexibleDatePreferences: { preferredMonths: [], preferredDays: [] },
 
   budget: null,
-
   venueSpace: null,
 
   startTime: "",
   endTime: "",
   timingFlexible: false,
+  mealService: null,
 
   services: [],
+
+  infoAcknowledged: false,
 
   consideringOtherVenues: null,
   otherVenuesDetails: "",
@@ -119,8 +123,6 @@ export const INITIAL_FORM_DATA: FormData = {
   additionalNotes: "",
   submittingOnBehalf: false,
 };
-
-/* ── Shared option lists (same across all locations) ────────────────── */
 
 export const EVENT_CATEGORIES: { value: EventCategory; label: string }[] = [
   { value: "birthday", label: "Birthday" },
@@ -164,4 +166,18 @@ export const MONTHS = [
 
 export const DAYS_OF_WEEK = [
   "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday",
+];
+
+export const MEAL_SERVICE_OPTIONS: { value: MealService; label: string; note?: string }[] = [
+  { value: "lunch", label: "Lunch", note: "Friday – Sunday only" },
+  { value: "dinner", label: "Dinner" },
+];
+
+export const LUNCH_START_TIMES = [
+  "11:30 AM", "12:00 PM", "12:30 PM", "1:00 PM",
+];
+
+export const DINNER_START_TIMES = [
+  "5:00 PM", "5:30 PM", "6:00 PM", "6:30 PM", "7:00 PM", "7:30 PM",
+  "8:00 PM", "8:30 PM", "9:00 PM", "9:30 PM", "10:00 PM",
 ];

@@ -19,9 +19,15 @@ function buildAdditionalInfo(data: FormData, location: LocationConfig): string {
   }
   lines.push(`Headcount May Change: ${data.headcountMayChange ? "Yes" : "No"}`);
 
-  lines.push(`Format: ${labelFor(EVENT_FORMATS, data.eventFormat)}`);
-  lines.push(`Budget: ${labelFor(location.budgetOptions, data.budget)}`);
-  lines.push(`Venue Space: ${labelFor(location.venueSpaces, data.venueSpace)}`);
+  if (data.eventFormat) {
+    lines.push(`Format: ${labelFor(EVENT_FORMATS, data.eventFormat)}`);
+  }
+  if (data.budget) {
+    lines.push(`Budget: ${labelFor(location.budgetOptions, data.budget)}`);
+  }
+  if (data.venueSpace) {
+    lines.push(`Venue Space: ${labelFor(location.venueSpaces, data.venueSpace)}`);
+  }
 
   if (data.datesFlexible) {
     lines.push("Dates Flexible: Yes");
@@ -31,14 +37,16 @@ function buildAdditionalInfo(data: FormData, location: LocationConfig): string {
     if (data.flexibleDatePreferences.preferredDays.length > 0) {
       lines.push(`Preferred Days: ${data.flexibleDatePreferences.preferredDays.join(", ")}`);
     }
-  } else {
-    if (data.backupDate) {
-      lines.push(`Backup Date: ${data.backupDate}`);
-    }
+  } else if (data.backupDate) {
+    lines.push(`Backup Date: ${data.backupDate}`);
   }
 
   if (data.timingFlexible) {
     lines.push("Timing Flexible: Yes");
+  }
+
+  if (data.mealService) {
+    lines.push(`Meal Service: ${data.mealService === "lunch" ? "Lunch" : "Dinner"}`);
   }
 
   if (data.services.length > 0) {

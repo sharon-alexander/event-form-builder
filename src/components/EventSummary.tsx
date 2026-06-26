@@ -4,6 +4,7 @@ import {
   EVENT_FORMATS,
   SERVICE_OPTIONS,
   REFERRAL_SOURCES,
+  MEAL_SERVICE_OPTIONS,
 } from "../types";
 import { useLocationConfig } from "../context/LocationContext";
 
@@ -22,7 +23,6 @@ interface SummaryRow {
 
 export default function EventSummary({ data }: EventSummaryProps) {
   const location = useLocationConfig();
-
   const rows: SummaryRow[] = [];
 
   if (data.bookingType) {
@@ -76,7 +76,13 @@ export default function EventSummary({ data }: EventSummaryProps) {
     rows.push({ title: "Space", value: label(location.venueSpaces, data.venueSpace) });
   }
 
-  if (data.timingFlexible) {
+  if (location.timingStyle === "meal_service" && data.mealService) {
+    const mealLabel = label(MEAL_SERVICE_OPTIONS, data.mealService);
+    rows.push({
+      title: "Timing",
+      value: data.startTime ? `${mealLabel} at ${data.startTime}` : mealLabel,
+    });
+  } else if (data.timingFlexible) {
     rows.push({ title: "Timing", value: "Flexible" });
   } else if (data.startTime || data.endTime) {
     rows.push({
