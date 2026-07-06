@@ -109,29 +109,18 @@ export default function FormsListPage() {
           </p>
         </div>
       ) : (
-        <ul className="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+        <ul className="divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white">
           {forms.map((form) => (
-            <li
+            <FormListRow
               key={form.id}
-              onClick={() => navigate(`/forms/${form.id}`)}
-              className="flex cursor-pointer items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-slate-50"
-            >
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="truncate font-medium text-gray-900">{form.name}</span>
-                  <StatusBadge published={form.published} />
-                </div>
-              </div>
-              <RowMenu
-                form={form}
-                onEdit={() => navigate(`/forms/${form.id}`)}
-                onPreview={() =>
-                  window.open(`/form/${encodeURIComponent(form.slug)}`, "_blank")
-                }
-                onTogglePublish={() => handleTogglePublish(form)}
-                onDelete={() => handleDelete(form)}
-              />
-            </li>
+              form={form}
+              onNavigate={() => navigate(`/forms/${form.id}`)}
+              onPreview={() =>
+                window.open(`/form/${encodeURIComponent(form.slug)}`, "_blank")
+              }
+              onTogglePublish={() => handleTogglePublish(form)}
+              onDelete={() => handleDelete(form)}
+            />
           ))}
         </ul>
       )}
@@ -147,32 +136,76 @@ export default function FormsListPage() {
   );
 }
 
+function FormListRow({
+  form,
+  onNavigate,
+  onPreview,
+  onTogglePublish,
+  onDelete,
+}: {
+  form: LocationRow;
+  onNavigate: () => void;
+  onPreview: () => void;
+  onTogglePublish: () => void;
+  onDelete: () => void;
+}) {
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  return (
+    <li
+      onClick={onNavigate}
+      className={`relative flex cursor-pointer items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-slate-50 ${
+        menuOpen ? "z-50" : ""
+      }`}
+    >
+      <div className="min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="truncate font-medium text-gray-900">{form.name}</span>
+          <StatusBadge published={form.published} />
+        </div>
+      </div>
+      <RowMenu
+        form={form}
+        open={menuOpen}
+        onOpenChange={setMenuOpen}
+        onEdit={onNavigate}
+        onPreview={onPreview}
+        onTogglePublish={onTogglePublish}
+        onDelete={onDelete}
+      />
+    </li>
+  );
+}
+
 function RowMenu({
   form,
+  open,
+  onOpenChange,
   onEdit,
   onPreview,
   onTogglePublish,
   onDelete,
 }: {
   form: LocationRow;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   onEdit: () => void;
   onPreview: () => void;
   onTogglePublish: () => void;
   onDelete: () => void;
 }) {
-  const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
     function handleClick(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
+        onOpenChange(false);
       }
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
-  }, [open]);
+  }, [open, onOpenChange]);
 
   return (
     <div ref={ref} className="relative">
@@ -180,7 +213,7 @@ function RowMenu({
         type="button"
         onClick={(e) => {
           e.stopPropagation();
-          setOpen((v) => !v);
+          onOpenChange(!open);
         }}
         className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-slate-100 hover:text-gray-600"
         aria-label="Actions"
@@ -193,10 +226,10 @@ function RowMenu({
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-10 mt-1 w-44 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
+        <div className="absolute right-0 top-full z-50 mt-1 w-44 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
           <MenuButton
             onClick={() => {
-              setOpen(false);
+              onOpenChange(false);
               onPreview();
             }}
           >
@@ -204,7 +237,7 @@ function RowMenu({
           </MenuButton>
           <MenuButton
             onClick={() => {
-              setOpen(false);
+              onOpenChange(false);
               onEdit();
             }}
           >
@@ -212,7 +245,7 @@ function RowMenu({
           </MenuButton>
           <MenuButton
             onClick={() => {
-              setOpen(false);
+              onOpenChange(false);
               onTogglePublish();
             }}
           >
@@ -221,7 +254,7 @@ function RowMenu({
           <div className="my-1 border-t border-slate-100" />
           <MenuButton
             onClick={() => {
-              setOpen(false);
+              onOpenChange(false);
               onDelete();
             }}
             destructive
