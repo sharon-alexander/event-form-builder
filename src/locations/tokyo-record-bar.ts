@@ -1,4 +1,3 @@
-import { assetUrl } from "../config";
 import type { LocationConfig } from "./types";
 
 const tokyoRecordBar: LocationConfig = {
@@ -8,11 +7,7 @@ const tokyoRecordBar: LocationConfig = {
   aboutBlurb:
     "A one-of-a-kind listening experience meets world-class Japanese-inspired cuisine. Host your next event surrounded by vinyl, incredible sound, and an intimate atmosphere unlike any other venue in the city.",
 
-  galleryMedia: [
-    { type: "image", src: assetUrl("/gallery/tokyo-record-bar/listening-room.png"), alt: "Listening room" },
-    { type: "image", src: assetUrl("/gallery/tokyo-record-bar/bar.png"), alt: "Bar area" },
-    { type: "image", src: assetUrl("/gallery/tokyo-record-bar/lounge.png"), alt: "Lounge area" },
-  ],
+  galleryMedia: [],
 
   venueSpaces: [
     { value: "cocktail_bar", label: "Cocktail Bar", price: "Starting at $2,500" },

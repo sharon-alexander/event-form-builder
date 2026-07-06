@@ -4,9 +4,9 @@
 // credentials intentionally live in env vars rather than here — the seed reads
 // them from process.env when present so secrets stay out of source control.
 //
-// `gallery` lists the image files expected under public/gallery/<slug>/. The seed
-// uploads any that exist to Supabase Storage and writes the resulting public URLs
-// into each location's gallery_media.
+// `gallery` lists optional image files under public/gallery/<slug>/. The seed
+// uploads only files that exist to Supabase Storage and writes the resulting
+// public URLs into each location's gallery_media. Missing files are skipped.
 
 /** @type {import("./seed.mjs").SeedLocation[]} */
 export const LOCATIONS = [

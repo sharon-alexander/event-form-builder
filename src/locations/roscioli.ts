@@ -1,4 +1,3 @@
-import { assetUrl } from "../config";
 import type { LocationConfig } from "./types";
 
 const roscioli: LocationConfig = {
@@ -8,11 +7,7 @@ const roscioli: LocationConfig = {
   aboutBlurb:
     "An iconic Italian dining destination where tradition meets modern hospitality. Host your next event in our storied space — from intimate wine dinners to celebratory gatherings — with world-class food and service at every turn.",
 
-  galleryMedia: [
-    { type: "image", src: assetUrl("/gallery/roscioli/dining-room.png"), alt: "Main dining room" },
-    { type: "image", src: assetUrl("/gallery/roscioli/wine-room.png"), alt: "Wine room" },
-    { type: "image", src: assetUrl("/gallery/roscioli/bar.png"), alt: "Bar area" },
-  ],
+  galleryMedia: [],
 
   venueSpaces: [
     { value: "main_dining", label: "Main Dining Room", price: "Starting at $5,000" },

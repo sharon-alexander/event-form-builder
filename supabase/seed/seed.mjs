@@ -144,25 +144,25 @@ async function findUserIdByEmail(email) {
   return null;
 }
 
-/** Uploads any existing files and returns gallery_media entries (with public URLs). */
+/** Uploads any existing local files and returns gallery_media entries (with public URLs). */
 async function uploadGallery(orgId, loc) {
   const media = [];
   for (const item of loc.gallery) {
     const localPath = join(PROJECT_ROOT, "public", "gallery", loc.slug, item.file);
-    const storagePath = `org/${orgId}/${loc.slug}/${item.file}`;
-    const publicUrl = admin.storage.from(BUCKET).getPublicUrl(storagePath).data.publicUrl;
-
-    if (existsSync(localPath)) {
-      const body = await readFile(localPath);
-      const { error } = await admin.storage
-        .from(BUCKET)
-        .upload(storagePath, body, { contentType: contentTypeFor(item.file), upsert: true });
-      if (error) throw error;
-      console.log(`  uploaded ${item.file}`);
-    } else {
-      console.log(`  (no local file for ${item.file} — keeping placeholder URL)`);
+    if (!existsSync(localPath)) {
+      console.log(`  (skipping ${item.file} — no local file)`);
+      continue;
     }
 
+    const storagePath = `org/${orgId}/${loc.slug}/${item.file}`;
+    const body = await readFile(localPath);
+    const { error } = await admin.storage
+      .from(BUCKET)
+      .upload(storagePath, body, { contentType: contentTypeFor(item.file), upsert: true });
+    if (error) throw error;
+    console.log(`  uploaded ${item.file}`);
+
+    const publicUrl = admin.storage.from(BUCKET).getPublicUrl(storagePath).data.publicUrl;
     media.push({ type: item.type ?? "image", src: publicUrl, alt: item.alt });
   }
   return media;
