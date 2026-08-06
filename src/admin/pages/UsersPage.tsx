@@ -14,6 +14,9 @@ const ROLE_LABELS: Record<AdminRole, string> = {
   editor: "Editor",
 };
 
+const inputClass =
+  "w-full rounded-lg border border-zinc-300 bg-white px-3.5 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 transition-colors focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900";
+
 export default function UsersPage() {
   const { org, profile } = useAuth();
   const [users, setUsers] = useState<OrgUser[]>([]);
@@ -90,33 +93,35 @@ export default function UsersPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="font-display text-2xl font-semibold text-gray-900">Users</h1>
-        <p className="mt-1 text-sm text-gray-500">
+      <div className="mb-8">
+        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">Users</h1>
+        <p className="mt-1 text-sm text-zinc-500">
           Manage admin access for {org?.name ?? "your group"}.
         </p>
       </div>
 
       {error && (
-        <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
+        <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {error}
+        </p>
       )}
       {success && (
-        <p className="mb-4 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">
+        <p className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
           {success}
         </p>
       )}
 
       <form
         onSubmit={handleInvite}
-        className="mb-8 rounded-2xl border border-slate-200 bg-white p-5"
+        className="mb-8 rounded-xl border border-zinc-200 bg-white p-5 shadow-sm"
       >
-        <h2 className="text-sm font-medium text-gray-900">Invite a new admin</h2>
-        <p className="mt-1 text-sm text-gray-500">
+        <h2 className="text-sm font-semibold text-zinc-900">Invite a new admin</h2>
+        <p className="mt-1 text-sm text-zinc-500">
           They will receive an email to set their password.
         </p>
         <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
           <div className="flex-1">
-            <label className="efb-label" htmlFor="invite-email">
+            <label className="mb-1.5 block text-sm font-medium text-zinc-700" htmlFor="invite-email">
               Email
             </label>
             <input
@@ -126,84 +131,95 @@ export default function UsersPage() {
               value={inviteEmail}
               onChange={(e) => setInviteEmail(e.target.value)}
               placeholder="colleague@example.com"
-              className="efb-input"
+              className={inputClass}
             />
           </div>
-          <div className="sm:w-40">
-            <label className="efb-label" htmlFor="invite-role">
+          <div className="sm:w-44">
+            <label className="mb-1.5 block text-sm font-medium text-zinc-700" htmlFor="invite-role">
               Role
             </label>
             <select
               id="invite-role"
               value={inviteRole}
               onChange={(e) => setInviteRole(e.target.value as AdminRole)}
-              className="efb-input"
+              className={inputClass}
             >
               <option value="editor">Editor</option>
               <option value="super_admin">Super admin</option>
             </select>
           </div>
-          <button type="submit" disabled={inviting} className="efb-btn-primary sm:mb-0">
+          <button
+            type="submit"
+            disabled={inviting}
+            className="inline-flex items-center justify-center rounded-lg bg-zinc-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
+          >
             {inviting ? "Sending…" : "Send invite"}
           </button>
         </div>
       </form>
 
       {loading ? (
-        <p className="text-sm text-gray-400">Loading…</p>
+        <div className="space-y-3">
+          {[0, 1].map((i) => (
+            <div key={i} className="h-14 animate-pulse rounded-xl border border-zinc-200 bg-white" />
+          ))}
+        </div>
       ) : users.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center">
-          <p className="text-sm text-gray-500">No users found.</p>
+        <div className="rounded-xl border border-dashed border-zinc-300 bg-white p-12 text-center">
+          <p className="text-sm text-zinc-500">No users found.</p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+        <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-slate-100 bg-slate-50 text-xs font-medium uppercase tracking-wide text-gray-500">
+              <tr className="border-b border-zinc-100 bg-zinc-50 text-xs font-medium uppercase tracking-wide text-zinc-500">
                 <th className="px-5 py-3">Email</th>
                 <th className="px-5 py-3">Role</th>
                 <th className="px-5 py-3">Joined</th>
                 <th className="px-5 py-3 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-zinc-100">
               {users.map((user) => {
                 const isSelf = user.id === profile?.id;
                 return (
-                  <tr key={user.id}>
-                    <td className="px-5 py-4 font-medium text-gray-900">
-                      {user.email ?? "—"}
-                      {isSelf && (
-                        <span className="ml-2 text-xs font-normal text-gray-400">(you)</span>
-                      )}
+                  <tr key={user.id} className="transition-colors hover:bg-zinc-50/60">
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-xs font-semibold text-zinc-600">
+                          {(user.email ?? "?").slice(0, 1).toUpperCase()}
+                        </div>
+                        <span className="font-medium text-zinc-900">
+                          {user.email ?? "—"}
+                          {isSelf && (
+                            <span className="ml-2 text-xs font-normal text-zinc-400">(you)</span>
+                          )}
+                        </span>
+                      </div>
                     </td>
                     <td className="px-5 py-4">
                       {isSelf ? (
-                        <span className="text-gray-600">{ROLE_LABELS[user.role]}</span>
+                        <span className="text-zinc-600">{ROLE_LABELS[user.role]}</span>
                       ) : (
                         <select
                           value={user.role}
-                          onChange={(e) =>
-                            void handleRoleChange(user, e.target.value as AdminRole)
-                          }
-                          className="rounded-lg border border-slate-200 px-2 py-1 text-sm"
+                          onChange={(e) => void handleRoleChange(user, e.target.value as AdminRole)}
+                          className="rounded-lg border border-zinc-300 bg-white px-2.5 py-1.5 text-sm text-zinc-700 transition-colors focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
                         >
                           <option value="editor">Editor</option>
                           <option value="super_admin">Super admin</option>
                         </select>
                       )}
                     </td>
-                    <td className="px-5 py-4 text-gray-500">
-                      {formatDate(user.created_at)}
-                    </td>
+                    <td className="px-5 py-4 text-zinc-500">{formatDate(user.created_at)}</td>
                     <td className="px-5 py-4 text-right">
                       {isSelf ? (
-                        <span className="text-xs text-gray-400">—</span>
+                        <span className="text-xs text-zinc-400">—</span>
                       ) : (
                         <button
                           type="button"
                           onClick={() => void handleRemove(user)}
-                          className="text-sm font-medium text-red-600 hover:text-red-700"
+                          className="text-sm font-medium text-red-600 transition-colors hover:text-red-700"
                         >
                           Remove
                         </button>

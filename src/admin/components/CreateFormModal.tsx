@@ -43,26 +43,30 @@ export default function CreateFormModal({ open, onClose, onCreate, creating, err
     await onCreate(name.trim(), slugify(slug));
   }
 
+  const inputClass =
+    "w-full rounded-lg border border-zinc-300 bg-white px-3.5 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 transition-colors focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900";
+  const labelClass = "mb-1.5 block text-sm font-medium text-zinc-700";
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 font-sans">
       <button
         type="button"
         aria-label="Close"
-        className="absolute inset-0 bg-black/40"
+        className="absolute inset-0 bg-zinc-900/50 backdrop-blur-sm"
         onClick={creating ? undefined : onClose}
       />
-      <div className="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-xl">
-        <h2 className="font-display text-xl font-semibold text-gray-900">New event form</h2>
-        <p className="mt-1 text-sm text-gray-500">
+      <div className="relative w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-6 shadow-2xl">
+        <h2 className="text-lg font-semibold tracking-tight text-zinc-900">New event form</h2>
+        <p className="mt-1 text-sm text-zinc-500">
           Create a new form for your organization.
         </p>
 
         <form onSubmit={handleSubmit} className="mt-5 space-y-4">
           <div>
-            <label htmlFor="form-name" className="efb-label">Name</label>
+            <label htmlFor="form-name" className={labelClass}>Name</label>
             <input
               id="form-name"
-              className="efb-input"
+              className={inputClass}
               placeholder='e.g. "Downtown Loft"'
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -70,10 +74,10 @@ export default function CreateFormModal({ open, onClose, onCreate, creating, err
             />
           </div>
           <div>
-            <label htmlFor="form-slug" className="efb-label">URL slug</label>
+            <label htmlFor="form-slug" className={labelClass}>URL slug</label>
             <input
               id="form-slug"
-              className="efb-input"
+              className={inputClass}
               placeholder="downtown-loft"
               value={slug}
               onChange={(e) => {
@@ -81,13 +85,13 @@ export default function CreateFormModal({ open, onClose, onCreate, creating, err
                 setSlug(e.target.value);
               }}
             />
-            <p className="mt-1 text-xs text-gray-400">
-              Used at /form/{slug || "your-slug"} — lowercase, globally unique.
+            <p className="mt-1.5 text-xs text-zinc-400">
+              Used at <span className="font-mono">/form/{slug || "your-slug"}</span> — lowercase, globally unique.
             </p>
           </div>
 
           {error && (
-            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
+            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
           )}
 
           <div className="flex justify-end gap-3 pt-2">
@@ -95,14 +99,14 @@ export default function CreateFormModal({ open, onClose, onCreate, creating, err
               type="button"
               onClick={onClose}
               disabled={creating}
-              className="efb-btn-secondary px-4 py-2"
+              className="inline-flex items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 transition-colors hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={creating || !name.trim() || !slug.trim()}
-              className="efb-btn-primary px-4 py-2"
+              className="inline-flex items-center justify-center rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {creating ? "Creating…" : "Create form"}
             </button>
