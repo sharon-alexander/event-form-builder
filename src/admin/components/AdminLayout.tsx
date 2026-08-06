@@ -9,7 +9,8 @@ export default function AdminLayout() {
     {
       to: "/",
       label: "Forms",
-      active: location.pathname === "/" || location.pathname.startsWith("/forms"),
+      active:
+        location.pathname === "/" || location.pathname.startsWith("/forms"),
       icon: FormsIcon,
       show: true,
     },
@@ -39,15 +40,19 @@ export default function AdminLayout() {
           </div>
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold leading-tight text-zinc-900">
-              {org?.name ?? "Event Forms"}
+              {org?.name ?? "Event Form Builder"}
             </p>
-            <p className="text-xs text-zinc-400">Event Forms</p>
           </div>
         </div>
 
         <nav className="flex-1 space-y-1 px-3 py-2">
           {nav.map((item) => (
-            <SidebarLink key={item.to} to={item.to} active={item.active} icon={item.icon}>
+            <SidebarLink
+              key={item.to}
+              to={item.to}
+              active={item.active}
+              icon={item.icon}
+            >
               {item.label}
             </SidebarLink>
           ))}
@@ -58,7 +63,10 @@ export default function AdminLayout() {
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-xs font-semibold text-zinc-600">
               {(profile?.email ?? "?").slice(0, 1).toUpperCase()}
             </div>
-            <p className="min-w-0 flex-1 truncate text-xs text-zinc-500" title={profile?.email ?? ""}>
+            <p
+              className="min-w-0 flex-1 truncate text-xs text-zinc-500"
+              title={profile?.email ?? ""}
+            >
               {profile?.email ?? "Signed in"}
             </p>
           </div>
@@ -79,7 +87,9 @@ export default function AdminLayout() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-900 text-xs font-semibold text-white">
             {orgInitials}
           </div>
-          <span className="text-sm font-semibold text-zinc-900">{org?.name ?? "Event Forms"}</span>
+          <span className="text-sm font-semibold text-zinc-900">
+            {org?.name ?? "Event Forms"}
+          </span>
         </div>
         <nav className="flex items-center gap-1">
           {nav.map((item) => (
@@ -87,7 +97,9 @@ export default function AdminLayout() {
               key={item.to}
               to={item.to}
               className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                item.active ? "bg-zinc-900 text-white" : "text-zinc-500 hover:bg-zinc-100"
+                item.active
+                  ? "bg-zinc-900 text-white"
+                  : "text-zinc-500 hover:bg-zinc-100"
               }`}
             >
               {item.label}
@@ -129,7 +141,9 @@ function SidebarLink({
     <Link
       to={to}
       className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-        active ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
+        active
+          ? "bg-zinc-900 text-white"
+          : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
       }`}
     >
       <Icon className="h-4 w-4" />
@@ -140,7 +154,13 @@ function SidebarLink({
 
 function FormsIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={1.8}
+    >
       <rect x="4" y="3" width="16" height="18" rx="2" />
       <path strokeLinecap="round" d="M8 8h8M8 12h8M8 16h5" />
     </svg>
@@ -149,19 +169,42 @@ function FormsIcon({ className }: { className?: string }) {
 
 function UsersIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={1.8}
+    >
       <circle cx="9" cy="8" r="3.2" />
       <path strokeLinecap="round" d="M3.5 19c0-3 2.5-5 5.5-5s5.5 2 5.5 5" />
-      <path strokeLinecap="round" d="M16 5.2A3 3 0 0119 8m1.5 11c0-2.4-1.4-4.2-3.5-4.8" />
+      <path
+        strokeLinecap="round"
+        d="M16 5.2A3 3 0 0119 8m1.5 11c0-2.4-1.4-4.2-3.5-4.8"
+      />
     </svg>
   );
 }
 
 function SignOutIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12H4m0 0l4-4m-4 4l4 4" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 7V5a2 2 0 012-2h7a2 2 0 012 2v14a2 2 0 01-2 2h-7a2 2 0 01-2-2v-2" />
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={1.8}
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M15 12H4m0 0l4-4m-4 4l4 4"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M9 7V5a2 2 0 012-2h7a2 2 0 012 2v14a2 2 0 01-2 2h-7a2 2 0 01-2-2v-2"
+      />
     </svg>
   );
 }
