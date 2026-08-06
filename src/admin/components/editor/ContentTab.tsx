@@ -10,24 +10,24 @@ export default function ContentTab({ draft, update }: Props) {
     <div className="space-y-5">
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
-          <label className="efb-label" htmlFor="name">
+          <label className="adm-label" htmlFor="name">
             Venue name
           </label>
           <input
             id="name"
-            className="efb-input"
+            className="adm-input"
             value={draft.name}
             onChange={(e) => update({ name: e.target.value })}
           />
-          <p className="mt-1 text-xs text-gray-400">Shown as the heading on the form.</p>
+          <p className="mt-1 text-xs text-zinc-400">Shown as the heading on the form.</p>
         </div>
         <div>
-          <label className="efb-label" htmlFor="slug">
+          <label className="adm-label" htmlFor="slug">
             URL slug
           </label>
           <input
             id="slug"
-            className="efb-input"
+            className="adm-input"
             value={draft.slug}
             onChange={(e) =>
               update({
@@ -38,39 +38,39 @@ export default function ContentTab({ draft, update }: Props) {
               })
             }
           />
-          <p className="mt-1 text-xs text-gray-400">
+          <p className="mt-1 text-xs text-zinc-400">
             Used in <code>/form/{draft.slug || "slug"}</code> and embeds. Must be unique.
           </p>
         </div>
       </div>
 
       <div>
-        <label className="efb-label" htmlFor="form_title">
+        <label className="adm-label" htmlFor="form_title">
           Eyebrow label
         </label>
         <input
           id="form_title"
-          className="efb-input"
+          className="adm-input"
           value={draft.form_title}
           onChange={(e) => update({ form_title: e.target.value })}
         />
-        <p className="mt-1 text-xs text-gray-400">
+        <p className="mt-1 text-xs text-zinc-400">
           Small label above the venue name, e.g. "Private Events".
         </p>
       </div>
 
       <div>
-        <label className="efb-label" htmlFor="about_blurb">
+        <label className="adm-label" htmlFor="about_blurb">
           About blurb
         </label>
         <textarea
           id="about_blurb"
           rows={5}
-          className="efb-input"
+          className="adm-input"
           value={draft.about_blurb}
           onChange={(e) => update({ about_blurb: e.target.value })}
         />
-        <p className="mt-1 text-xs text-gray-400">
+        <p className="mt-1 text-xs text-zinc-400">
           Paragraph shown on the landing page below the venue name.
         </p>
       </div>

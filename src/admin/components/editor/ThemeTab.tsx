@@ -54,7 +54,7 @@ export default function ThemeTab({ draft, update }: Props) {
     <div className="grid gap-8 lg:grid-cols-2">
       <div className="space-y-6">
         <div>
-          <label className="efb-label" htmlFor="brandColor">
+          <label className="adm-label" htmlFor="brandColor">
             Brand color
           </label>
           <div className="flex items-center gap-3">
@@ -63,35 +63,35 @@ export default function ThemeTab({ draft, update }: Props) {
               type="color"
               value={brandColor}
               onChange={(e) => setTheme({ brandColor: e.target.value })}
-              className="h-10 w-14 cursor-pointer rounded border border-slate-200 bg-white p-1"
+              className="h-10 w-14 cursor-pointer rounded border border-zinc-200 bg-white p-1"
             />
             <input
-              className="efb-input py-2 font-mono"
+              className="adm-input py-2 font-mono"
               value={brandColor}
               onChange={(e) => setTheme({ brandColor: e.target.value })}
             />
             {theme.brandColor && (
               <button
                 type="button"
-                className="whitespace-nowrap text-xs font-medium text-gray-500 hover:text-gray-700"
+                className="whitespace-nowrap text-xs font-medium text-zinc-500 hover:text-zinc-700"
                 onClick={() => setTheme({ brandColor: undefined })}
               >
                 Reset
               </button>
             )}
           </div>
-          <p className="mt-1 text-xs text-gray-400">
+          <p className="mt-1 text-xs text-zinc-400">
             A full palette of shades is generated from this color.
           </p>
         </div>
 
         <div>
-          <label className="efb-label" htmlFor="fontSans">
+          <label className="adm-label" htmlFor="fontSans">
             Body font
           </label>
           <select
             id="fontSans"
-            className="efb-input"
+            className="adm-input"
             value={theme.fontSans ?? DEFAULT_FONT_SANS}
             onChange={(e) => setTheme({ fontSans: e.target.value })}
           >
@@ -104,12 +104,12 @@ export default function ThemeTab({ draft, update }: Props) {
         </div>
 
         <div>
-          <label className="efb-label" htmlFor="fontDisplay">
+          <label className="adm-label" htmlFor="fontDisplay">
             Heading font
           </label>
           <select
             id="fontDisplay"
-            className="efb-input"
+            className="adm-input"
             value={theme.fontDisplay ?? DEFAULT_FONT_DISPLAY}
             onChange={(e) => setTheme({ fontDisplay: e.target.value })}
           >
@@ -119,7 +119,7 @@ export default function ThemeTab({ draft, update }: Props) {
               </option>
             ))}
           </select>
-          <p className="mt-1 text-xs text-gray-400">
+          <p className="mt-1 text-xs text-zinc-400">
             Custom Google Fonts must also be loaded on the embedding page.
           </p>
         </div>
@@ -127,25 +127,25 @@ export default function ThemeTab({ draft, update }: Props) {
 
       {/* Live preview */}
       <div>
-        <p className="efb-label">Preview</p>
+        <p className="adm-label">Preview</p>
         <div
           ref={previewRef}
-          className="rounded-2xl border border-slate-200 bg-white p-6"
+          className="rounded-2xl border border-zinc-200 bg-white p-6"
         >
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">
             {draft.form_title || "Private Events"}
           </p>
-          <h3 className="font-display text-2xl font-semibold text-gray-900">
+          <h3 className="font-display text-2xl font-semibold text-zinc-900">
             {draft.name || "Venue name"}
           </h3>
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-2 text-sm text-zinc-600">
             A quick look at how your brand color and fonts come together.
           </p>
           <div className="mt-4 flex gap-2">
             <span className="efb-btn-primary px-5 py-2">Primary</span>
             <span className="efb-btn-secondary px-5 py-2">Secondary</span>
           </div>
-          <div className="mt-5 flex overflow-hidden rounded-lg border border-slate-200">
+          <div className="mt-5 flex overflow-hidden rounded-lg border border-zinc-200">
             {BRAND_STOPS.map((stop) => (
               <div
                 key={stop}

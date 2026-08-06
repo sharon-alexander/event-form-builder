@@ -75,8 +75,8 @@ export default function GalleryTab({ draft, update, orgId, onError }: Props) {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-sm font-semibold text-gray-900">Gallery media</h2>
-          <p className="mt-0.5 text-xs text-gray-400">
+          <h2 className="text-sm font-semibold text-zinc-900">Gallery media</h2>
+          <p className="mt-0.5 text-xs text-zinc-400">
             Images (and videos) shown on the landing page, in order.
           </p>
         </div>
@@ -85,7 +85,7 @@ export default function GalleryTab({ draft, update, orgId, onError }: Props) {
             <button
               type="button"
               onClick={() => setPickerOpen((v) => !v)}
-              className="efb-btn-secondary px-4 py-2"
+              className="adm-btn-secondary px-4 py-2"
             >
               {pickerOpen ? "Cancel" : "Choose existing"}
             </button>
@@ -94,7 +94,7 @@ export default function GalleryTab({ draft, update, orgId, onError }: Props) {
             type="button"
             onClick={() => fileInput.current?.click()}
             disabled={uploading}
-            className="efb-btn-primary px-4 py-2"
+            className="adm-btn-primary px-4 py-2"
           >
             {uploading ? "Uploading…" : "Upload"}
           </button>
@@ -119,7 +119,7 @@ export default function GalleryTab({ draft, update, orgId, onError }: Props) {
       )}
 
       {media.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-300 p-10 text-center text-sm text-gray-400">
+        <div className="rounded-xl border border-dashed border-zinc-300 p-10 text-center text-sm text-zinc-400">
           No media yet. Click <span className="font-medium">Upload</span> to add images.
         </div>
       ) : (
@@ -127,9 +127,9 @@ export default function GalleryTab({ draft, update, orgId, onError }: Props) {
           {media.map((item, i) => (
             <li
               key={`${item.src}-${i}`}
-              className="flex gap-4 rounded-xl border border-slate-200 p-3"
+              className="flex gap-4 rounded-xl border border-zinc-200 p-3"
             >
-              <div className="h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-slate-100">
+              <div className="h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-zinc-100">
                 {item.type === "video" ? (
                   <video src={item.src} className="h-full w-full object-cover" />
                 ) : (
@@ -143,13 +143,13 @@ export default function GalleryTab({ draft, update, orgId, onError }: Props) {
 
               <div className="flex min-w-0 flex-1 flex-col gap-2">
                 <input
-                  className="efb-input py-2"
+                  className="adm-input py-2"
                   placeholder="Alt text (describe the image)"
                   value={item.alt}
                   onChange={(e) => patchItem(i, { alt: e.target.value })}
                 />
-                <div className="flex min-w-0 items-center gap-2 text-xs text-gray-400">
-                  <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 font-medium uppercase text-slate-500">
+                <div className="flex min-w-0 items-center gap-2 text-xs text-zinc-400">
+                  <span className="shrink-0 rounded bg-zinc-100 px-1.5 py-0.5 font-medium uppercase text-zinc-500">
                     {item.type}
                   </span>
                   <span className="truncate">{filenameFromUrl(item.src)}</span>
@@ -212,7 +212,7 @@ function IconButton({
       className={`flex h-7 w-7 items-center justify-center rounded-md border transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
         destructive
           ? "border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600"
-          : "border-slate-200 text-gray-600 hover:bg-slate-50"
+          : "border-zinc-200 text-zinc-600 hover:bg-zinc-50"
       }`}
     >
       {children}

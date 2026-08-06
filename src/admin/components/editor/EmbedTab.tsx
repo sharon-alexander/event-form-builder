@@ -31,8 +31,8 @@ export default function EmbedTab({ draft }: Props) {
   return (
     <div className="space-y-8">
       <section>
-        <h2 className="text-sm font-semibold text-gray-900">Embed on your website</h2>
-        <p className="mt-1 text-sm text-gray-500">
+        <h2 className="text-sm font-semibold text-zinc-900">Embed on your website</h2>
+        <p className="mt-1 text-sm text-zinc-500">
           Paste this into a Squarespace <span className="font-medium">Code</span> block (set
           the block type to HTML). Works on any site that allows custom HTML + scripts.
         </p>
@@ -45,7 +45,7 @@ export default function EmbedTab({ draft }: Props) {
         )}
 
         <div className="relative mt-4">
-          <pre className="overflow-x-auto rounded-xl border border-slate-200 bg-slate-50 p-4 pr-14 text-xs leading-relaxed text-gray-800">
+          <pre className="overflow-x-auto rounded-xl border border-zinc-200 bg-zinc-50 p-4 pr-14 text-xs leading-relaxed text-zinc-800">
             <code>{embedCode}</code>
           </pre>
           <div className="absolute right-3 top-3">
@@ -60,12 +60,12 @@ export default function EmbedTab({ draft }: Props) {
       </section>
 
       <section>
-        <h2 className="text-sm font-semibold text-gray-900">Direct link</h2>
-        <p className="mt-1 text-sm text-gray-500">
+        <h2 className="text-sm font-semibold text-zinc-900">Direct link</h2>
+        <p className="mt-1 text-sm text-zinc-500">
           Share a standalone page without embedding — useful for testing or email links.
         </p>
         <div className="mt-3 flex items-center gap-2">
-          <code className="min-w-0 flex-1 truncate rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-gray-700">
+          <code className="min-w-0 flex-1 truncate rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-700">
             {previewUrl}
           </code>
           <IconButton
@@ -79,7 +79,7 @@ export default function EmbedTab({ draft }: Props) {
             target="_blank"
             rel="noreferrer"
             aria-label="Open preview in new tab"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-slate-200 text-gray-600 transition-colors hover:bg-slate-50"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-zinc-200 text-zinc-600 transition-colors hover:bg-zinc-50"
           >
             <ExternalLinkIcon />
           </a>
@@ -104,7 +104,7 @@ function IconButton({
       aria-label={label}
       title={label}
       onClick={onClick}
-      className="flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 bg-white text-gray-600 shadow-sm transition-colors hover:bg-slate-50"
+      className="flex h-9 w-9 items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-600 shadow-sm transition-colors hover:bg-zinc-50"
     >
       {children}
     </button>
@@ -125,7 +125,7 @@ function CopyIcon() {
 
 function CheckIcon() {
   return (
-    <svg className="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg className="h-4 w-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
     </svg>
   );

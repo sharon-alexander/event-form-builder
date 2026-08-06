@@ -62,19 +62,19 @@ export default function VenueGalleryEditor({
   }
 
   return (
-    <details className="rounded-lg border border-slate-200 bg-slate-50/50 p-3" open={media.length > 0}>
-      <summary className="cursor-pointer list-none text-xs font-medium text-brand-700 marker:content-none">
+    <details className="rounded-lg border border-zinc-200 bg-zinc-50/50 p-3" open={media.length > 0}>
+      <summary className="cursor-pointer list-none text-xs font-medium text-zinc-700 marker:content-none">
         <span className="flex items-center justify-between gap-2">
           <span>
             Photos &amp; videos
             {media.length > 0 && (
-              <span className="ml-1 font-normal text-gray-400">({media.length} on form)</span>
+              <span className="ml-1 font-normal text-zinc-400">({media.length} on form)</span>
             )}
           </span>
-          <span className="text-gray-400">Edit</span>
+          <span className="text-zinc-400">Edit</span>
         </span>
       </summary>
-      <p className="mt-2 text-xs text-gray-400">
+      <p className="mt-2 text-xs text-zinc-400">
         Photos appear on the venue step when added here. This panel only expands the editor — it does
         not hide photos from the public form.
       </p>
@@ -84,7 +84,7 @@ export default function VenueGalleryEditor({
           <button
             type="button"
             onClick={() => setPickerOpen((v) => !v)}
-            className="efb-btn-secondary px-2 py-1 text-xs"
+            className="adm-btn-secondary px-2 py-1 text-xs"
           >
             {pickerOpen ? "Cancel" : "Choose existing"}
           </button>
@@ -93,7 +93,7 @@ export default function VenueGalleryEditor({
           type="button"
           onClick={() => fileInput.current?.click()}
           disabled={uploading}
-          className="efb-btn-secondary px-2 py-1 text-xs"
+          className="adm-btn-secondary px-2 py-1 text-xs"
         >
           {uploading ? "Uploading…" : "Upload"}
         </button>
@@ -118,13 +118,13 @@ export default function VenueGalleryEditor({
 
       <div className="mt-3 space-y-2">
         {media.length === 0 ? (
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-zinc-400">
             No photos or videos for {label || "this space"} yet.
           </p>
         ) : (
           media.map((item, i) => (
             <div key={`${item.src}-${i}`} className="flex items-center gap-2">
-              <div className="h-12 w-16 shrink-0 overflow-hidden rounded-md bg-slate-100">
+              <div className="h-12 w-16 shrink-0 overflow-hidden rounded-md bg-zinc-100">
                 {item.type === "video" ? (
                   <video src={item.src} className="h-full w-full object-cover" />
                 ) : (
@@ -132,7 +132,7 @@ export default function VenueGalleryEditor({
                 )}
               </div>
               <input
-                className="efb-input min-w-0 flex-1 py-1.5 text-xs"
+                className="adm-input min-w-0 flex-1 py-1.5 text-xs"
                 placeholder="Alt text"
                 value={item.alt}
                 onChange={(e) =>

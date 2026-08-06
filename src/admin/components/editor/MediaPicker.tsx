@@ -12,20 +12,20 @@ export default function MediaPicker({ library, selected, onSelect, onClose }: Pr
   const available = library.filter((m) => !selectedSrcs.has(m.src));
 
   return (
-    <div className="mt-3 rounded-lg border border-slate-200 bg-white p-3">
+    <div className="mt-3 rounded-lg border border-zinc-200 bg-white p-3">
       <div className="mb-2 flex items-center justify-between">
-        <p className="text-xs font-medium text-gray-700">Choose from existing media</p>
+        <p className="text-xs font-medium text-zinc-700">Choose from existing media</p>
         <button
           type="button"
           onClick={onClose}
-          className="text-xs text-gray-400 hover:text-gray-600"
+          className="text-xs text-zinc-400 hover:text-zinc-600"
         >
           Close
         </button>
       </div>
 
       {available.length === 0 ? (
-        <p className="text-xs text-gray-400">
+        <p className="text-xs text-zinc-400">
           {library.length === 0
             ? "Upload media on the Gallery tab or to another venue first."
             : "All available media is already in this gallery."}
@@ -38,7 +38,7 @@ export default function MediaPicker({ library, selected, onSelect, onClose }: Pr
               type="button"
               onClick={() => onSelect(item)}
               aria-label={`Add ${item.alt}`}
-              className="group relative overflow-hidden rounded-md ring-1 ring-slate-200 transition-all hover:ring-brand-500"
+              className="group relative overflow-hidden rounded-md ring-1 ring-zinc-200 transition-all hover:ring-zinc-400"
             >
               <img
                 src={item.type === "video" ? (item.poster ?? item.src) : item.src}

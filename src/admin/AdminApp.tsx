@@ -49,12 +49,12 @@ export default function AdminApp() {
 function NotConfigured() {
   return (
     <div className="mx-auto max-w-lg px-6 py-24 text-center">
-      <h1 className="font-display text-2xl font-semibold text-gray-900">
+      <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
         Supabase isn't configured
       </h1>
-      <p className="mt-3 text-sm text-gray-600">
-        Set <code className="rounded bg-gray-100 px-1">VITE_SUPABASE_URL</code> and{" "}
-        <code className="rounded bg-gray-100 px-1">VITE_SUPABASE_ANON_KEY</code> in
+      <p className="mt-3 text-sm text-zinc-600">
+        Set <code className="rounded bg-zinc-100 px-1">VITE_SUPABASE_URL</code> and{" "}
+        <code className="rounded bg-zinc-100 px-1">VITE_SUPABASE_ANON_KEY</code> in
         your environment, then rebuild. See <code>supabase/README.md</code>.
       </p>
     </div>

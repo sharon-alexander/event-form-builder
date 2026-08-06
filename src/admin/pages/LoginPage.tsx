@@ -30,21 +30,21 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-6 font-sans">
+    <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-6 font-sans">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <h1 className="font-display text-2xl font-semibold text-gray-900">
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
             Event Forms Admin
           </h1>
-          <p className="mt-1 text-sm text-gray-500">Sign in to manage your forms</p>
+          <p className="mt-1 text-sm text-zinc-500">Sign in to manage your forms</p>
         </div>
 
         <form
           onSubmit={handleSubmit}
-          className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+          className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm"
         >
           <div>
-            <label className="efb-label" htmlFor="email">
+            <label className="adm-label" htmlFor="email">
               Email
             </label>
             <input
@@ -54,11 +54,11 @@ export default function LoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="efb-input"
+              className="adm-input"
             />
           </div>
           <div>
-            <label className="efb-label" htmlFor="password">
+            <label className="adm-label" htmlFor="password">
               Password
             </label>
             <input
@@ -68,18 +68,18 @@ export default function LoginPage() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="efb-input"
+              className="adm-input"
             />
           </div>
 
           {error && (
-            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
+            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
           )}
 
           <button
             type="submit"
             disabled={submitting}
-            className="efb-btn-primary w-full"
+            className="adm-btn-primary w-full"
           >
             {submitting ? "Signing in…" : "Sign in"}
           </button>

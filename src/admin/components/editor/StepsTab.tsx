@@ -70,8 +70,8 @@ export default function StepsTab({ draft, update }: Props) {
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-sm font-semibold text-gray-900">Form steps</h2>
-          <p className="mt-0.5 text-xs text-gray-400">
+          <h2 className="text-sm font-semibold text-zinc-900">Form steps</h2>
+          <p className="mt-0.5 text-xs text-zinc-400">
             Drag to reorder. Optional &quot;More Details&quot; text appears below each step on the
             public form.
           </p>
@@ -79,7 +79,7 @@ export default function StepsTab({ draft, update }: Props) {
         {availableToAdd.length > 0 && (
           <div className="flex items-center gap-2">
             <select
-              className="efb-input py-1.5 text-xs"
+              className="adm-input py-1.5 text-xs"
               defaultValue=""
               onChange={(e) => {
                 const value = e.target.value as StepId;
@@ -149,15 +149,15 @@ function SortableStepRow({
     <div
       ref={setNodeRef}
       style={style}
-      className={`rounded-xl border border-slate-200 bg-white p-4 ${
-        isDragging ? "z-10 shadow-lg ring-2 ring-brand-200" : ""
+      className={`rounded-xl border border-zinc-200 bg-white p-4 ${
+        isDragging ? "z-10 shadow-lg ring-2 ring-zinc-300" : ""
       }`}
     >
       <div className="flex items-start gap-3">
         <button
           type="button"
           aria-label="Drag to reorder"
-          className="mt-0.5 flex h-8 w-8 shrink-0 cursor-grab touch-none items-center justify-center rounded-md border border-slate-200 text-gray-400 hover:bg-slate-50 hover:text-gray-600 active:cursor-grabbing"
+          className="mt-0.5 flex h-8 w-8 shrink-0 cursor-grab touch-none items-center justify-center rounded-md border border-zinc-200 text-zinc-400 hover:bg-zinc-50 hover:text-zinc-600 active:cursor-grabbing"
           {...attributes}
           {...listeners}
         >
@@ -165,7 +165,7 @@ function SortableStepRow({
         </button>
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
-            <p className="text-sm font-medium text-gray-900">
+            <p className="text-sm font-medium text-zinc-900">
               {index + 1}. {label}
             </p>
             <button
@@ -177,7 +177,7 @@ function SortableStepRow({
             </button>
           </div>
           <textarea
-            className="efb-input mt-2 text-sm"
+            className="adm-input mt-2 text-sm"
             rows={3}
             placeholder="Optional more details for this step…"
             value={moreDetails}
