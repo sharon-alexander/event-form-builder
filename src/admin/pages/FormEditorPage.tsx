@@ -158,14 +158,14 @@ export default function FormEditorPage() {
     [draft],
   );
 
-  if (loading) return <p className="text-sm text-gray-400">Loading…</p>;
+  if (loading) return <p className="text-sm text-zinc-400">Loading…</p>;
   if (!draft) {
     return (
       <div>
-        <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {error ?? "Form not found."}
         </p>
-        <Link to="/" className="text-sm font-medium text-brand-700 hover:underline">
+        <Link to="/" className="text-sm font-medium text-zinc-700 hover:underline">
           ← Back to forms
         </Link>
       </div>
@@ -175,11 +175,11 @@ export default function FormEditorPage() {
   return (
     <div>
       <div className="mb-6">
-        <Link to="/" className="text-sm font-medium text-gray-500 hover:text-gray-700">
+        <Link to="/" className="text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-900">
           ← All forms
         </Link>
         <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
-          <h1 className="font-display text-2xl font-semibold text-gray-900">
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
             {draft.name}
           </h1>
           <div className="flex items-center gap-3">
@@ -191,7 +191,7 @@ export default function FormEditorPage() {
               href={previewUrl}
               target="_blank"
               rel="noreferrer"
-              className="efb-btn-secondary px-4 py-2"
+              className="adm-btn-secondary px-4 py-2"
             >
               Preview
             </a>
@@ -199,7 +199,7 @@ export default function FormEditorPage() {
               type="button"
               onClick={handleSave}
               disabled={saving || !dirty}
-              className="efb-btn-primary px-5 py-2"
+              className="adm-btn-primary px-5 py-2"
             >
               {saving ? "Saving…" : dirty ? "Save changes" : "Saved"}
             </button>
@@ -208,15 +208,15 @@ export default function FormEditorPage() {
       </div>
 
       {error && (
-        <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
+        <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
       )}
       {notice && (
-        <p className="mb-4 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">
+        <p className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
           {notice}
         </p>
       )}
 
-      <div className="mb-6 flex flex-wrap gap-1 border-b border-slate-200">
+      <div className="mb-6 flex flex-wrap gap-1 border-b border-zinc-200">
         {TABS.map((t) => (
           <button
             key={t.id}
@@ -224,8 +224,8 @@ export default function FormEditorPage() {
             onClick={() => setTab(t.id)}
             className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
               tab === t.id
-                ? "border-brand-600 text-brand-700"
-                : "border-transparent text-gray-500 hover:text-gray-700"
+                ? "border-zinc-900 text-zinc-900"
+                : "border-transparent text-zinc-500 hover:text-zinc-800"
             }`}
           >
             {t.label}
@@ -233,7 +233,7 @@ export default function FormEditorPage() {
         ))}
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-6">
+      <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
         {tab === "content" && <ContentTab draft={draft} update={update} />}
         {tab === "gallery" && (
           <GalleryTab draft={draft} update={update} orgId={orgId} onError={setError} />

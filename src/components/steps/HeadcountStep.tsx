@@ -1,5 +1,8 @@
+import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
 import FormStep from "../FormStep";
 import type { StepProps } from "./stepProps";
+
+const copy = DEFAULT_STEP_COPY.headcount;
 
 export default function HeadcountStep({
   data,
@@ -8,8 +11,8 @@ export default function HeadcountStep({
   onBack,
   nextLabel,
   moreDetails,
-  title = "How many guests?",
-  subtitle = "An estimate is fine — you can let us know if it may change.",
+  title = copy.title,
+  subtitle = copy.subtitle,
 }: StepProps) {
   return (
     <FormStep

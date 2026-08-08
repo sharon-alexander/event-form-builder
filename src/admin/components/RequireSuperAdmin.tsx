@@ -6,7 +6,7 @@ export default function RequireSuperAdmin({ children }: { children: React.ReactN
 
   if (loading) {
     return (
-      <div className="px-6 py-24 text-center text-sm text-gray-400">Loading…</div>
+      <div className="px-6 py-24 text-center text-sm text-zinc-400">Loading…</div>
     );
   }
 

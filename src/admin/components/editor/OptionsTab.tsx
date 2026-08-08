@@ -45,15 +45,15 @@ export default function OptionsTab({ draft, update, orgId, onError }: Props) {
       <section>
         <div className="mb-3 flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-semibold text-gray-900">Venue spaces</h2>
-            <p className="mt-0.5 text-xs text-gray-400">
+            <h2 className="text-sm font-semibold text-zinc-900">Venue spaces</h2>
+            <p className="mt-0.5 text-xs text-zinc-400">
               Options shown on the venue selection step, with starting prices and optional
               photo/video galleries.
             </p>
           </div>
           <button
             type="button"
-            className="efb-btn-secondary px-3 py-1.5 text-xs"
+            className="adm-btn-secondary px-3 py-1.5 text-xs"
             onClick={() =>
               setVenues([...venues, { value: "", label: "", price: "" }])
             }
@@ -66,11 +66,11 @@ export default function OptionsTab({ draft, update, orgId, onError }: Props) {
           {venues.map((v, i) => (
             <div
               key={i}
-              className="space-y-3 rounded-xl border border-slate-200 p-3"
+              className="space-y-3 rounded-xl border border-zinc-200 p-3"
             >
               <div className="flex items-center gap-3">
                 <input
-                  className="efb-input min-w-0 flex-1 py-2"
+                  className="adm-input min-w-0 flex-1 py-2"
                   placeholder="Name (e.g. 1st Floor Salon)"
                   value={v.label}
                   onChange={(e) => {
@@ -83,7 +83,7 @@ export default function OptionsTab({ draft, update, orgId, onError }: Props) {
                   }}
                 />
                 <input
-                  className="efb-input min-w-0 flex-1 py-2"
+                  className="adm-input min-w-0 flex-1 py-2"
                   placeholder="Price (e.g. Starting at $3,000)"
                   value={v.price}
                   onChange={(e) =>
@@ -120,14 +120,14 @@ export default function OptionsTab({ draft, update, orgId, onError }: Props) {
       <section>
         <div className="mb-3 flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-semibold text-gray-900">Budget ranges</h2>
-            <p className="mt-0.5 text-xs text-gray-400">
+            <h2 className="text-sm font-semibold text-zinc-900">Budget ranges</h2>
+            <p className="mt-0.5 text-xs text-zinc-400">
               Options shown on the budget step.
             </p>
           </div>
           <button
             type="button"
-            className="efb-btn-secondary px-3 py-1.5 text-xs"
+            className="adm-btn-secondary px-3 py-1.5 text-xs"
             onClick={() => setBudgets([...budgets, { value: "", label: "" }])}
           >
             Add range
@@ -138,10 +138,10 @@ export default function OptionsTab({ draft, update, orgId, onError }: Props) {
           {budgets.map((b, i) => (
             <div
               key={i}
-              className="flex items-center gap-3 rounded-xl border border-slate-200 p-3"
+              className="flex items-center gap-3 rounded-xl border border-zinc-200 p-3"
             >
               <input
-                className="efb-input min-w-0 flex-1 py-2"
+                className="adm-input min-w-0 flex-1 py-2"
                 placeholder="Label (e.g. $5,000 – $7,000)"
                 value={b.label}
                 onChange={(e) => {
@@ -184,7 +184,7 @@ function IconButton({
       className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-md border transition-colors ${
         destructive
           ? "border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600"
-          : "border-slate-200 text-gray-600 hover:bg-slate-50"
+          : "border-zinc-200 text-zinc-600 hover:bg-zinc-50"
       }`}
     >
       {children}
@@ -205,5 +205,5 @@ function TrashIcon() {
 }
 
 function EmptyHint({ label }: { label: string }) {
-  return <p className="text-xs text-gray-400">No {label} yet.</p>;
+  return <p className="text-xs text-zinc-400">No {label} yet.</p>;
 }

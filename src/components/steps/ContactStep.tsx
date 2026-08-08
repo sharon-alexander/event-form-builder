@@ -1,5 +1,8 @@
+import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
 import FormStep from "../FormStep";
 import type { StepProps } from "./stepProps";
+
+const copy = DEFAULT_STEP_COPY.contact;
 
 export default function ContactStep({
   data,
@@ -8,8 +11,8 @@ export default function ContactStep({
   onBack,
   nextLabel = "Review & Submit",
   moreDetails,
-  title = "Your details",
-  subtitle = "Tell us a bit about yourself so we can get in touch.",
+  title = copy.title,
+  subtitle = copy.subtitle,
 }: StepProps) {
   const isValid =
     data.firstName.trim() !== "" &&

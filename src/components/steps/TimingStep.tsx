@@ -4,8 +4,11 @@ import {
   DINNER_START_TIMES,
 } from "../../types";
 import { useLocationConfig } from "../../context/LocationContext";
+import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
 import FormStep from "../FormStep";
 import type { StepProps } from "./stepProps";
+
+const copy = DEFAULT_STEP_COPY.timing;
 
 const TIME_OPTIONS: string[] = [];
 for (let h = 9; h <= 23; h++) {
@@ -147,12 +150,12 @@ export default function TimingStep(props: StepProps) {
 
   return (
     <FormStep
-      title={props.title ?? "Timing"}
+      title={props.title ?? copy.title}
       subtitle={
         props.subtitle ??
         (isMeal
           ? "Select your meal service and preferred start time."
-          : "Select your preferred start and end times.")
+          : copy.subtitle)
       }
       moreDetails={props.moreDetails}
       onNext={props.onNext}

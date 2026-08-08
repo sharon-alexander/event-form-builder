@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { AdminRole } from "../auth";
 import { useAuth } from "../auth";
 import {
@@ -13,6 +13,9 @@ const ROLE_LABELS: Record<AdminRole, string> = {
   super_admin: "Super admin",
   editor: "Editor",
 };
+
+const inputClass =
+  "w-full rounded-lg border border-zinc-300 bg-white px-3.5 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 transition-colors focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900";
 
 export default function UsersPage() {
   const { org, profile } = useAuth();
@@ -90,33 +93,35 @@ export default function UsersPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="font-display text-2xl font-semibold text-gray-900">Users</h1>
-        <p className="mt-1 text-sm text-gray-500">
+      <div className="mb-8">
+        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">Users</h1>
+        <p className="mt-1 text-sm text-zinc-500">
           Manage admin access for {org?.name ?? "your group"}.
         </p>
       </div>
 
       {error && (
-        <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
+        <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {error}
+        </p>
       )}
       {success && (
-        <p className="mb-4 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">
+        <p className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
           {success}
         </p>
       )}
 
       <form
         onSubmit={handleInvite}
-        className="mb-8 rounded-2xl border border-slate-200 bg-white p-5"
+        className="mb-8 rounded-xl border border-zinc-200 bg-white p-5 shadow-sm"
       >
-        <h2 className="text-sm font-medium text-gray-900">Invite a new admin</h2>
-        <p className="mt-1 text-sm text-gray-500">
+        <h2 className="text-sm font-semibold text-zinc-900">Invite a new admin</h2>
+        <p className="mt-1 text-sm text-zinc-500">
           They will receive an email to set their password.
         </p>
         <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
           <div className="flex-1">
-            <label className="efb-label" htmlFor="invite-email">
+            <label className="mb-1.5 block text-sm font-medium text-zinc-700" htmlFor="invite-email">
               Email
             </label>
             <input
@@ -126,87 +131,92 @@ export default function UsersPage() {
               value={inviteEmail}
               onChange={(e) => setInviteEmail(e.target.value)}
               placeholder="colleague@example.com"
-              className="efb-input"
+              className={inputClass}
             />
           </div>
-          <div className="sm:w-40">
-            <label className="efb-label" htmlFor="invite-role">
+          <div className="sm:w-44">
+            <label className="mb-1.5 block text-sm font-medium text-zinc-700" htmlFor="invite-role">
               Role
             </label>
             <select
               id="invite-role"
               value={inviteRole}
               onChange={(e) => setInviteRole(e.target.value as AdminRole)}
-              className="efb-input"
+              className={inputClass}
             >
               <option value="editor">Editor</option>
               <option value="super_admin">Super admin</option>
             </select>
           </div>
-          <button type="submit" disabled={inviting} className="efb-btn-primary sm:mb-0">
+          <button
+            type="submit"
+            disabled={inviting}
+            className="inline-flex items-center justify-center rounded-lg bg-zinc-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
+          >
             {inviting ? "Sending…" : "Send invite"}
           </button>
         </div>
       </form>
 
       {loading ? (
-        <p className="text-sm text-gray-400">Loading…</p>
+        <div className="space-y-3">
+          {[0, 1].map((i) => (
+            <div key={i} className="h-14 animate-pulse rounded-xl border border-zinc-200 bg-white" />
+          ))}
+        </div>
       ) : users.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center">
-          <p className="text-sm text-gray-500">No users found.</p>
+        <div className="rounded-xl border border-dashed border-zinc-300 bg-white p-12 text-center">
+          <p className="text-sm text-zinc-500">No users found.</p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+        <div className="rounded-xl border border-zinc-200 bg-white shadow-sm">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-slate-100 bg-slate-50 text-xs font-medium uppercase tracking-wide text-gray-500">
-                <th className="px-5 py-3">Email</th>
+              <tr className="border-b border-zinc-100 bg-zinc-50 text-xs font-medium uppercase tracking-wide text-zinc-500">
+                <th className="rounded-tl-xl px-5 py-3">Email</th>
                 <th className="px-5 py-3">Role</th>
                 <th className="px-5 py-3">Joined</th>
-                <th className="px-5 py-3 text-right">Actions</th>
+                <th className="w-12 rounded-tr-xl px-3 py-3">
+                  <span className="sr-only">Actions</span>
+                </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-zinc-100">
               {users.map((user) => {
                 const isSelf = user.id === profile?.id;
                 return (
-                  <tr key={user.id}>
-                    <td className="px-5 py-4 font-medium text-gray-900">
-                      {user.email ?? "—"}
-                      {isSelf && (
-                        <span className="ml-2 text-xs font-normal text-gray-400">(you)</span>
-                      )}
+                  <tr key={user.id} className="transition-colors hover:bg-zinc-50/60">
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-xs font-semibold text-zinc-600">
+                          {(user.email ?? "?").slice(0, 1).toUpperCase()}
+                        </div>
+                        <span className="font-medium text-zinc-900">
+                          {user.email ?? "—"}
+                          {isSelf && (
+                            <span className="ml-2 text-xs font-normal text-zinc-400">(you)</span>
+                          )}
+                        </span>
+                      </div>
                     </td>
                     <td className="px-5 py-4">
                       {isSelf ? (
-                        <span className="text-gray-600">{ROLE_LABELS[user.role]}</span>
+                        <span className="text-zinc-600">{ROLE_LABELS[user.role]}</span>
                       ) : (
                         <select
                           value={user.role}
-                          onChange={(e) =>
-                            void handleRoleChange(user, e.target.value as AdminRole)
-                          }
-                          className="rounded-lg border border-slate-200 px-2 py-1 text-sm"
+                          onChange={(e) => void handleRoleChange(user, e.target.value as AdminRole)}
+                          className="rounded-lg border border-zinc-300 bg-white px-2.5 py-1.5 text-sm text-zinc-700 transition-colors focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
                         >
                           <option value="editor">Editor</option>
                           <option value="super_admin">Super admin</option>
                         </select>
                       )}
                     </td>
-                    <td className="px-5 py-4 text-gray-500">
-                      {formatDate(user.created_at)}
-                    </td>
-                    <td className="px-5 py-4 text-right">
-                      {isSelf ? (
-                        <span className="text-xs text-gray-400">—</span>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => void handleRemove(user)}
-                          className="text-sm font-medium text-red-600 hover:text-red-700"
-                        >
-                          Remove
-                        </button>
+                    <td className="px-5 py-4 text-zinc-500">{formatDate(user.created_at)}</td>
+                    <td className="px-3 py-4 text-right">
+                      {!isSelf && (
+                        <UserRowMenu onDelete={() => void handleRemove(user)} />
                       )}
                     </td>
                   </tr>
@@ -214,6 +224,58 @@ export default function UsersPage() {
               })}
             </tbody>
           </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function UserRowMenu({ onDelete }: { onDelete: () => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative inline-flex">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700"
+        aria-label="Actions"
+        aria-expanded={open}
+      >
+        <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+          <circle cx="10" cy="4" r="1.5" />
+          <circle cx="10" cy="10" r="1.5" />
+          <circle cx="10" cy="16" r="1.5" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="absolute right-0 bottom-full z-50 mb-1 w-40 overflow-hidden rounded-xl border border-zinc-200 bg-white py-1 shadow-lg ring-1 ring-black/5">
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              onDelete();
+            }}
+            className="flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-sm text-red-600 transition-colors hover:bg-red-50"
+          >
+            <svg className="h-4 w-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m-8 0v12a1 1 0 001 1h6a1 1 0 001-1V7" />
+            </svg>
+            Delete
+          </button>
         </div>
       )}
     </div>

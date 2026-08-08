@@ -1,6 +1,9 @@
 import { MONTHS, DAYS_OF_WEEK } from "../../types";
+import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
 import FormStep from "../FormStep";
 import type { StepProps } from "./stepProps";
+
+const copy = DEFAULT_STEP_COPY.event_date;
 
 export default function EventDateStep({
   data,
@@ -9,8 +12,8 @@ export default function EventDateStep({
   onBack,
   nextLabel,
   moreDetails,
-  title = "When are you thinking?",
-  subtitle = "Pick a date or let us know your flexibility.",
+  title = copy.title,
+  subtitle = copy.subtitle,
 }: StepProps) {
   const toggleMonth = (m: string) => {
     const current = data.flexibleDatePreferences.preferredMonths;

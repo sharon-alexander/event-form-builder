@@ -49,4 +49,19 @@
   .efb-label {
     @apply mb-1.5 block text-sm font-medium text-gray-700;
   }
+
+  /* Admin portal (CMS) — neutral zinc palette, kept separate from the
+     per-location brand theme used by the public embeddable form. */
+  .adm-btn-primary {
+    @apply inline-flex items-center justify-center rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .adm-btn-secondary {
+    @apply inline-flex items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .adm-input {
+    @apply w-full rounded-lg border border-zinc-300 bg-white px-3.5 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 transition-colors focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900;
+  }
+  .adm-label {
+    @apply mb-1.5 block text-sm font-medium text-zinc-700;
+  }
 }

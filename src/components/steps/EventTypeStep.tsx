@@ -1,4 +1,5 @@
 import type { EventBookingType } from "../../types";
+import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
 import FormStep from "../FormStep";
 import type { StepProps } from "./stepProps";
 
@@ -7,6 +8,8 @@ const BOOKING_TYPES: { value: EventBookingType; label: string; desc: string }[] 
   { value: "large_party", label: "Large Party Booking", desc: "A bigger group or multi-room event" },
 ];
 
+const copy = DEFAULT_STEP_COPY.event_type;
+
 export default function EventTypeStep({
   data,
   onChange,
@@ -14,8 +17,8 @@ export default function EventTypeStep({
   onBack,
   nextLabel,
   moreDetails,
-  title = "What type of event?",
-  subtitle = "Select the booking type that best fits your plans.",
+  title = copy.title,
+  subtitle = copy.subtitle,
 }: StepProps) {
   return (
     <FormStep
