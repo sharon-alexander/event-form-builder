@@ -56,6 +56,8 @@ export interface LocationConfig {
   name: string;
   formTitle: string;
   aboutBlurb: string;
+  /** Public URL of the venue logo, if set on the form theme. */
+  logoUrl?: string;
   galleryMedia: MediaItem[];
   venueSpaces: VenueSpaceOption[];
   budgetOptions: BudgetOption[];

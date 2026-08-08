@@ -196,16 +196,19 @@ function FormListRow({
         menuOpen ? "z-50" : ""
       }`}
     >
-      <div className="min-w-0">
-        <div className="flex items-center gap-2.5">
-          <span className="truncate font-semibold text-zinc-900">{form.name}</span>
-          <StatusBadge published={form.published} />
-        </div>
-        <div className="mt-1 flex items-center gap-1 text-xs text-zinc-400">
-          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15.5 5.5l3 3L9 18l-4 1 1-4 9.5-9.5z" />
-          </svg>
-          Edited {updated ? formatRelative(updated) : "—"}
+      <div className="flex min-w-0 items-center gap-3">
+        <FormLogoAvatar name={form.name} logoUrl={form.theme?.logoUrl} />
+        <div className="min-w-0">
+          <div className="flex items-center gap-2.5">
+            <span className="truncate font-semibold text-zinc-900">{form.name}</span>
+            <StatusBadge published={form.published} />
+          </div>
+          <div className="mt-1 flex items-center gap-1 text-xs text-zinc-400">
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.5 5.5l3 3L9 18l-4 1 1-4 9.5-9.5z" />
+            </svg>
+            Edited {updated ? formatRelative(updated) : "—"}
+          </div>
         </div>
       </div>
       <RowMenu
@@ -369,6 +372,29 @@ function formatRelative(iso: string): string {
     month: "short",
     day: "numeric",
   });
+}
+
+function FormLogoAvatar({ name, logoUrl }: { name: string; logoUrl?: string }) {
+  const initial = (name.trim()[0] ?? "?").toUpperCase();
+
+  if (logoUrl) {
+    return (
+      <img
+        src={logoUrl}
+        alt=""
+        className="h-8 w-8 shrink-0 rounded-full object-cover ring-1 ring-zinc-200"
+      />
+    );
+  }
+
+  return (
+    <div
+      aria-hidden
+      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-xs font-semibold text-zinc-500 ring-1 ring-zinc-200"
+    >
+      {initial}
+    </div>
+  );
 }
 
 function EyeIcon() {

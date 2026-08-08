@@ -13,6 +13,8 @@ export interface ThemeTokens {
   fontSans?: string;
   /** CSS font-family value for headings, e.g. `"Playfair Display"`. */
   fontDisplay?: string;
+  /** Public URL of the venue logo image. */
+  logoUrl?: string;
 }
 
 export const BRAND_STOPS = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950] as const;

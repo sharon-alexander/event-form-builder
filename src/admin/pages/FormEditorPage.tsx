@@ -242,7 +242,9 @@ export default function FormEditorPage() {
           <OptionsTab draft={draft} update={update} orgId={orgId} onError={setError} />
         )}
         {tab === "steps" && <StepsTab draft={draft} update={update} />}
-        {tab === "theme" && <ThemeTab draft={draft} update={update} />}
+        {tab === "theme" && (
+          <ThemeTab draft={draft} update={update} orgId={orgId} onError={setError} />
+        )}
         {tab === "embed" && <EmbedTab draft={draft} />}
         {tab === "advanced" && <AdvancedTab draft={draft} update={update} />}
       </div>
