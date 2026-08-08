@@ -15,6 +15,7 @@ export default function FormsListPage() {
   const [creating, setCreating] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<"all" | "published">("all");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -73,7 +74,8 @@ export default function FormsListPage() {
     }
   }
 
-  const publishedCount = forms.filter((f) => f.published).length;
+  const filteredForms =
+    statusFilter === "published" ? forms.filter((f) => f.published) : forms;
 
   return (
     <div>
@@ -106,12 +108,26 @@ export default function FormsListPage() {
       )}
 
       {!loading && forms.length > 0 && (
-        <div className="mb-4 flex items-center gap-4 text-xs font-medium text-zinc-400">
-          <span>{forms.length} total</span>
-          <span className="h-1 w-1 rounded-full bg-zinc-300" />
-          <span>{publishedCount} published</span>
-          <span className="h-1 w-1 rounded-full bg-zinc-300" />
-          <span>{forms.length - publishedCount} draft</span>
+        <div className="mb-4 flex items-center gap-1 rounded-lg border border-zinc-200 bg-zinc-50 p-1">
+          {(
+            [
+              { value: "all", label: "All" },
+              { value: "published", label: "Published" },
+            ] as const
+          ).map(({ value, label }) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setStatusFilter(value)}
+              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                statusFilter === value
+                  ? "bg-white text-zinc-900 shadow-sm"
+                  : "text-zinc-500 hover:text-zinc-700"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
       )}
 
@@ -127,9 +143,13 @@ export default function FormsListPage() {
             No forms yet. Click <span className="font-medium text-zinc-700">New form</span> to create one.
           </p>
         </div>
+      ) : filteredForms.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-zinc-300 bg-white p-12 text-center">
+          <p className="text-sm text-zinc-500">No published forms.</p>
+        </div>
       ) : (
         <ul className="space-y-2.5">
-          {forms.map((form) => (
+          {filteredForms.map((form) => (
             <FormListRow
               key={form.id}
               form={form}
@@ -181,15 +201,11 @@ function FormListRow({
           <span className="truncate font-semibold text-zinc-900">{form.name}</span>
           <StatusBadge published={form.published} />
         </div>
-        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-400">
-          <span className="inline-flex items-center gap-1">
-            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.5 5.5l3 3L9 18l-4 1 1-4 9.5-9.5z" />
-            </svg>
-            Edited {updated ? formatRelative(updated) : "—"}
-          </span>
-          <span className="hidden h-1 w-1 rounded-full bg-zinc-300 sm:inline-block" />
-          <span className="hidden truncate font-mono text-zinc-400 sm:inline">/form/{form.slug}</span>
+        <div className="mt-1 flex items-center gap-1 text-xs text-zinc-400">
+          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.5 5.5l3 3L9 18l-4 1 1-4 9.5-9.5z" />
+          </svg>
+          Edited {updated ? formatRelative(updated) : "—"}
         </div>
       </div>
       <RowMenu
@@ -274,7 +290,7 @@ function RowMenu({
             Edit
           </MenuButton>
           <MenuButton
-            icon={form.published ? <DownIcon /> : <UpIcon />}
+            icon={form.published ? <EyeOffIcon /> : <UpIcon />}
             onClick={() => {
               onOpenChange(false);
               onTogglePublish();
@@ -380,10 +396,14 @@ function UpIcon() {
   );
 }
 
-function DownIcon() {
+function EyeOffIcon() {
   return (
     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14m0 0l5-5m-5 5l-5-5" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3 3l18 18M10.5 10.6a2.5 2.5 0 003.5 3.5M9.9 5.7A10.4 10.4 0 0112 5.5c6 0 9.5 6.5 9.5 6.5a16.5 16.5 0 01-3.2 3.8M6.1 6.1C3.9 7.8 2.5 12 2.5 12S6 18.5 12 18.5c1.1 0 2.1-.2 3-.5"
+      />
     </svg>
   );
 }

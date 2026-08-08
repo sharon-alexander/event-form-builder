@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { AdminRole } from "../auth";
 import { useAuth } from "../auth";
 import {
@@ -169,14 +169,16 @@ export default function UsersPage() {
           <p className="text-sm text-zinc-500">No users found.</p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
+        <div className="rounded-xl border border-zinc-200 bg-white shadow-sm">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-zinc-100 bg-zinc-50 text-xs font-medium uppercase tracking-wide text-zinc-500">
-                <th className="px-5 py-3">Email</th>
+                <th className="rounded-tl-xl px-5 py-3">Email</th>
                 <th className="px-5 py-3">Role</th>
                 <th className="px-5 py-3">Joined</th>
-                <th className="px-5 py-3 text-right">Actions</th>
+                <th className="w-12 rounded-tr-xl px-3 py-3">
+                  <span className="sr-only">Actions</span>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100">
@@ -212,17 +214,9 @@ export default function UsersPage() {
                       )}
                     </td>
                     <td className="px-5 py-4 text-zinc-500">{formatDate(user.created_at)}</td>
-                    <td className="px-5 py-4 text-right">
-                      {isSelf ? (
-                        <span className="text-xs text-zinc-400">—</span>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => void handleRemove(user)}
-                          className="text-sm font-medium text-red-600 transition-colors hover:text-red-700"
-                        >
-                          Remove
-                        </button>
+                    <td className="px-3 py-4 text-right">
+                      {!isSelf && (
+                        <UserRowMenu onDelete={() => void handleRemove(user)} />
                       )}
                     </td>
                   </tr>
@@ -230,6 +224,58 @@ export default function UsersPage() {
               })}
             </tbody>
           </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function UserRowMenu({ onDelete }: { onDelete: () => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative inline-flex">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700"
+        aria-label="Actions"
+        aria-expanded={open}
+      >
+        <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+          <circle cx="10" cy="4" r="1.5" />
+          <circle cx="10" cy="10" r="1.5" />
+          <circle cx="10" cy="16" r="1.5" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="absolute right-0 bottom-full z-50 mb-1 w-40 overflow-hidden rounded-xl border border-zinc-200 bg-white py-1 shadow-lg ring-1 ring-black/5">
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              onDelete();
+            }}
+            className="flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-sm text-red-600 transition-colors hover:bg-red-50"
+          >
+            <svg className="h-4 w-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m-8 0v12a1 1 0 001 1h6a1 1 0 001-1V7" />
+            </svg>
+            Delete
+          </button>
         </div>
       )}
     </div>
