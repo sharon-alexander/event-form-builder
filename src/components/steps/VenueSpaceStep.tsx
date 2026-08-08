@@ -1,9 +1,12 @@
 import { useState } from "react";
 import type { VenueSpaceOption } from "../../locations/types";
 import { useLocationConfig } from "../../context/LocationContext";
+import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
 import FormStep from "../FormStep";
 import MediaGalleryModal from "../MediaGalleryModal";
 import type { StepProps } from "./stepProps";
+
+const copy = DEFAULT_STEP_COPY.venue_space;
 
 export default function VenueSpaceStep({
   data,
@@ -12,8 +15,8 @@ export default function VenueSpaceStep({
   onBack,
   nextLabel,
   moreDetails,
-  title = "Where would you like to host?",
-  subtitle = "Each space has its own character and capacity.",
+  title = copy.title,
+  subtitle = copy.subtitle,
 }: StepProps) {
   const { venueSpaces } = useLocationConfig();
   const [galleryVenue, setGalleryVenue] = useState<VenueSpaceOption | null>(null);

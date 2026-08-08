@@ -1,7 +1,10 @@
 import type { ServiceInterest } from "../../types";
 import { SERVICE_OPTIONS } from "../../types";
+import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
 import FormStep from "../FormStep";
 import type { StepProps } from "./stepProps";
+
+const copy = DEFAULT_STEP_COPY.services;
 
 export default function ServicesStep({
   data,
@@ -10,8 +13,8 @@ export default function ServicesStep({
   onBack,
   nextLabel,
   moreDetails,
-  title = "I am interested in…",
-  subtitle = "Select all that apply — or skip if none.",
+  title = copy.title,
+  subtitle = copy.subtitle,
 }: StepProps) {
   const toggle = (value: ServiceInterest) => {
     const next = data.services.includes(value)

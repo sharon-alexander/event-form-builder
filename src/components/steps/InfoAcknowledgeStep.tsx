@@ -1,4 +1,5 @@
 import { useLocationConfig } from "../../context/LocationContext";
+import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
 import FormStep from "../FormStep";
 import type { StepProps } from "./stepProps";
 
@@ -11,7 +12,7 @@ export default function InfoAcknowledgeStep({
   moreDetails,
 }: StepProps) {
   const { infoPage } = useLocationConfig();
-  const title = infoPage?.title ?? "Please review";
+  const title = infoPage?.title ?? DEFAULT_STEP_COPY.info_acknowledge.title;
 
   return (
     <FormStep

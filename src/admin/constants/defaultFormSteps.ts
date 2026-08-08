@@ -1,4 +1,5 @@
 import type { StepId } from "../../locations/types";
+import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
 
 export const ALL_STEP_IDS: StepId[] = [
   "event_type",
@@ -25,16 +26,9 @@ export const DEFAULT_FORM_STEPS: StepId[] = [
   "contact",
 ];
 
-export const STEP_LABELS: Record<StepId, string> = {
-  event_type: "Event Type",
-  headcount: "Headcount",
-  event_format: "Type & Format",
-  event_date: "Event Date",
-  budget: "Budget",
-  venue_space: "Venue / Dining",
-  timing: "Timing",
-  services: "Add-on Services",
-  info_acknowledge: "Info Acknowledgement",
-  other_venues_referral: "Other Venues & Referral",
-  contact: "Contact & Submit",
-};
+export const STEP_LABELS: Record<StepId, string> = Object.fromEntries(
+  ALL_STEP_IDS.map((id) => {
+    const copy = DEFAULT_STEP_COPY[id];
+    return [id, copy.adminLabel ?? copy.title];
+  }),
+) as Record<StepId, string>;

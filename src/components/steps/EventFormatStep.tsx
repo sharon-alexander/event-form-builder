@@ -1,6 +1,9 @@
 import { EVENT_CATEGORIES, EVENT_FORMATS } from "../../types";
+import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
 import FormStep from "../FormStep";
 import type { StepProps } from "./stepProps";
+
+const copy = DEFAULT_STEP_COPY.event_format;
 
 export default function EventFormatStep({
   data,
@@ -9,8 +12,8 @@ export default function EventFormatStep({
   onBack,
   nextLabel,
   moreDetails,
-  title = "Type & format",
-  subtitle = "Tell us about the occasion and how you'd like the event set up.",
+  title = copy.title,
+  subtitle = copy.subtitle,
 }: StepProps) {
   const categoryValid =
     data.eventCategory !== null &&

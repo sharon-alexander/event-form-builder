@@ -1,6 +1,9 @@
 import { REFERRAL_SOURCES } from "../../types";
+import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
 import FormStep from "../FormStep";
 import type { StepProps } from "./stepProps";
+
+const copy = DEFAULT_STEP_COPY.other_venues_referral;
 
 export default function OtherVenuesReferralStep({
   data,
@@ -9,8 +12,8 @@ export default function OtherVenuesReferralStep({
   onBack,
   nextLabel,
   moreDetails,
-  title = "Almost there",
-  subtitle = "A couple more questions before we wrap up.",
+  title = copy.title,
+  subtitle = copy.subtitle,
 }: StepProps) {
   const referralValid =
     data.referralSource !== null &&

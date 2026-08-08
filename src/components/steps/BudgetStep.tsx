@@ -1,6 +1,9 @@
 import { useLocationConfig } from "../../context/LocationContext";
+import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
 import FormStep from "../FormStep";
 import type { StepProps } from "./stepProps";
+
+const copy = DEFAULT_STEP_COPY.budget;
 
 export default function BudgetStep({
   data,
@@ -9,8 +12,8 @@ export default function BudgetStep({
   onBack,
   nextLabel,
   moreDetails,
-  title = "What's your budget?",
-  subtitle = "This helps us recommend the right experience.",
+  title = copy.title,
+  subtitle = copy.subtitle,
 }: StepProps) {
   const { budgetOptions } = useLocationConfig();
 
