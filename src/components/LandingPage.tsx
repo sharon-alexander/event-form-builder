@@ -13,6 +13,13 @@ export default function LandingPage({ onStart }: LandingPageProps) {
   return (
     <div className="px-4 py-10 sm:px-6">
       <div className="text-center">
+        {location.logoUrl && (
+          <img
+            src={location.logoUrl}
+            alt=""
+            className="mx-auto mb-4 h-16 w-auto max-w-[12rem] object-contain sm:h-20"
+          />
+        )}
         <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">
           {location.formTitle}
         </p>

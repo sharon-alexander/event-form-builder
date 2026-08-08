@@ -46,6 +46,7 @@ export function locationConfigFromRow(row: LocationRow): LocationConfig {
     name: row.name,
     formTitle: row.form_title,
     aboutBlurb: row.about_blurb,
+    logoUrl: row.theme?.logoUrl,
     galleryMedia: row.gallery_media ?? [],
     venueSpaces: row.venue_spaces ?? [],
     budgetOptions: row.budget_options ?? [],
