@@ -30,9 +30,22 @@ async function findAuthUserIdByEmail(
   return null;
 }
 
+async function hasLinkedProfile(
+  serviceClient: SupabaseClient,
+  userId: string,
+): Promise<boolean> {
+  const { data } = await serviceClient
+    .from("profiles")
+    .select("id")
+    .eq("id", userId)
+    .maybeSingle();
+  return Boolean(data);
+}
+
 /**
  * Invite may create an auth user even when sending the email fails.
- * Delete that occupant (never the original), then put the real email back.
+ * Delete that occupant (never the original, never a user with a profile —
+ * deleteUser cascades), then put the real email back.
  */
 async function restoreOriginalEmail(
   serviceClient: SupabaseClient,
@@ -46,18 +59,31 @@ async function restoreOriginalEmail(
   }
 
   let lookupError: string | null = null;
+  let occupantId: string | null = null;
   try {
-    const occupantId = await findAuthUserIdByEmail(serviceClient, email);
+    occupantId = await findAuthUserIdByEmail(serviceClient, email);
     if (occupantId && occupantId !== originalId) {
-      idsToRemove.add(occupantId);
+      // A concurrent/prior resend may already own this address. Only remove
+      // an occupant this request created, or an unreturned invite orphan.
+      const createdByUs = createdUserId && occupantId === createdUserId;
+      if (createdByUs || !createdUserId) {
+        idsToRemove.add(occupantId);
+      }
     }
   } catch (err) {
     lookupError = err instanceof Error ? err.message : "Failed to look up auth user.";
   }
 
   for (const id of idsToRemove) {
+    if (await hasLinkedProfile(serviceClient, id)) continue;
     const { error } = await serviceClient.auth.admin.deleteUser(id);
     if (error) return error.message;
+  }
+
+  if (occupantId && occupantId !== originalId && await hasLinkedProfile(serviceClient, occupantId)) {
+    // Replacement already exists; leave the original parked for the caller
+    // to drop rather than stealing the address back.
+    return lookupError;
   }
 
   const { error } = await serviceClient.auth.admin.updateUserById(originalId, {
@@ -67,6 +93,61 @@ async function restoreOriginalEmail(
     return lookupError ? `${error.message} (${lookupError})` : error.message;
   }
   return null;
+}
+
+/**
+ * Drop the parked original after a replacement profile exists.
+ * Concurrent resends may have already removed it — that is success.
+ */
+async function removeParkedOriginal(
+  serviceClient: SupabaseClient,
+  originalId: string,
+): Promise<string | null> {
+  const { error: cleanupError } = await serviceClient.auth.admin.deleteUser(originalId);
+  if (!cleanupError) return null;
+
+  const { data: leftover } = await serviceClient
+    .from("profiles")
+    .select("id")
+    .eq("id", originalId)
+    .maybeSingle();
+  if (!leftover) return null;
+
+  const { error: profileCleanupError } = await serviceClient
+    .from("profiles")
+    .delete()
+    .eq("id", originalId);
+  if (profileCleanupError) {
+    return `Invite sent but the previous pending user could not be removed: ${cleanupError.message}`;
+  }
+  return null;
+}
+
+/** If another resend already created the pending member, finish cleanup. */
+async function adoptExistingReplacement(
+  serviceClient: SupabaseClient,
+  originalId: string,
+  email: string,
+  orgId: string,
+): Promise<string | null> {
+  let occupantId: string | null;
+  try {
+    occupantId = await findAuthUserIdByEmail(serviceClient, email);
+  } catch {
+    return null;
+  }
+  if (!occupantId || occupantId === originalId) return null;
+
+  const { data: linked } = await serviceClient
+    .from("profiles")
+    .select("id, org_id")
+    .eq("id", occupantId)
+    .maybeSingle();
+  if (!linked || linked.org_id !== orgId) return null;
+
+  const cleanupError = await removeParkedOriginal(serviceClient, originalId);
+  if (cleanupError) throw new Error(cleanupError);
+  return occupantId;
 }
 
 function failAfterRestore(
@@ -161,6 +242,21 @@ Deno.serve(async (req) => {
     });
 
   if (inviteError || !inviteData.user) {
+    try {
+      const adoptedId = await adoptExistingReplacement(
+        serviceClient,
+        targetId,
+        email,
+        orgId,
+      );
+      if (adoptedId) return jsonResponse({ ok: true, userId: adoptedId });
+    } catch (err) {
+      return jsonResponse(
+        { error: err instanceof Error ? err.message : "Failed to adopt existing invite." },
+        500,
+      );
+    }
+
     const restoreError = await restoreOriginalEmail(
       serviceClient,
       targetId,
@@ -193,24 +289,9 @@ Deno.serve(async (req) => {
     return failAfterRestore(profileError.message, restoreError, 500);
   }
 
-  const { error: cleanupError } = await serviceClient.auth.admin.deleteUser(targetId);
+  const cleanupError = await removeParkedOriginal(serviceClient, targetId);
   if (cleanupError) {
-    // Invite and new profile succeeded. Drop the old profiles row so the
-    // pending member is not listed twice; leftover auth user is an orphan
-    // with a parked email (invite-admin already cleans those up).
-    const { error: profileCleanupError } = await serviceClient
-      .from("profiles")
-      .delete()
-      .eq("id", targetId);
-    if (profileCleanupError) {
-      return jsonResponse(
-        {
-          error:
-            `Invite sent but the previous pending user could not be removed: ${cleanupError.message}`,
-        },
-        500,
-      );
-    }
+    return jsonResponse({ error: cleanupError }, 500);
   }
 
   return jsonResponse({ ok: true, userId: inviteData.user.id });
