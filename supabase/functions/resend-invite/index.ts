@@ -150,6 +150,17 @@ async function adoptExistingReplacement(
   return occupantId;
 }
 
+function isEmailTakenError(error: { message?: string; code?: string } | null): boolean {
+  if (!error) return false;
+  const code = error.code?.toLowerCase() ?? "";
+  const message = error.message?.toLowerCase() ?? "";
+  return (
+    code === "email_exists" ||
+    message.includes("already been registered") ||
+    message.includes("already registered")
+  );
+}
+
 function failAfterRestore(
   primary: string,
   restoreError: string | null,
@@ -216,17 +227,54 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "ADMIN_SET_PASSWORD_URL is not configured." }, 500);
   }
 
-  // auth.resend({ type: "invite" }) is unreliable for existing users, and
-  // resetPasswordForEmail sends the wrong template. Re-invite so Supabase
-  // sends the real "Invite user" email again.
+  // auth.resend({ type: "invite" }) is unreliable, and resetPasswordForEmail
+  // sends the wrong template. Prefer re-inviting the SAME pending user so a
+  // leftover session from the first "Accept invite" click still maps to them.
   //
-  // Do not delete the pending member first: inviteUserByEmail / profile
-  // insert can fail (e.g. SMTP still rolling out). Park the original auth
-  // email instead, then delete only after the replacement profile exists.
+  // Clicking the invite confirms the auth user (and GoTrue then rejects
+  // inviteUserByEmail). Unconfirm first so /invite can send a fresh Invite
+  // email. Fall back to park-and-replace only if this GoTrue build still
+  // treats the address as already registered.
   const email = target.email;
   const role = target.role;
   const orgId = target.org_id;
 
+  const { data: authUserData, error: authUserError } =
+    await serviceClient.auth.admin.getUserById(targetId);
+  if (authUserError || !authUserData.user) {
+    return jsonResponse({ error: "Auth user not found." }, 404);
+  }
+
+  if (authUserData.user.email_confirmed_at) {
+    const { error: unconfirmError } = await serviceClient.auth.admin.updateUserById(
+      targetId,
+      { email_confirm: false },
+    );
+    if (unconfirmError) {
+      return jsonResponse({ error: unconfirmError.message }, 500);
+    }
+  }
+
+  const { data: existingInvite, error: existingInviteError } =
+    await serviceClient.auth.admin.inviteUserByEmail(email, {
+      redirectTo,
+      data: { org_id: orgId },
+    });
+
+  if (!existingInviteError && existingInvite.user?.id === targetId) {
+    return jsonResponse({ ok: true, userId: targetId });
+  }
+
+  if (existingInviteError && !isEmailTakenError(existingInviteError)) {
+    return jsonResponse(
+      { error: existingInviteError.message ?? "Failed to resend invite." },
+      400,
+    );
+  }
+
+  // Do not delete the pending member first: inviteUserByEmail / profile
+  // insert can fail (e.g. SMTP still rolling out). Park the original auth
+  // email instead, then delete only after the replacement profile exists.
   const { error: parkError } = await serviceClient.auth.admin.updateUserById(
     targetId,
     { email: parkedEmail(targetId) },

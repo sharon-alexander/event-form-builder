@@ -78,6 +78,7 @@ async function consumeQueryParams(
   const type = params.get("type");
   const tokenHash = params.get("token_hash");
   if (tokenHash && type) {
+    await dropLocalSessionKeepPkceVerifier(client);
     const { error } = await client.auth.verifyOtp({
       token_hash: tokenHash,
       type: type as "recovery" | "invite" | "magiclink" | "email",
@@ -90,6 +91,7 @@ async function consumeQueryParams(
 
   const code = params.get("code");
   if (code) {
+    await dropLocalSessionKeepPkceVerifier(client);
     const { error } = await client.auth.exchangeCodeForSession(code);
     if (error) {
       console.error("[authCallback] code exchange failed:", error.message);
@@ -127,6 +129,7 @@ async function consumeHashTokens(
   const refreshToken = hashParams.get("refresh_token") ?? "";
   const type = hashParams.get("type");
 
+  await dropLocalSessionKeepPkceVerifier(client);
   const { error } = await client.auth.setSession({
     access_token: accessToken,
     refresh_token: refreshToken,
@@ -141,6 +144,35 @@ async function consumeHashTokens(
     isRecovery: type === "recovery",
     error: null,
   };
+}
+
+/**
+ * Clear a leftover session so it cannot race with a one-time email link.
+ * signOut({ scope: "local" }) also deletes the PKCE code verifier that
+ * resetPasswordForEmail stored — keep that, or the ?code= exchange fails.
+ */
+async function dropLocalSessionKeepPkceVerifier(client: SupabaseClient): Promise<void> {
+  const saved = snapshotPkceVerifiers();
+  await client.auth.signOut({ scope: "local" });
+  restorePkceVerifiers(saved);
+}
+
+function snapshotPkceVerifiers(): Array<{ key: string; value: string }> {
+  if (typeof window === "undefined") return [];
+  const saved: Array<{ key: string; value: string }> = [];
+  for (let i = 0; i < window.localStorage.length; i++) {
+    const key = window.localStorage.key(i);
+    if (!key?.endsWith("-code-verifier")) continue;
+    const value = window.localStorage.getItem(key);
+    if (value) saved.push({ key, value });
+  }
+  return saved;
+}
+
+function restorePkceVerifiers(saved: Array<{ key: string; value: string }>): void {
+  for (const { key, value } of saved) {
+    window.localStorage.setItem(key, value);
+  }
 }
 
 // ── URL cleanup ───────────────────────────────────────────────────────────

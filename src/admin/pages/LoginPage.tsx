@@ -31,8 +31,7 @@ export default function LoginPage() {
       return;
     }
     if (profile && !profile.onboarding_complete) {
-      // Pending user — only route to signup from email link (handled by passwordSetup above).
-      // If they're on login page with no passwordSetup, they just stay here.
+      navigate("/signup", { replace: true });
       return;
     }
     if (profile) navigate("/", { replace: true });

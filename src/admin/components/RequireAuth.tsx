@@ -1,19 +1,8 @@
-import { useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../auth";
 
 export default function RequireAuth({ children }: { children: React.ReactNode }) {
-  const { loading, session, profile, passwordSetup, signOut } = useAuth();
-
-  // Pending invitee who typed the URL (not from email link) — can't use app.
-  // Sign them out so they land on login.
-  useEffect(() => {
-    if (loading || !session || !profile) return;
-    if (passwordSetup) return;
-    if (!profile.onboarding_complete) {
-      void signOut();
-    }
-  }, [loading, session, profile, passwordSetup, signOut]);
+  const { loading, session, profile, passwordSetup } = useAuth();
 
   if (loading) {
     return (
@@ -35,9 +24,10 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     );
   }
 
-  // Pending user being signed out above — will redirect to login next render.
+  // Invite accepted but password never set — send them to create-password,
+  // not login (they have no password to sign in with).
   if (profile && !profile.onboarding_complete) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/signup" replace />;
   }
 
   // Session exists but profile still loading after auth change.
