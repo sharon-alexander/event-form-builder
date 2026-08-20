@@ -176,6 +176,42 @@ function failAfterRestore(
   );
 }
 
+/** Link the new auth user to this org, then drop the parked original. */
+async function finalizeReplacement(
+  serviceClient: SupabaseClient,
+  originalId: string,
+  replacementId: string,
+  orgId: string,
+  role: string,
+  email: string,
+): Promise<Response> {
+  const { error: profileError } = await serviceClient.from("profiles").insert({
+    id: replacementId,
+    org_id: orgId,
+    role,
+    email,
+    joined_at: null,
+    onboarding_complete: false,
+  });
+
+  if (profileError) {
+    const restoreError = await restoreOriginalEmail(
+      serviceClient,
+      originalId,
+      email,
+      replacementId,
+    );
+    return failAfterRestore(profileError.message, restoreError, 500);
+  }
+
+  const cleanupError = await removeParkedOriginal(serviceClient, originalId);
+  if (cleanupError) {
+    return jsonResponse({ error: cleanupError }, 500);
+  }
+
+  return jsonResponse({ ok: true, userId: replacementId });
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return corsPreflightResponse();
   if (req.method !== "POST") return jsonResponse({ error: "Method not allowed." }, 405);
@@ -261,8 +297,21 @@ Deno.serve(async (req) => {
       data: { org_id: orgId },
     });
 
-  if (!existingInviteError && existingInvite.user?.id === targetId) {
-    return jsonResponse({ ok: true, userId: targetId });
+  if (!existingInviteError && existingInvite.user) {
+    if (existingInvite.user.id === targetId) {
+      return jsonResponse({ ok: true, userId: targetId });
+    }
+    // Address was already free (leftover park). The invite email went out
+    // to this new user — keep them instead of falling through to restore,
+    // which would delete the account the email points at.
+    return await finalizeReplacement(
+      serviceClient,
+      targetId,
+      existingInvite.user.id,
+      orgId,
+      role,
+      email,
+    );
   }
 
   if (existingInviteError && !isEmailTakenError(existingInviteError)) {
@@ -318,29 +367,12 @@ Deno.serve(async (req) => {
     );
   }
 
-  const { error: profileError } = await serviceClient.from("profiles").insert({
-    id: inviteData.user.id,
-    org_id: orgId,
+  return await finalizeReplacement(
+    serviceClient,
+    targetId,
+    inviteData.user.id,
+    orgId,
     role,
     email,
-    joined_at: null,
-    onboarding_complete: false,
-  });
-
-  if (profileError) {
-    const restoreError = await restoreOriginalEmail(
-      serviceClient,
-      targetId,
-      email,
-      inviteData.user.id,
-    );
-    return failAfterRestore(profileError.message, restoreError, 500);
-  }
-
-  const cleanupError = await removeParkedOriginal(serviceClient, targetId);
-  if (cleanupError) {
-    return jsonResponse({ error: cleanupError }, 500);
-  }
-
-  return jsonResponse({ ok: true, userId: inviteData.user.id });
+  );
 });
