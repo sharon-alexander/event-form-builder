@@ -1,6 +1,7 @@
 import { HashRouter, Navigate, Route, Routes } from "react-router-dom";
 import { isSupabaseConfigured } from "../lib/supabase";
 import { AuthProvider } from "./auth";
+import AuthEmailRedirect from "./components/AuthEmailRedirect";
 import RequireAuth from "./components/RequireAuth";
 import RequireSuperAdmin from "./components/RequireSuperAdmin";
 import AdminLayout from "./components/AdminLayout";
@@ -18,8 +19,10 @@ export default function AdminApp() {
   return (
     <AuthProvider>
       <HashRouter>
+        <AuthEmailRedirect />
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SetPasswordPage />} />
           <Route path="/set-password" element={<SetPasswordPage />} />
           <Route
             element={

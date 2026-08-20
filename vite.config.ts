@@ -33,9 +33,11 @@ function formPathRouting(): Plugin {
         }
 
         if (pathname === "/admin" || pathname === "/admin/") {
-          req.url = "/admin.html";
+          const qs = url.includes("?") ? url.slice(url.indexOf("?")) : "";
+          req.url = `/admin.html${qs}`;
         } else if (pathname.startsWith("/form/") || pathname === "/form") {
-          req.url = "/index.html";
+          const qs = url.includes("?") ? url.slice(url.indexOf("?")) : "";
+          req.url = `/index.html${qs}`;
         }
         next();
       });

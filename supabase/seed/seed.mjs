@@ -127,7 +127,14 @@ async function maybeCreateAdminUser(orgId) {
 
   const { error: profileErr } = await admin
     .from("profiles")
-    .upsert({ id: userId, org_id: orgId, role: "super_admin", email });
+    .upsert({
+      id: userId,
+      org_id: orgId,
+      role: "super_admin",
+      email,
+      joined_at: new Date().toISOString(),
+      onboarding_complete: true,
+    });
   if (profileErr) throw profileErr;
   console.log("  linked profile -> org");
 }

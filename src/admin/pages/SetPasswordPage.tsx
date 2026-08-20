@@ -1,9 +1,18 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { requireSupabase } from "../../lib/supabase";
+import { useAuth } from "../auth";
 
 export default function SetPasswordPage() {
   const navigate = useNavigate();
+  const {
+    loading,
+    session,
+    passwordSetup,
+    clearPasswordSetup,
+    refreshProfile,
+    abandonPasswordSetup,
+  } = useAuth();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -11,48 +20,27 @@ export default function SetPasswordPage() {
   const [ready, setReady] = useState(false);
   const [checking, setChecking] = useState(true);
 
-  useEffect(() => {
-    let active = true;
-    const supabase = requireSupabase();
+  // Recovery email → reset copy. Invite (or pending joined_at) → signup copy.
+  const isRecovery = passwordSetup?.isRecovery === true;
 
-    async function checkSession() {
-      const { data } = await supabase.auth.getSession();
-      if (!active) return;
-      if (data.session) {
-        setReady(true);
-        setChecking(false);
-      }
+  useEffect(() => {
+    if (loading) return;
+
+    if (session) {
+      setReady(true);
+      setError(null);
+      setChecking(false);
+      return;
     }
 
-    void checkSession();
-
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!active) return;
-      if (session) {
-        setReady(true);
-        setError(null);
-      }
-      setChecking(false);
-    });
-
-    const timeout = window.setTimeout(() => {
-      if (!active) return;
-      setChecking((wasChecking) => {
-        if (wasChecking) {
-          setError(
-            "Invite link is invalid or has expired. Ask your administrator to send a new invite.",
-          );
-        }
-        return false;
-      });
-    }, 5000);
-
-    return () => {
-      active = false;
-      sub.subscription.unsubscribe();
-      window.clearTimeout(timeout);
-    };
-  }, []);
+    setReady(false);
+    setChecking(false);
+    setError(
+      isRecovery
+        ? "This reset link is invalid or has expired. Request a new password reset."
+        : "This invite link is invalid or has expired. Ask your administrator to resend it.",
+    );
+  }, [loading, session, isRecovery]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -72,12 +60,21 @@ export default function SetPasswordPage() {
       const supabase = requireSupabase();
       const { error: updateError } = await supabase.auth.updateUser({ password });
       if (updateError) throw updateError;
+      const { error: acceptError } = await supabase.rpc("accept_admin_invite");
+      if (acceptError) throw acceptError;
+      clearPasswordSetup();
+      await refreshProfile();
       navigate("/", { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to set password.");
+      setError(err instanceof Error ? err.message : "Unable to save password.");
     } finally {
       setSubmitting(false);
     }
+  }
+
+  async function handleBackToSignIn() {
+    await abandonPasswordSetup();
+    navigate("/login", { replace: true });
   }
 
   return (
@@ -85,17 +82,32 @@ export default function SetPasswordPage() {
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
-            Set your password
+            {isRecovery ? "Reset your password" : "Create your account"}
           </h1>
           <p className="mt-1 text-sm text-zinc-500">
-            Choose a password to finish setting up your admin account.
+            {isRecovery
+              ? "Choose a new password for your admin account."
+              : "Choose a password to finish joining Event Forms Admin."}
           </p>
         </div>
 
-        {checking ? (
-          <p className="text-center text-sm text-zinc-400">Verifying invite…</p>
+        {checking || loading ? (
+          <p className="text-center text-sm text-zinc-400">
+            {isRecovery ? "Verifying reset link…" : "Verifying invite…"}
+          </p>
         ) : !ready ? (
-          <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
+          <div className="space-y-4">
+            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {error}
+            </p>
+            <button
+              type="button"
+              onClick={() => void handleBackToSignIn()}
+              className="block w-full text-center text-sm font-medium text-zinc-600 hover:text-zinc-900"
+            >
+              Back to sign in
+            </button>
+          </div>
         ) : (
           <form
             onSubmit={handleSubmit}
@@ -133,7 +145,9 @@ export default function SetPasswordPage() {
             </div>
 
             {error && (
-              <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
+              <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                {error}
+              </p>
             )}
 
             <button
@@ -141,7 +155,19 @@ export default function SetPasswordPage() {
               disabled={submitting}
               className="adm-btn-primary w-full"
             >
-              {submitting ? "Saving…" : "Save password"}
+              {submitting
+                ? "Saving…"
+                : isRecovery
+                  ? "Update password"
+                  : "Create account"}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => void handleBackToSignIn()}
+              className="w-full text-center text-sm font-medium text-zinc-500 hover:text-zinc-800"
+            >
+              Back to sign in
             </button>
           </form>
         )}

@@ -61,6 +61,16 @@ Deno.serve(async (req) => {
     }
   }
 
+  // Hard-delete auth user; profiles cascade via FK. Also delete profile first
+  // so a soft-delete / orphan can't leave a joined_at row for this email.
+  const { error: profileDeleteError } = await serviceClient
+    .from("profiles")
+    .delete()
+    .eq("id", targetId);
+  if (profileDeleteError) {
+    return jsonResponse({ error: profileDeleteError.message }, 500);
+  }
+
   const { error: deleteError } = await serviceClient.auth.admin.deleteUser(targetId);
   if (deleteError) {
     return jsonResponse({ error: deleteError.message }, 500);
