@@ -106,7 +106,11 @@ export default function AdminLayout() {
 
       {/* Main content */}
       <div className="flex-1 lg:pl-64">
-        <main className="mx-auto max-w-4xl px-5 py-8 sm:px-8 lg:py-12">
+        <main
+          className={`mx-auto px-5 py-8 sm:px-8 lg:py-12 ${
+            location.pathname.startsWith("/forms/") ? "max-w-7xl" : "max-w-4xl"
+          }`}
+        >
           <Outlet />
         </main>
       </div>

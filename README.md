@@ -51,10 +51,10 @@ that belongs to their org; the public (anon) role can only read published forms.
 
 What you can edit per form:
 
-- **Content** — venue name, URL slug, eyebrow label, about blurb
-- **Gallery** — upload/reorder/remove images and videos (stored in Supabase Storage), edit alt text
-- **Venues & Budgets** — the venue space and budget range options
+- **Landing page** — venue name, URL slug, eyebrow label, about blurb, and hero gallery
+- **Form** — ordered guest steps; configure spaces, budgets, timing style, and info page on the steps that need them
 - **Theme** — brand color (a full palette is derived from it) and body/heading fonts, with a live preview
+- **Embed** — embed snippet for Squarespace (or any site)
 - **Advanced** — Tripleseat credentials (referral source IDs are resolved automatically from Tripleseat)
 - **Publish** — toggle a form live; "Preview" opens `/form/<slug>`
 
@@ -172,7 +172,7 @@ Change `data-location` to `roscioli` or `tokyo-record-bar` for the other venues.
 Once Supabase is set up, the preferred way is through the dashboard:
 
 1. Go to `/admin`, sign in, and click **New form**.
-2. Fill in the Content, Gallery, Venues & Budgets, Theme, and Advanced tabs.
+2. Fill in the Landing page and Form tabs (spaces/budgets live on their steps), then Theme and Advanced.
 3. Toggle **Published** and save.
 
 To add a location to another **group**, create the organization and its admin in
