@@ -1,3 +1,21 @@
+import { useEffect, useRef, useState, type ReactNode, type Ref } from "react";
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import type { BudgetOption, VenueSpaceOption } from "../../../locations/types";
 import type { EditableLocation } from "../../pages/FormEditorPage";
 import { collectFormMedia } from "../../utils/formMediaLibrary";
@@ -9,6 +27,21 @@ interface Props {
   orgId: string | null;
   onError: (msg: string) => void;
 }
+
+const COMMON_BUDGET_RANGES: BudgetOption[] = [
+  { value: "under_5k", label: "Less than $5,000" },
+  { value: "5k_10k", label: "$5,000 – $10,000" },
+  { value: "10k_15k", label: "$10,000 – $15,000" },
+  { value: "15k_plus", label: "$15,000+" },
+];
+
+const NOT_SURE_SPACE: VenueSpaceOption = {
+  value: "not_sure",
+  label: "Not Sure Yet",
+  price: "We'll help you decide",
+};
+
+type SubTab = "spaces" | "budgets";
 
 function slugifyValue(s: string): string {
   return s
@@ -28,139 +61,463 @@ function withGeneratedValues<T extends { value: string; label: string }>(
   }));
 }
 
+function newId(): string {
+  return crypto.randomUUID();
+}
+
 export default function OptionsTab({ draft, update, orgId, onError }: Props) {
   const venues = draft.venue_spaces;
   const budgets = draft.budget_options;
   const libraryMedia = collectFormMedia(draft);
 
-  function setVenues(next: VenueSpaceOption[]) {
+  const [subTab, setSubTab] = useState<SubTab>("spaces");
+  const [spaceIds, setSpaceIds] = useState(() => venues.map(newId));
+  const [budgetIds, setBudgetIds] = useState(() => budgets.map(newId));
+  const [focusId, setFocusId] = useState<string | null>(null);
+  const focusRef = useRef<HTMLInputElement | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  useEffect(() => {
+    if (!focusId) return;
+    focusRef.current?.focus();
+    setFocusId(null);
+  }, [focusId, venues, budgets]);
+
+  function setVenues(next: VenueSpaceOption[], nextIds?: string[]) {
+    if (nextIds) setSpaceIds(nextIds);
     update({ venue_spaces: withGeneratedValues(next) });
   }
-  function setBudgets(next: BudgetOption[]) {
+
+  function setBudgets(next: BudgetOption[], nextIds?: string[]) {
+    if (nextIds) setBudgetIds(nextIds);
     update({ budget_options: withGeneratedValues(next) });
   }
 
+  function addSpace(space: VenueSpaceOption = { value: "", label: "", price: "" }) {
+    const id = newId();
+    setVenues([...venues, space], [...spaceIds, id]);
+    setFocusId(id);
+  }
+
+  function addBudget(budget: BudgetOption = { value: "", label: "" }) {
+    const id = newId();
+    setBudgets([...budgets, budget], [...budgetIds, id]);
+    setFocusId(id);
+  }
+
+  function handleSpaceDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = spaceIds.indexOf(active.id as string);
+    const newIndex = spaceIds.indexOf(over.id as string);
+    if (oldIndex === -1 || newIndex === -1) return;
+    setVenues(arrayMove(venues, oldIndex, newIndex), arrayMove(spaceIds, oldIndex, newIndex));
+  }
+
+  function handleBudgetDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = budgetIds.indexOf(active.id as string);
+    const newIndex = budgetIds.indexOf(over.id as string);
+    if (oldIndex === -1 || newIndex === -1) return;
+    setBudgets(arrayMove(budgets, oldIndex, newIndex), arrayMove(budgetIds, oldIndex, newIndex));
+  }
+
   return (
-    <div className="space-y-10">
-      <section>
-        <div className="mb-3 flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-semibold text-zinc-900">Venue spaces</h2>
-            <p className="mt-0.5 text-xs text-zinc-400">
-              Options shown on the venue selection step, with starting prices and optional
-              photo/video galleries.
-            </p>
-          </div>
+    <div className="space-y-5">
+      <div className="flex items-center gap-1 rounded-lg border border-zinc-200 bg-zinc-50 p-1 w-fit">
+        {(
+          [
+            { id: "spaces", label: `Spaces (${venues.length})` },
+            { id: "budgets", label: `Budgets (${budgets.length})` },
+          ] as const
+        ).map(({ id, label }) => (
           <button
+            key={id}
             type="button"
-            className="adm-btn-secondary px-3 py-1.5 text-xs"
-            onClick={() =>
-              setVenues([...venues, { value: "", label: "", price: "" }])
-            }
+            onClick={() => setSubTab(id)}
+            className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+              subTab === id
+                ? "bg-white text-zinc-900 shadow-sm"
+                : "text-zinc-500 hover:text-zinc-700"
+            }`}
           >
-            Add space
+            {label}
           </button>
-        </div>
+        ))}
+      </div>
 
-        <div className="space-y-2">
-          {venues.map((v, i) => (
-            <div
-              key={i}
-              className="space-y-3 rounded-xl border border-zinc-200 p-3"
+      {subTab === "spaces" ? (
+        <section className="space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-sm font-semibold text-zinc-900">Spaces</h2>
+            {venues.length > 0 && (
+              <button
+                type="button"
+                className="adm-btn-secondary shrink-0 px-3 py-1.5 text-xs"
+                onClick={() => addSpace()}
+              >
+                Add space
+              </button>
+            )}
+          </div>
+
+          {venues.length === 0 ? (
+            <EmptyState
+              title="No spaces yet"
+              primaryLabel="Add space"
+              onPrimary={() => addSpace()}
+              secondaryLabel="Add “Not sure yet”"
+              onSecondary={() => addSpace(NOT_SURE_SPACE)}
+            />
+          ) : (
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleSpaceDragEnd}
             >
-              <div className="flex items-center gap-3">
-                <input
-                  className="adm-input min-w-0 flex-1 py-2"
-                  placeholder="Name (e.g. 1st Floor Salon)"
-                  value={v.label}
-                  onChange={(e) => {
-                    const label = e.target.value;
-                    setVenues(
-                      venues.map((row, idx) =>
-                        idx === i ? { ...row, label } : row,
-                      ),
+              <SortableContext items={spaceIds} strategy={verticalListSortingStrategy}>
+                <div className="space-y-3">
+                  {venues.map((venue, i) => {
+                    const id = spaceIds[i];
+                    if (!id) return null;
+                    return (
+                      <SortableSpaceCard
+                        key={id}
+                        id={id}
+                        index={i}
+                        venue={venue}
+                        inputRef={focusId === id ? focusRef : undefined}
+                        libraryMedia={libraryMedia}
+                        orgId={orgId}
+                        slug={draft.slug}
+                        onError={onError}
+                        onChange={(patch) =>
+                          setVenues(
+                            venues.map((row, idx) => (idx === i ? { ...row, ...patch } : row)),
+                          )
+                        }
+                        onRemove={() =>
+                          setVenues(
+                            venues.filter((_, idx) => idx !== i),
+                            spaceIds.filter((_, idx) => idx !== i),
+                          )
+                        }
+                      />
                     );
-                  }}
-                />
-                <input
-                  className="adm-input min-w-0 flex-1 py-2"
-                  placeholder="Price (e.g. Starting at $3,000)"
-                  value={v.price}
-                  onChange={(e) =>
-                    setVenues(
-                      venues.map((row, idx) =>
-                        idx === i ? { ...row, price: e.target.value } : row,
-                      ),
-                    )
-                  }
-                />
-                <IconButton label="Remove" onClick={() => setVenues(venues.filter((_, idx) => idx !== i))} destructive>
-                  <TrashIcon />
-                </IconButton>
-              </div>
-              <VenueGalleryEditor
-                label={v.label}
-                media={v.galleryMedia ?? []}
-                libraryMedia={libraryMedia}
-                onChange={(galleryMedia) =>
-                  setVenues(
-                    venues.map((row, idx) => (idx === i ? { ...row, galleryMedia } : row)),
-                  )
-                }
-                orgId={orgId}
-                slug={draft.slug}
-                onError={onError}
-              />
-            </div>
-          ))}
-          {venues.length === 0 && <EmptyHint label="venue spaces" />}
-        </div>
-      </section>
-
-      <section>
-        <div className="mb-3 flex items-center justify-between">
-          <div>
+                  })}
+                </div>
+              </SortableContext>
+            </DndContext>
+          )}
+        </section>
+      ) : (
+        <section className="space-y-4">
+          <div className="flex items-center justify-between gap-3">
             <h2 className="text-sm font-semibold text-zinc-900">Budget ranges</h2>
-            <p className="mt-0.5 text-xs text-zinc-400">
-              Options shown on the budget step.
-            </p>
+            {budgets.length > 0 && (
+              <button
+                type="button"
+                className="adm-btn-secondary shrink-0 px-3 py-1.5 text-xs"
+                onClick={() => addBudget()}
+              >
+                Add range
+              </button>
+            )}
           </div>
-          <button
-            type="button"
-            className="adm-btn-secondary px-3 py-1.5 text-xs"
-            onClick={() => setBudgets([...budgets, { value: "", label: "" }])}
-          >
-            Add range
-          </button>
-        </div>
 
-        <div className="space-y-2">
-          {budgets.map((b, i) => (
-            <div
-              key={i}
-              className="flex items-center gap-3 rounded-xl border border-zinc-200 p-3"
+          {budgets.length === 0 ? (
+            <EmptyState
+              title="No ranges yet"
+              primaryLabel="Add range"
+              onPrimary={() => addBudget()}
+              secondaryLabel="Use common ranges"
+              onSecondary={() => {
+                const ids = COMMON_BUDGET_RANGES.map(newId);
+                setBudgets(COMMON_BUDGET_RANGES, ids);
+                const firstId = ids[0];
+                if (firstId) setFocusId(firstId);
+              }}
+            />
+          ) : (
+            <>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {budgets.map((budget, i) => (
+                  <div
+                    key={budgetIds[i] ?? `budget-preview-${i}`}
+                    className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-center text-xs font-medium text-zinc-700"
+                  >
+                    {budget.label.trim() || "Untitled range"}
+                  </div>
+                ))}
+              </div>
+
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleBudgetDragEnd}
+              >
+                <SortableContext items={budgetIds} strategy={verticalListSortingStrategy}>
+                  <div className="space-y-2">
+                    {budgets.map((budget, i) => {
+                      const id = budgetIds[i];
+                      if (!id) return null;
+                      return (
+                        <SortableBudgetRow
+                          key={id}
+                          id={id}
+                          index={i}
+                          budget={budget}
+                          inputRef={focusId === id ? focusRef : undefined}
+                          onChange={(label) =>
+                            setBudgets(
+                              budgets.map((row, idx) => (idx === i ? { ...row, label } : row)),
+                            )
+                          }
+                          onRemove={() =>
+                            setBudgets(
+                              budgets.filter((_, idx) => idx !== i),
+                              budgetIds.filter((_, idx) => idx !== i),
+                            )
+                          }
+                        />
+                      );
+                    })}
+                  </div>
+                </SortableContext>
+              </DndContext>
+            </>
+          )}
+        </section>
+      )}
+    </div>
+  );
+}
+
+function SortableSpaceCard({
+  id,
+  index,
+  venue,
+  inputRef,
+  libraryMedia,
+  orgId,
+  slug,
+  onError,
+  onChange,
+  onRemove,
+}: {
+  id: string;
+  index: number;
+  venue: VenueSpaceOption;
+  inputRef?: Ref<HTMLInputElement>;
+  libraryMedia: ReturnType<typeof collectFormMedia>;
+  orgId: string | null;
+  slug: string;
+  onError: (msg: string) => void;
+  onChange: (patch: Partial<VenueSpaceOption>) => void;
+  onRemove: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id,
+  });
+  const media = venue.galleryMedia ?? [];
+  const preview = media[0];
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={`rounded-xl border border-zinc-200 bg-white p-3 ${
+        isDragging ? "relative z-10 shadow-md ring-1 ring-zinc-200" : ""
+      }`}
+    >
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <GuestCardPreview
+          label={venue.label}
+          price={venue.price}
+          preview={preview}
+        />
+
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start gap-2">
+            <button
+              type="button"
+              aria-label="Reorder space"
+              className="mt-6 flex h-9 w-7 shrink-0 cursor-grab items-center justify-center rounded-md text-zinc-300 hover:bg-zinc-50 hover:text-zinc-500 active:cursor-grabbing"
+              {...attributes}
+              {...listeners}
             >
-              <input
-                className="adm-input min-w-0 flex-1 py-2"
-                placeholder="Label (e.g. $5,000 – $7,000)"
-                value={b.label}
-                onChange={(e) => {
-                  const label = e.target.value;
-                  setBudgets(
-                    budgets.map((row, idx) =>
-                      idx === i ? { ...row, label } : row,
-                    ),
-                  );
-                }}
-              />
-              <IconButton label="Remove" onClick={() => setBudgets(budgets.filter((_, idx) => idx !== i))} destructive>
-                <TrashIcon />
-              </IconButton>
+              <GripIcon />
+            </button>
+            <span className="mt-8 w-5 shrink-0 text-center text-xs font-medium tabular-nums text-zinc-400">
+              {index + 1}
+            </span>
+            <div className="min-w-0 flex-1 space-y-3">
+              <div>
+                <label className="adm-label" htmlFor={`space-name-${id}`}>
+                  Space name
+                </label>
+                <input
+                  id={`space-name-${id}`}
+                  ref={inputRef}
+                  className="adm-input py-2"
+                  placeholder="e.g. 1st Floor Salon"
+                  value={venue.label}
+                  onChange={(e) => onChange({ label: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="adm-label" htmlFor={`space-price-${id}`}>
+                  Starting price
+                </label>
+                <input
+                  id={`space-price-${id}`}
+                  className="adm-input py-2"
+                  placeholder="e.g. Starting at $3,000"
+                  value={venue.price}
+                  onChange={(e) => onChange({ price: e.target.value })}
+                />
+              </div>
             </div>
-          ))}
-          {budgets.length === 0 && <EmptyHint label="budget ranges" />}
+            <IconButton label="Remove" onClick={onRemove} destructive>
+              <TrashIcon />
+            </IconButton>
+          </div>
         </div>
-      </section>
+      </div>
+
+      <div className="mt-3">
+        <VenueGalleryEditor
+          media={media}
+          libraryMedia={libraryMedia}
+          onChange={(galleryMedia) => onChange({ galleryMedia })}
+          orgId={orgId}
+          slug={slug}
+          onError={onError}
+        />
+      </div>
+    </div>
+  );
+}
+
+function SortableBudgetRow({
+  id,
+  index,
+  budget,
+  inputRef,
+  onChange,
+  onRemove,
+}: {
+  id: string;
+  index: number;
+  budget: BudgetOption;
+  inputRef?: Ref<HTMLInputElement>;
+  onChange: (label: string) => void;
+  onRemove: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id,
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={`flex items-start gap-2 rounded-xl border border-zinc-200 bg-white p-3 ${
+        isDragging ? "relative z-10 shadow-md ring-1 ring-zinc-200" : ""
+      }`}
+    >
+      <button
+        type="button"
+        aria-label="Reorder range"
+        className="mt-6 flex h-9 w-7 shrink-0 cursor-grab items-center justify-center rounded-md text-zinc-300 hover:bg-zinc-50 hover:text-zinc-500 active:cursor-grabbing"
+        {...attributes}
+        {...listeners}
+      >
+        <GripIcon />
+      </button>
+      <span className="mt-8 w-5 shrink-0 text-center text-xs font-medium tabular-nums text-zinc-400">
+        {index + 1}
+      </span>
+      <div className="min-w-0 flex-1">
+        <label className="adm-label" htmlFor={`budget-label-${id}`}>
+          Range label
+        </label>
+        <input
+          id={`budget-label-${id}`}
+          ref={inputRef}
+          className="adm-input py-2"
+          placeholder="e.g. $5,000 – $10,000"
+          value={budget.label}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      </div>
+      <IconButton label="Remove" onClick={onRemove} destructive>
+        <TrashIcon />
+      </IconButton>
+    </div>
+  );
+}
+
+function GuestCardPreview({
+  label,
+  price,
+  preview,
+}: {
+  label: string;
+  price: string;
+  preview?: { type: string; src: string; poster?: string; alt: string };
+}) {
+  const src =
+    preview && (preview.type === "video" ? (preview.poster ?? preview.src) : preview.src);
+
+  return (
+    <div className="w-full shrink-0 rounded-lg border border-zinc-200 bg-white p-2 sm:w-36">
+      <div className="mb-2 h-20 overflow-hidden rounded-md bg-zinc-100">
+        {src ? (
+          <img src={src} alt={preview?.alt ?? ""} className="h-full w-full object-cover" />
+        ) : (
+          <div className="flex h-full items-center justify-center border border-dashed border-zinc-200 text-[10px] text-zinc-400">
+            No photo
+          </div>
+        )}
+      </div>
+      <p className="text-xs font-semibold text-zinc-900">
+        {label.trim() || "Untitled space"}
+      </p>
+      {price.trim() ? <p className="mt-0.5 text-[10px] text-zinc-500">{price}</p> : null}
+    </div>
+  );
+}
+
+function EmptyState({
+  title,
+  primaryLabel,
+  onPrimary,
+  secondaryLabel,
+  onSecondary,
+}: {
+  title: string;
+  primaryLabel: string;
+  onPrimary: () => void;
+  secondaryLabel: string;
+  onSecondary: () => void;
+}) {
+  return (
+    <div className="rounded-xl border-2 border-dashed border-zinc-300 px-6 py-10 text-center">
+      <p className="text-sm font-medium text-zinc-800">{title}</p>
+      <div className="mt-4 flex flex-wrap justify-center gap-2">
+        <button type="button" className="adm-btn-primary px-4 py-2 text-xs" onClick={onPrimary}>
+          {primaryLabel}
+        </button>
+        <button type="button" className="adm-btn-secondary px-4 py-2 text-xs" onClick={onSecondary}>
+          {secondaryLabel}
+        </button>
+      </div>
     </div>
   );
 }
@@ -171,7 +528,7 @@ function IconButton({
   onClick,
   destructive,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   label: string;
   onClick: () => void;
   destructive?: boolean;
@@ -181,7 +538,7 @@ function IconButton({
       type="button"
       aria-label={label}
       onClick={onClick}
-      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-md border transition-colors ${
+      className={`mt-6 flex h-9 w-9 shrink-0 items-center justify-center rounded-md border transition-colors ${
         destructive
           ? "border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600"
           : "border-zinc-200 text-zinc-600 hover:bg-zinc-50"
@@ -189,6 +546,14 @@ function IconButton({
     >
       {children}
     </button>
+  );
+}
+
+function GripIcon() {
+  return (
+    <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+      <path d="M7 4a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm0 6a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm0 6a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm9-12a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm0 6a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm0 6a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+    </svg>
   );
 }
 
@@ -202,8 +567,4 @@ function TrashIcon() {
       />
     </svg>
   );
-}
-
-function EmptyHint({ label }: { label: string }) {
-  return <p className="text-xs text-zinc-400">No {label} yet.</p>;
 }

@@ -1,10 +1,9 @@
-import { useRef, useState } from "react";
+import { type DragEvent, useRef, useState } from "react";
 import type { MediaItem } from "../../../locations/types";
 import { uploadGalleryFile } from "../../api";
 import MediaPicker from "./MediaPicker";
 
 interface Props {
-  label: string;
   media: MediaItem[];
   libraryMedia: MediaItem[];
   onChange: (next: MediaItem[]) => void;
@@ -14,7 +13,6 @@ interface Props {
 }
 
 export default function VenueGalleryEditor({
-  label,
   media,
   libraryMedia,
   onChange,
@@ -25,6 +23,7 @@ export default function VenueGalleryEditor({
   const fileInput = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
 
   function remove(index: number) {
     onChange(media.filter((_, i) => i !== index));
@@ -61,42 +60,35 @@ export default function VenueGalleryEditor({
     onChange([...media, item]);
   }
 
-  return (
-    <details className="rounded-lg border border-zinc-200 bg-zinc-50/50 p-3" open={media.length > 0}>
-      <summary className="cursor-pointer list-none text-xs font-medium text-zinc-700 marker:content-none">
-        <span className="flex items-center justify-between gap-2">
-          <span>
-            Photos &amp; videos
-            {media.length > 0 && (
-              <span className="ml-1 font-normal text-zinc-400">({media.length} on form)</span>
-            )}
-          </span>
-          <span className="text-zinc-400">Edit</span>
-        </span>
-      </summary>
-      <p className="mt-2 text-xs text-zinc-400">
-        Photos appear on the venue step when added here. This panel only expands the editor — it does
-        not hide photos from the public form.
-      </p>
+  function handleDrop(e: DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setDragOver(false);
+    if (e.dataTransfer.files.length > 0) handleFiles(e.dataTransfer.files);
+  }
 
-      <div className="mt-3 flex flex-wrap gap-2">
-        {libraryMedia.length > 0 && (
+  return (
+    <div className="rounded-lg border border-zinc-200 bg-zinc-50/50 p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs font-medium text-zinc-700">Photos</p>
+        <div className="flex flex-wrap gap-2">
+          {libraryMedia.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setPickerOpen((v) => !v)}
+              className="adm-btn-secondary px-2 py-1 text-xs"
+            >
+              {pickerOpen ? "Cancel" : "Choose existing"}
+            </button>
+          )}
           <button
             type="button"
-            onClick={() => setPickerOpen((v) => !v)}
+            onClick={() => fileInput.current?.click()}
+            disabled={uploading}
             className="adm-btn-secondary px-2 py-1 text-xs"
           >
-            {pickerOpen ? "Cancel" : "Choose existing"}
+            {uploading ? "Uploading…" : "Upload"}
           </button>
-        )}
-        <button
-          type="button"
-          onClick={() => fileInput.current?.click()}
-          disabled={uploading}
-          className="adm-btn-secondary px-2 py-1 text-xs"
-        >
-          {uploading ? "Uploading…" : "Upload"}
-        </button>
+        </div>
         <input
           ref={fileInput}
           type="file"
@@ -108,37 +100,56 @@ export default function VenueGalleryEditor({
       </div>
 
       {pickerOpen && (
-        <MediaPicker
-          library={libraryMedia}
-          selected={media}
-          onSelect={addExisting}
-          onClose={() => setPickerOpen(false)}
-        />
+        <div className="mt-3">
+          <MediaPicker
+            library={libraryMedia}
+            selected={media}
+            onSelect={addExisting}
+            onClose={() => setPickerOpen(false)}
+          />
+        </div>
       )}
 
-      <div className="mt-3 space-y-2">
-        {media.length === 0 ? (
-          <p className="text-xs text-zinc-400">
-            No photos or videos for {label || "this space"} yet.
-          </p>
-        ) : (
-          media.map((item, i) => (
+      {media.length === 0 ? (
+        <div
+          onDrop={handleDrop}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragOver(true);
+          }}
+          onDragLeave={() => setDragOver(false)}
+          className={`mt-3 rounded-lg border-2 border-dashed px-4 py-5 text-center transition-colors ${
+            dragOver ? "border-zinc-400 bg-zinc-100" : "border-zinc-200"
+          }`}
+        >
+          <p className="text-xs text-zinc-400">{uploading ? "Uploading…" : "Drop or upload"}</p>
+        </div>
+      ) : (
+        <div className="mt-3 space-y-2">
+          {media.map((item, i) => (
             <div key={`${item.src}-${i}`} className="flex items-center gap-2">
-              <div className="h-12 w-16 shrink-0 overflow-hidden rounded-md bg-zinc-100">
+              <div className="relative h-12 w-16 shrink-0 overflow-hidden rounded-md bg-zinc-100">
                 {item.type === "video" ? (
                   <video src={item.src} className="h-full w-full object-cover" />
                 ) : (
                   <img src={item.src} alt={item.alt} className="h-full w-full object-cover" />
                 )}
               </div>
-              <input
-                className="adm-input min-w-0 flex-1 py-1.5 text-xs"
-                placeholder="Alt text"
-                value={item.alt}
-                onChange={(e) =>
-                  onChange(media.map((m, idx) => (idx === i ? { ...m, alt: e.target.value } : m)))
-                }
-              />
+              <div className="min-w-0 flex-1">
+                {i === 0 && (
+                  <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-zinc-500">
+                    Card preview
+                  </p>
+                )}
+                <input
+                  className="adm-input min-w-0 w-full py-1.5 text-xs"
+                  placeholder="Alt text"
+                  value={item.alt}
+                  onChange={(e) =>
+                    onChange(media.map((m, idx) => (idx === i ? { ...m, alt: e.target.value } : m)))
+                  }
+                />
+              </div>
               <button
                 type="button"
                 aria-label="Remove"
@@ -148,10 +159,10 @@ export default function VenueGalleryEditor({
                 <TrashIcon />
               </button>
             </div>
-          ))
-        )}
-      </div>
-    </details>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
