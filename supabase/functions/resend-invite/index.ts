@@ -150,6 +150,25 @@ async function adoptExistingReplacement(
   return occupantId;
 }
 
+/** Drop the parked original when this replacement already has a same-org profile. */
+async function adoptLinkedReplacement(
+  serviceClient: SupabaseClient,
+  originalId: string,
+  replacementId: string,
+  orgId: string,
+): Promise<Response | null> {
+  const { data: linked } = await serviceClient
+    .from("profiles")
+    .select("id, org_id")
+    .eq("id", replacementId)
+    .maybeSingle();
+  if (!linked || linked.org_id !== orgId) return null;
+
+  const cleanupError = await removeParkedOriginal(serviceClient, originalId);
+  if (cleanupError) return jsonResponse({ error: cleanupError }, 500);
+  return jsonResponse({ ok: true, userId: replacementId });
+}
+
 function isEmailTakenError(error: { message?: string; code?: string } | null): boolean {
   if (!error) return false;
   const code = error.code?.toLowerCase() ?? "";
@@ -176,7 +195,7 @@ function failAfterRestore(
   );
 }
 
-/** Link the new auth user to this org, then drop the parked original. */
+/** Keep a same-org leftover, or insert a profile, then drop the parked original. */
 async function finalizeReplacement(
   serviceClient: SupabaseClient,
   originalId: string,
@@ -185,6 +204,14 @@ async function finalizeReplacement(
   role: string,
   email: string,
 ): Promise<Response> {
+  const alreadyLinked = await adoptLinkedReplacement(
+    serviceClient,
+    originalId,
+    replacementId,
+    orgId,
+  );
+  if (alreadyLinked) return alreadyLinked;
+
   const { error: profileError } = await serviceClient.from("profiles").insert({
     id: replacementId,
     org_id: orgId,
@@ -195,6 +222,14 @@ async function finalizeReplacement(
   });
 
   if (profileError) {
+    const raced = await adoptLinkedReplacement(
+      serviceClient,
+      originalId,
+      replacementId,
+      orgId,
+    );
+    if (raced) return raced;
+
     const restoreError = await restoreOriginalEmail(
       serviceClient,
       originalId,
