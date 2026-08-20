@@ -69,14 +69,15 @@ project, then:
 supabase functions deploy invite-admin
 supabase functions deploy remove-admin
 
-# Secrets used by the invite function (set per environment):
-supabase secrets set ADMIN_SET_PASSWORD_URL="https://yoursite.com/admin.html#/set-password"
+# Secrets used by the invite / resend functions (set per environment).
+# Do NOT include a hash (#/…) — Supabase PKCE appends ?code= and that breaks.
+supabase secrets set ADMIN_SET_PASSWORD_URL="https://yoursite.com/admin"
 ```
 
 For local development, use:
 
 ```
-http://localhost:5173/admin.html#/set-password
+http://localhost:5173/admin
 ```
 
 `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` are
@@ -87,10 +88,11 @@ provided automatically to Edge Functions by Supabase.
 In the Supabase dashboard under **Authentication → URL Configuration**:
 
 - **Site URL:** your production admin URL (e.g.
-  `https://event-form-builder.vercel.app/admin.html`)
-- **Redirect URLs:** add both dev and prod set-password URLs:
-  - `http://localhost:5173/admin.html#/set-password`
-  - `https://yoursite.com/admin.html#/set-password`
+  `https://event-form-builder.vercel.app/admin`)
+- **Redirect URLs:** add both dev and prod admin URLs (no hash):
+  - `http://localhost:5173/admin`
+  - `https://event-form-builder.vercel.app/admin`
+  - `https://yoursite.com/admin`
 
 Confirm **Authentication → Email Templates → Invite user** is enabled.
 

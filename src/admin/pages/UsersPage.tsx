@@ -5,6 +5,7 @@ import {
   inviteOrgUser,
   listOrgUsers,
   removeOrgUser,
+  resendOrgInvite,
   updateOrgUserRole,
   type OrgUser,
 } from "../usersApi";
@@ -73,6 +74,18 @@ export default function UsersPage() {
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update role.");
+    }
+  }
+
+  async function handleResendInvite(user: OrgUser) {
+    setError(null);
+    setSuccess(null);
+    try {
+      await resendOrgInvite(user.id);
+      setSuccess(`Invite resent to ${user.email ?? "user"}.`);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to resend invite.");
     }
   }
 
@@ -184,6 +197,7 @@ export default function UsersPage() {
             <tbody className="divide-y divide-zinc-100">
               {users.map((user) => {
                 const isSelf = user.id === profile?.id;
+                const pending = !user.onboarding_complete;
                 return (
                   <tr key={user.id} className="transition-colors hover:bg-zinc-50/60">
                     <td className="px-5 py-4">
@@ -213,10 +227,22 @@ export default function UsersPage() {
                         </select>
                       )}
                     </td>
-                    <td className="px-5 py-4 text-zinc-500">{formatDate(user.created_at)}</td>
+                    <td className="px-5 py-4 text-zinc-500">
+                      {pending ? (
+                        <span className="inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800">
+                          Pending
+                        </span>
+                      ) : (
+                        formatDate(user.joined_at ?? user.created_at)
+                      )}
+                    </td>
                     <td className="px-3 py-4 text-right">
                       {!isSelf && (
-                        <UserRowMenu onDelete={() => void handleRemove(user)} />
+                        <UserRowMenu
+                          pending={pending}
+                          onResendInvite={() => void handleResendInvite(user)}
+                          onDelete={() => void handleRemove(user)}
+                        />
                       )}
                     </td>
                   </tr>
@@ -230,7 +256,15 @@ export default function UsersPage() {
   );
 }
 
-function UserRowMenu({ onDelete }: { onDelete: () => void }) {
+function UserRowMenu({
+  pending,
+  onResendInvite,
+  onDelete,
+}: {
+  pending: boolean;
+  onResendInvite: () => void;
+  onDelete: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -262,7 +296,22 @@ function UserRowMenu({ onDelete }: { onDelete: () => void }) {
       </button>
 
       {open && (
-        <div className="absolute right-0 bottom-full z-50 mb-1 w-40 overflow-hidden rounded-xl border border-zinc-200 bg-white py-1 shadow-lg ring-1 ring-black/5">
+        <div className="absolute right-0 bottom-full z-50 mb-1 w-44 overflow-hidden rounded-xl border border-zinc-200 bg-white py-1 shadow-lg ring-1 ring-black/5">
+          {pending && (
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                onResendInvite();
+              }}
+              className="flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-sm text-zinc-700 transition-colors hover:bg-zinc-50"
+            >
+              <svg className="h-4 w-4 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+              Resend invite
+            </button>
+          )}
           <button
             type="button"
             onClick={() => {

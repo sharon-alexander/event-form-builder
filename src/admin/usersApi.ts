@@ -8,13 +8,15 @@ export interface OrgUser {
   role: AdminRole;
   email: string | null;
   created_at: string;
+  joined_at: string | null;
+  onboarding_complete: boolean;
 }
 
 export async function listOrgUsers(): Promise<OrgUser[]> {
   const supabase = requireSupabase();
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, org_id, role, email, created_at")
+    .select("id, org_id, role, email, created_at, joined_at, onboarding_complete")
     .order("created_at", { ascending: true });
   if (error) throw error;
   return (data ?? []) as OrgUser[];
@@ -55,7 +57,11 @@ async function callEdgeFunction(
 }
 
 export async function inviteOrgUser(email: string, role: AdminRole): Promise<void> {
-  await callEdgeFunction("invite-admin", { email, role });
+  await callEdgeFunction("invite-admin", { email, role, redirectTo: `${window.location.origin}/admin` });
+}
+
+export async function resendOrgInvite(userId: string): Promise<void> {
+  await callEdgeFunction("resend-invite", { userId, redirectTo: `${window.location.origin}/admin` });
 }
 
 export async function removeOrgUser(userId: string): Promise<void> {

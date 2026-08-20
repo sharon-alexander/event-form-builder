@@ -11,7 +11,9 @@ export const isSupabaseConfigured = Boolean(url && anonKey);
 export const supabase: SupabaseClient | null = isSupabaseConfigured
   ? createClient(url!, anonKey!, {
       auth: {
-        detectSessionInUrl: true,
+        // AuthProvider calls exchangeCodeForSession / verifyOtp explicitly so
+        // we don't race a second automatic exchange (which burns the one-time code).
+        detectSessionInUrl: false,
         flowType: "pkce",
       },
     })
