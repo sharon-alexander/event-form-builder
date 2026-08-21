@@ -25,7 +25,9 @@ import {
   STEP_LABELS,
 } from "../../constants/defaultFormSteps";
 import BudgetRangesEditor from "./BudgetRangesEditor";
-import GuestQuestionsPreview, { hasGuestPreview } from "./GuestQuestionsPreview";
+import GuestQuestionsPreview, {
+  hasGuestPreview,
+} from "./GuestQuestionsPreview";
 import InfoPageEditor from "./InfoPageEditor";
 import TimingStyleEditor from "./TimingStyleEditor";
 import VenueSpacesEditor from "./VenueSpacesEditor";
@@ -37,7 +39,10 @@ interface Props {
   onError: (msg: string) => void;
 }
 
-type StepStatus = { kind: "ok"; label: string } | { kind: "needs"; label: string } | null;
+type StepStatus =
+  | { kind: "ok"; label: string }
+  | { kind: "needs"; label: string }
+  | null;
 
 function stepStatus(stepId: StepId, draft: EditableLocation): StepStatus {
   switch (stepId) {
@@ -54,7 +59,9 @@ function stepStatus(stepId: StepId, draft: EditableLocation): StepStatus {
         : { kind: "needs", label: "Needs setup" };
     }
     case "timing":
-      return draft.timing_style ? null : { kind: "needs", label: "Needs setup" };
+      return draft.timing_style
+        ? null
+        : { kind: "needs", label: "Needs setup" };
     case "info_acknowledge": {
       const page = draft.info_page;
       const hasContent =
@@ -71,16 +78,19 @@ function stepStatus(stepId: StepId, draft: EditableLocation): StepStatus {
   }
 }
 
-function needsSetupBanner(stepId: StepId, draft: EditableLocation): string | null {
+function needsSetupBanner(
+  stepId: StepId,
+  draft: EditableLocation,
+): string | null {
   const status = stepStatus(stepId, draft);
   if (status?.kind !== "needs") return null;
   switch (stepId) {
     case "venue_space":
-      return "No spaces yet. Guests will see an empty step until you add at least one.";
+      return "No spaces yet. This step will look empty on the form until you add at least one.";
     case "budget":
-      return "No budget ranges yet. Guests will see an empty step until you add at least one.";
+      return "No budget ranges yet. This step will look empty on the form until you add at least one.";
     case "info_acknowledge":
-      return "No info content yet. Add a title and details guests should acknowledge.";
+      return "No info content yet. Add a title and details people should acknowledge.";
     default:
       return null;
   }
@@ -157,7 +167,7 @@ export default function StepsTab({ draft, update, orgId, onError }: Props) {
       <div>
         <h2 className="text-sm font-semibold text-zinc-900">Form steps</h2>
         <p className="mt-0.5 text-xs text-zinc-400">
-          Guest journey in order. Select a step to configure it.
+          Form questions in order. Select a step to configure it.
         </p>
       </div>
 
@@ -168,7 +178,10 @@ export default function StepsTab({ draft, update, orgId, onError }: Props) {
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
           >
-            <SortableContext items={steps} strategy={verticalListSortingStrategy}>
+            <SortableContext
+              items={steps}
+              strategy={verticalListSortingStrategy}
+            >
               <div className="overflow-hidden rounded-xl border border-zinc-200 divide-y divide-zinc-100">
                 {steps.map((stepId, i) => (
                   <SortableStepRow
@@ -188,10 +201,7 @@ export default function StepsTab({ draft, update, orgId, onError }: Props) {
           </DndContext>
 
           {availableToAdd.length > 0 && (
-            <AddStepPicker
-              available={availableToAdd}
-              onAdd={addStep}
-            />
+            <AddStepPicker available={availableToAdd} onAdd={addStep} />
           )}
         </div>
 
@@ -209,7 +219,9 @@ export default function StepsTab({ draft, update, orgId, onError }: Props) {
                   {STEP_LABELS[selectedId]}
                 </h3>
                 {selectedCopy.subtitle && (
-                  <p className="mt-1 text-sm text-zinc-500">{selectedCopy.subtitle}</p>
+                  <p className="mt-1 text-sm text-zinc-500">
+                    {selectedCopy.subtitle}
+                  </p>
                 )}
               </div>
 
@@ -240,26 +252,65 @@ export default function StepsTab({ draft, update, orgId, onError }: Props) {
                 <InfoPageEditor draft={draft} update={update} />
               )}
 
-              <div>
-                <label className="adm-label" htmlFor="step-more-details">
-                  More details
-                </label>
-                <p className="mb-1 text-xs text-zinc-400">
-                  Optional extra copy shown below the questions on this step.
-                </p>
-                <input
-                  id="step-more-details"
-                  className="adm-input"
-                  placeholder="Optional more details"
+              {selectedId !== "info_acknowledge" && (
+                <StepNoteEditor
                   value={moreDetails[selectedId] ?? ""}
-                  onChange={(e) => setMoreDetails(selectedId, e.target.value)}
+                  onChange={(text) => setMoreDetails(selectedId, text)}
                 />
-              </div>
+              )}
             </div>
           )}
         </div>
       </div>
     </div>
+  );
+}
+
+function StepNoteEditor({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (text: string) => void;
+}) {
+  const trimmed = value.trim();
+
+  return (
+    <section className="space-y-3 rounded-xl border border-zinc-200 bg-white p-4">
+      <div>
+        <h3 className="text-sm font-semibold text-zinc-900">Extra Info</h3>
+        <p className="mt-0.5 text-xs text-zinc-400">
+          Optional. Shown under a{" "}
+          <span className="font-medium text-zinc-500">More Details</span>{" "}
+          heading after the questions on this step.
+        </p>
+      </div>
+
+      <textarea
+        id="step-more-details"
+        rows={4}
+        className="adm-input resize-y"
+        placeholder='e.g. "Parking is available on 12th Street."'
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+
+      {trimmed ? (
+        <div className="rounded-lg border border-dashed border-zinc-200 bg-zinc-50/80 px-3 py-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400">
+            Form preview
+          </p>
+          <div className="mt-2 border-t border-zinc-200 pt-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+              More Details
+            </p>
+            <p className="mt-1.5 whitespace-pre-wrap text-sm text-zinc-600">
+              {value}
+            </p>
+          </div>
+        </div>
+      ) : null}
+    </section>
   );
 }
 
@@ -336,7 +387,9 @@ function AddStepPicker({
                   {STEP_LABELS[id]}
                 </span>
                 {copy.subtitle && (
-                  <span className="mt-0.5 text-xs text-zinc-400">{copy.subtitle}</span>
+                  <span className="mt-0.5 text-xs text-zinc-400">
+                    {copy.subtitle}
+                  </span>
                 )}
               </button>
             );
@@ -406,9 +459,7 @@ function SortableStepRow({
         type="button"
         onClick={onSelect}
         className={`flex min-w-0 flex-1 items-start gap-2 rounded-lg px-2 py-1.5 text-left transition-colors ${
-          selected
-            ? "bg-zinc-900 text-white"
-            : "hover:bg-zinc-50"
+          selected ? "bg-zinc-900 text-white" : "hover:bg-zinc-50"
         }`}
       >
         <span
@@ -419,7 +470,9 @@ function SortableStepRow({
           {index + 1}
         </span>
         <div className="min-w-0 flex-1">
-          <p className={`text-sm font-medium ${selected ? "text-white" : "text-zinc-900"}`}>
+          <p
+            className={`text-sm font-medium ${selected ? "text-white" : "text-zinc-900"}`}
+          >
             {label}
           </p>
           {subtitle && (
@@ -463,7 +516,12 @@ function SortableStepRow({
 
 function GripIcon() {
   return (
-    <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+    <svg
+      className="h-4 w-4"
+      viewBox="0 0 20 20"
+      fill="currentColor"
+      aria-hidden
+    >
       <path d="M7 4a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm0 6a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm0 6a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm9-12a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm0 6a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm0 6a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
     </svg>
   );

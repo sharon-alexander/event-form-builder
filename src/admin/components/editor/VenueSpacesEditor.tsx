@@ -109,7 +109,7 @@ export default function VenueSpacesEditor({ draft, update, orgId, onError }: Pro
         <div>
           <h3 className="text-sm font-semibold text-zinc-900">Spaces</h3>
           <p className="mt-0.5 text-xs text-zinc-400">
-            Options guests pick on this step. Add photos per space.
+            Options people pick on this step. Add photos per space.
           </p>
         </div>
         {venues.length > 0 && (

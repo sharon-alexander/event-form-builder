@@ -80,9 +80,10 @@ export default function GuestQuestionsPreview({ stepId }: { stepId: StepId }) {
   return (
     <section className="space-y-3">
       <div>
-        <h3 className="text-sm font-semibold text-zinc-900">What guests answer</h3>
+        <h3 className="text-sm font-semibold text-zinc-900">What this step asks</h3>
         <p className="mt-0.5 text-xs text-zinc-400">
-          These questions are the same on every form. You can add extra copy below.
+          These questions are the same on every form. Add an optional note at the
+          bottom of this step if people need extra context.
         </p>
       </div>
 

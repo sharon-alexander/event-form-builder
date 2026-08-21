@@ -104,7 +104,7 @@ export default function BudgetRangesEditor({ draft, update }: Props) {
         <div>
           <h3 className="text-sm font-semibold text-zinc-900">Budget ranges</h3>
           <p className="mt-0.5 text-xs text-zinc-400">
-            Options guests pick on this step.
+            Options people pick on this step.
           </p>
         </div>
         {budgets.length > 0 && (

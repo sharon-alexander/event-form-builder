@@ -65,7 +65,7 @@ export default function InfoPageEditor({ draft, update }: Props) {
       <div>
         <h3 className="text-sm font-semibold text-zinc-900">Info page content</h3>
         <p className="mt-0.5 text-xs text-zinc-400">
-          Shown on the acknowledgement step. Guests must tap “I Understand” to continue.
+          Shown on the acknowledgement step. People must tap “I Understand” to continue.
         </p>
       </div>
 

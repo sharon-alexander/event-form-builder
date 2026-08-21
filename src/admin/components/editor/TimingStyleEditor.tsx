@@ -10,12 +10,12 @@ const OPTIONS: { value: TimingStyle; label: string; hint: string }[] = [
   {
     value: "standard",
     label: "Start & end times",
-    hint: "Guests pick preferred start and end times.",
+    hint: "People pick preferred start and end times.",
   },
   {
     value: "meal_service",
     label: "Meal service",
-    hint: "Guests pick a meal service (lunch/dinner) plus start time.",
+    hint: "People pick a meal service (lunch/dinner) plus start time.",
   },
 ];
 
@@ -27,7 +27,7 @@ export default function TimingStyleEditor({ draft, update }: Props) {
       <div>
         <h3 className="text-sm font-semibold text-zinc-900">Timing style</h3>
         <p className="mt-0.5 text-xs text-zinc-400">
-          Controls which timing questions guests see on this step.
+          Controls which timing questions appear on this step.
         </p>
       </div>
 
