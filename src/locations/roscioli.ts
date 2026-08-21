@@ -40,22 +40,16 @@ const roscioli: LocationConfig = {
 
   infoPage: {
     title: "Food & Beverage Service",
-    intro: "Your event coordinator will work with you to select both food and beverage options.",
-    sections: [
-      {
-        heading: "Food:",
-        bullets: [
-          "Our menu changes seasonally.",
-          "We accommodate most dietary restrictions or allergies.",
-        ],
-      },
-      {
-        heading: "Beverages:",
-        bullets: [
-          "We do not provide liquor or offer cocktails due to our license.",
-        ],
-      },
-    ],
+  },
+
+  stepMoreDetails: {
+    info_acknowledge: [
+      "<p>Your event coordinator will work with you to select both food and beverage options.</p>",
+      "<p><strong>Food:</strong></p>",
+      "<ul><li>Our menu changes seasonally.</li><li>We accommodate most dietary restrictions or allergies.</li></ul>",
+      "<p><strong>Beverages:</strong></p>",
+      "<ul><li>We do not provide liquor or offer cocktails due to our license.</li></ul>",
+    ].join(""),
   },
 
   tripleseat: {

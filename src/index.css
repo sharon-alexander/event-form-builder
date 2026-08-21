@@ -64,4 +64,35 @@
   .adm-label {
     @apply mb-1.5 block text-sm font-medium text-zinc-700;
   }
+
+  .adm-rich-editor {
+    @apply min-h-[8rem] px-3.5 py-2.5 text-sm text-zinc-900 outline-none;
+  }
+  .adm-rich-editor--empty:before {
+    content: attr(data-placeholder);
+    @apply pointer-events-none text-zinc-400;
+  }
+}
+
+/* More-details HTML (public form + admin editor/preview). */
+.efb-rich-text p + p {
+  margin-top: 0.5rem;
+}
+.efb-rich-text ul {
+  list-style: disc;
+  margin-top: 0.5rem;
+  padding-left: 1.25rem;
+}
+.efb-rich-text ol {
+  list-style: decimal;
+  margin-top: 0.5rem;
+  padding-left: 1.25rem;
+}
+.efb-rich-text li + li {
+  margin-top: 0.25rem;
+}
+.efb-rich-text strong,
+.efb-rich-text b {
+  font-weight: 600;
+  color: rgb(17 24 39);
 }

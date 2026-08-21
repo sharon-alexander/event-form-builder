@@ -1,5 +1,6 @@
 import { supabasePublic } from "../lib/supabase";
 import type { ThemeTokens } from "../theme/theme";
+import { mergeInfoPageIntoMoreDetails } from "../utils/richText";
 import { DEFAULT_LOCATION_ID, tryGetLocation } from "./index";
 import type {
   BudgetOption,
@@ -53,13 +54,19 @@ export function locationConfigFromRow(row: LocationRow): LocationConfig {
     steps,
     stepMoreDetails: {
       ...bundled?.stepMoreDetails,
-      ...row.step_more_details,
+      ...mergeInfoPageIntoMoreDetails(
+        row.step_more_details ?? {},
+        row.info_page ?? bundled?.infoPage,
+      ),
     },
     timingStyle:
       (row.timing_style as LocationConfig["timingStyle"]) ||
       bundled?.timingStyle ||
       "standard",
-    infoPage: row.info_page ?? bundled?.infoPage,
+    infoPage: (() => {
+      const page = row.info_page ?? bundled?.infoPage;
+      return page ? { title: page.title } : undefined;
+    })(),
     stepCopy: bundled?.stepCopy,
     tripleseat: {
       publicKey: row.tripleseat?.publicKey ?? "",

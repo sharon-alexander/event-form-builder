@@ -18,6 +18,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import type { StepId } from "../../../locations/types";
 import { DEFAULT_STEP_COPY } from "../../../form/defaultStepCopy";
+import { isEmptyRichText, toDisplayHtml } from "../../../utils/richText";
 import type { EditableLocation } from "../../pages/FormEditorPage";
 import {
   ALL_STEP_IDS,
@@ -29,6 +30,7 @@ import GuestQuestionsPreview, {
   hasGuestPreview,
 } from "./GuestQuestionsPreview";
 import InfoPageEditor from "./InfoPageEditor";
+import RichTextEditor from "./RichTextEditor";
 import TimingStyleEditor from "./TimingStyleEditor";
 import VenueSpacesEditor from "./VenueSpacesEditor";
 
@@ -63,13 +65,10 @@ function stepStatus(stepId: StepId, draft: EditableLocation): StepStatus {
         ? null
         : { kind: "needs", label: "Needs setup" };
     case "info_acknowledge": {
-      const page = draft.info_page;
-      const hasContent =
-        !!page &&
-        (!!page.title.trim() ||
-          !!page.intro?.trim() ||
-          (page.sections?.length ?? 0) > 0);
-      return hasContent
+      const hasTitle = !!draft.info_page?.title.trim();
+      const details = draft.step_more_details?.info_acknowledge ?? "";
+      const hasDetails = !!details && !isEmptyRichText(details);
+      return hasTitle || hasDetails
         ? { kind: "ok", label: "Configured" }
         : { kind: "needs", label: "Needs setup" };
     }
@@ -252,12 +251,16 @@ export default function StepsTab({ draft, update, orgId, onError }: Props) {
                 <InfoPageEditor draft={draft} update={update} />
               )}
 
-              {selectedId !== "info_acknowledge" && (
-                <StepNoteEditor
-                  value={moreDetails[selectedId] ?? ""}
-                  onChange={(text) => setMoreDetails(selectedId, text)}
-                />
-              )}
+              <StepNoteEditor
+                value={moreDetails[selectedId] ?? ""}
+                onChange={(text) => setMoreDetails(selectedId, text)}
+                showDetailsHeading={selectedId !== "info_acknowledge"}
+                hint={
+                  selectedId === "info_acknowledge"
+                    ? "Shown above the I Understand button. Supports bold, bullets, and numbered lists."
+                    : undefined
+                }
+              />
             </div>
           )}
         </div>
@@ -269,44 +272,48 @@ export default function StepsTab({ draft, update, orgId, onError }: Props) {
 function StepNoteEditor({
   value,
   onChange,
+  showDetailsHeading = true,
+  hint,
 }: {
   value: string;
   onChange: (text: string) => void;
+  showDetailsHeading?: boolean;
+  hint?: string;
 }) {
-  const trimmed = value.trim();
+  const hasContent = !isEmptyRichText(value);
 
   return (
     <section className="space-y-3 rounded-xl border border-zinc-200 bg-white p-4">
       <div>
         <h3 className="text-sm font-semibold text-zinc-900">Extra Info</h3>
         <p className="mt-0.5 text-xs text-zinc-400">
-          Optional. Shown under a{" "}
-          <span className="font-medium text-zinc-500">More Details</span>{" "}
-          heading after the questions on this step.
+          {hint ??
+            "Optional. Shown on the form as extra details for this step. Supports bold, bullets, and numbered lists."}
         </p>
       </div>
 
-      <textarea
+      <RichTextEditor
         id="step-more-details"
-        rows={4}
-        className="adm-input resize-y"
-        placeholder='e.g. "Parking is available on 12th Street."'
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={onChange}
+        placeholder='e.g. "Parking is available on 12th Street."'
       />
 
-      {trimmed ? (
+      {hasContent ? (
         <div className="rounded-lg border border-dashed border-zinc-200 bg-zinc-50/80 px-3 py-3">
           <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400">
             Form preview
           </p>
           <div className="mt-2 border-t border-zinc-200 pt-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-              More Details
-            </p>
-            <p className="mt-1.5 whitespace-pre-wrap text-sm text-zinc-600">
-              {value}
-            </p>
+            {showDetailsHeading ? (
+              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                More Details
+              </p>
+            ) : null}
+            <div
+              className={`efb-rich-text text-sm text-zinc-600 ${showDetailsHeading ? "mt-1.5" : ""}`}
+              dangerouslySetInnerHTML={{ __html: toDisplayHtml(value) }}
+            />
           </div>
         </div>
       ) : null}

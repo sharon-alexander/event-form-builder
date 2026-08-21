@@ -17,16 +17,8 @@ export interface BudgetOption {
   label: string;
 }
 
-export interface InfoPageSection {
-  heading?: string;
-  body?: string;
-  bullets?: string[];
-}
-
 export interface InfoPageConfig {
   title: string;
-  intro?: string;
-  sections?: InfoPageSection[];
 }
 
 export type TimingStyle = "standard" | "meal_service";
@@ -65,12 +57,12 @@ export interface LocationConfig {
   /** Ordered list of form steps for this location. */
   steps: StepId[];
 
-  /** Optional read-only "More Details" text shown below each step's inputs. */
+  /** Optional "More Details" HTML shown on each step. */
   stepMoreDetails?: Partial<Record<StepId, string>>;
 
   timingStyle?: TimingStyle;
 
-  /** Content for the info acknowledgement step (Roscioli). */
+  /** Title for the info acknowledgement step. */
   infoPage?: InfoPageConfig;
 
   /** Override labels/copy for specific steps. */

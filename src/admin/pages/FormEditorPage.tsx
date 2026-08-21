@@ -11,6 +11,7 @@ import type {
 } from "../../locations/types";
 import type { LocationRow } from "../../locations/fromDb";
 import { tryGetLocation } from "../../locations";
+import { mergeInfoPageIntoMoreDetails } from "../../utils/richText";
 import {
   getLocationById,
   updateLocation,
@@ -68,10 +69,16 @@ function toEditable(row: LocationRow): EditableLocation {
         : bundled?.steps ?? [],
     step_more_details: {
       ...bundled?.stepMoreDetails,
-      ...row.step_more_details,
+      ...mergeInfoPageIntoMoreDetails(
+        row.step_more_details ?? {},
+        row.info_page ?? bundled?.infoPage,
+      ),
     },
     timing_style: row.timing_style || bundled?.timingStyle || "standard",
-    info_page: row.info_page ?? bundled?.infoPage ?? null,
+    info_page: (() => {
+      const page = row.info_page ?? bundled?.infoPage ?? null;
+      return page ? { title: page.title } : null;
+    })(),
     tripleseat: row.tripleseat ?? {},
     theme: row.theme ?? {},
     published: row.published,
@@ -134,7 +141,9 @@ export default function FormEditorPage() {
         form_steps: draft.form_steps,
         step_more_details: draft.step_more_details,
         timing_style: draft.timing_style,
-        info_page: draft.info_page,
+        info_page: draft.info_page
+          ? { title: draft.info_page.title }
+          : null,
         tripleseat: draft.tripleseat,
         theme: draft.theme,
         published: draft.published,
