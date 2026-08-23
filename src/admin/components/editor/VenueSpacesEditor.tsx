@@ -16,9 +16,10 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { VenueSpaceOption } from "../../../locations/types";
+import type { MediaItem, VenueSpaceOption } from "../../../locations/types";
 import type { EditableLocation } from "../../pages/FormEditorPage";
 import { collectFormMedia } from "../../utils/formMediaLibrary";
+import { MediaThumb } from "../../../components/MediaThumb";
 import VenueGalleryEditor from "./VenueGalleryEditor";
 
 interface Props {
@@ -213,7 +214,7 @@ function SortableSpaceCard({
     id,
   });
   const media = venue.galleryMedia ?? [];
-  const preview = media.find((item) => item.type === "image" || item.poster);
+  const preview = media[0];
 
   return (
     <div
@@ -302,11 +303,10 @@ function GuestCardPreview({
 }: {
   label: string;
   price: string;
-  preview?: { type: string; src: string; poster?: string; alt: string };
+  preview?: MediaItem;
   onOpenGallery: () => void;
 }) {
-  const src = preview && (preview.type === "video" ? preview.poster : preview.src);
-  const actionLabel = src ? "Edit photos" : "Add photos";
+  const actionLabel = preview ? "Edit photos" : "Add photos";
 
   return (
     <div className="w-full shrink-0 rounded-lg border border-zinc-200 bg-white p-2 sm:w-36">
@@ -316,8 +316,8 @@ function GuestCardPreview({
         aria-label={actionLabel}
         className="group relative mb-2 block h-20 w-full overflow-hidden rounded-md bg-zinc-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900 focus-visible:ring-offset-1"
       >
-        {src ? (
-          <img src={src} alt={preview?.alt ?? ""} className="h-full w-full object-cover" />
+        {preview ? (
+          <MediaThumb item={preview} className="h-full w-full object-cover" />
         ) : (
           <span className="flex h-full flex-col items-center justify-center gap-1 border border-dashed border-zinc-200 text-zinc-400">
             <CameraIcon className="h-4 w-4" />

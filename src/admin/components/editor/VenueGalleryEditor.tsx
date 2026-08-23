@@ -1,6 +1,7 @@
 import { type DragEvent, useEffect, useRef, useState } from "react";
 import type { MediaItem } from "../../../locations/types";
 import { uploadGalleryFile } from "../../api";
+import { VideoThumbFallback } from "../../../components/MediaThumb";
 import MediaPicker from "./MediaPicker";
 
 interface Props {
@@ -46,22 +47,18 @@ export default function VenueGalleryEditor({
 
   if (!open) return null;
 
-  function commit(next: MediaItem[]) {
-    onChange(withCardThumbnailFirst(next));
-  }
-
   function remove(index: number) {
-    commit(media.filter((_, i) => i !== index));
+    onChange(media.filter((_, i) => i !== index));
   }
 
   function setAsThumbnail(index: number) {
     if (index <= 0 || index >= media.length) return;
     const item = media[index];
-    if (!item || !canBeCardThumbnail(item)) return;
+    if (!item) return;
     const next = [...media];
     next.splice(index, 1);
     next.unshift(item);
-    commit(next);
+    onChange(next);
   }
 
   async function handleFiles(files: FileList | null) {
@@ -81,7 +78,7 @@ export default function VenueGalleryEditor({
           alt: file.name.replace(/\.[^.]+$/, ""),
         });
       }
-      commit([...media, ...uploaded]);
+      onChange([...media, ...uploaded]);
     } catch (err) {
       onError(err instanceof Error ? err.message : "Upload failed.");
     } finally {
@@ -92,7 +89,7 @@ export default function VenueGalleryEditor({
 
   function addExisting(item: MediaItem) {
     if (media.some((m) => m.src === item.src)) return;
-    commit([...media, item]);
+    onChange([...media, item]);
   }
 
   function handleDrop(e: DragEvent<HTMLDivElement>) {
@@ -101,8 +98,7 @@ export default function VenueGalleryEditor({
     if (e.dataTransfer.files.length > 0) handleFiles(e.dataTransfer.files);
   }
 
-  const thumbnailIndex = media.findIndex(canBeCardThumbnail);
-  const thumbnail = media[thumbnailIndex >= 0 ? thumbnailIndex : 0];
+  const thumbnail = media[0];
 
   return (
     <div
@@ -125,7 +121,7 @@ export default function VenueGalleryEditor({
               {title.trim() || "Untitled space"}
             </h2>
             <p className="mt-0.5 text-xs text-zinc-400">
-              Click an image to set the card thumbnail. Videos need a poster.
+              Click a photo or video to set the card thumbnail.
             </p>
           </div>
           <button
@@ -205,35 +201,27 @@ export default function VenueGalleryEditor({
               <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                 {media.map((item, i) => {
                   const src = item.type === "video" ? (item.poster ?? item.src) : item.src;
-                  const eligible = canBeCardThumbnail(item);
-                  const isThumb = i === thumbnailIndex;
+                  const isThumb = i === 0;
                   return (
                     <div
                       key={`${item.src}-${i}`}
                       className={`group relative aspect-square overflow-hidden rounded-lg bg-zinc-100 ring-offset-2 ${
-                        isThumb
-                          ? "ring-2 ring-zinc-900"
-                          : eligible
-                            ? "hover:ring-2 hover:ring-zinc-300"
-                            : ""
+                        isThumb ? "ring-2 ring-zinc-900" : "hover:ring-2 hover:ring-zinc-300"
                       }`}
                     >
                       <button
                         type="button"
                         onClick={() => setAsThumbnail(i)}
-                        disabled={!eligible}
                         aria-label={
                           isThumb
                             ? `${item.alt || "Photo"} (card thumbnail)`
-                            : eligible
-                              ? `Set ${item.alt || "photo"} as card thumbnail`
-                              : `${item.alt || "Video"} cannot be a card thumbnail without a poster`
+                            : `Set ${item.alt || "photo"} as card thumbnail`
                         }
                         aria-current={isThumb ? "true" : undefined}
-                        className={`absolute inset-0 ${eligible ? "" : "cursor-default"}`}
+                        className="absolute inset-0"
                       >
                         {item.type === "video" && !item.poster ? (
-                          <video src={item.src} className="h-full w-full object-cover" muted />
+                          <VideoThumbFallback className="h-full w-full" alt={item.alt} />
                         ) : (
                           <img src={src} alt={item.alt} className="h-full w-full object-cover" />
                         )}
@@ -270,12 +258,9 @@ export default function VenueGalleryEditor({
                 className="adm-input w-full py-2 text-sm"
                 placeholder="Describe this photo..."
                 value={thumbnail.alt}
-                onChange={(e) => {
-                  const index = thumbnailIndex >= 0 ? thumbnailIndex : 0;
-                  commit(
-                    media.map((m, idx) => (idx === index ? { ...m, alt: e.target.value } : m)),
-                  );
-                }}
+                onChange={(e) =>
+                  onChange(media.map((m, idx) => (idx === 0 ? { ...m, alt: e.target.value } : m)))
+                }
               />
             </div>
           )}
@@ -283,22 +268,6 @@ export default function VenueGalleryEditor({
       </div>
     </div>
   );
-}
-
-function canBeCardThumbnail(item: MediaItem): boolean {
-  return item.type === "image" || Boolean(item.poster);
-}
-
-function withCardThumbnailFirst(items: MediaItem[]): MediaItem[] {
-  const first = items[0];
-  if (!first || canBeCardThumbnail(first)) return items;
-  const eligibleIndex = items.findIndex(canBeCardThumbnail);
-  if (eligibleIndex < 1) return items;
-  const next = [...items];
-  const [moved] = next.splice(eligibleIndex, 1);
-  if (!moved) return items;
-  next.unshift(moved);
-  return next;
 }
 
 function CloseIcon() {

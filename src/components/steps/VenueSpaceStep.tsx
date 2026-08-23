@@ -4,6 +4,7 @@ import { useLocationConfig } from "../../context/LocationContext";
 import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
 import FormStep from "../FormStep";
 import MediaGalleryModal from "../MediaGalleryModal";
+import { MediaThumb } from "../MediaThumb";
 import type { StepProps } from "./stepProps";
 
 const copy = DEFAULT_STEP_COPY.venue_space;
@@ -36,12 +37,7 @@ export default function VenueSpaceStep({
           {venueSpaces.map((v) => {
             const media = v.galleryMedia ?? [];
             const hasGallery = media.length > 0;
-            const preview = media.find((item) => item.type === "image" || item.poster);
-            const previewSrc = preview
-              ? preview.type === "video"
-                ? preview.poster
-                : preview.src
-              : undefined;
+            const preview = media[0];
 
             return (
               <div key={v.value} className="relative break-inside-avoid">
@@ -50,11 +46,10 @@ export default function VenueSpaceStep({
                   onClick={() => onChange({ venueSpace: v.value })}
                   className={`efb-card w-full text-left ${data.venueSpace === v.value ? "efb-card-selected" : ""}`}
                 >
-                  {previewSrc && (
+                  {preview && (
                     <div className="mb-3 overflow-hidden rounded-md">
-                      <img
-                        src={previewSrc}
-                        alt={preview?.alt ?? ""}
+                      <MediaThumb
+                        item={preview}
                         className="h-32 w-full object-cover"
                         loading="lazy"
                       />
