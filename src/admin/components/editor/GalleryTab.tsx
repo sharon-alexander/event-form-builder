@@ -167,9 +167,15 @@ export default function GalleryTab({ draft, update, orgId, onError }: Props) {
             type="button"
             onClick={() => fileInput.current?.click()}
             disabled={uploading}
-            className="adm-btn-primary px-4 py-2"
+            aria-label={uploading ? "Uploading" : "Upload media"}
+            title={uploading ? "Uploading…" : "Upload media"}
+            className="adm-btn-primary px-3 py-2"
           >
-            {uploading ? "Uploading…" : "+"}
+            {uploading ? (
+              <span className="text-xs">Uploading…</span>
+            ) : (
+              <UploadIcon />
+            )}
           </button>
         </div>
         <input
@@ -207,7 +213,7 @@ export default function GalleryTab({ draft, update, orgId, onError }: Props) {
           <div className="p-8 text-center text-sm text-zinc-400">
             {uploading
               ? "Uploading…"
-              : "Drop images or videos here, or click + to upload."}
+              : "Drop images or videos here, or click upload."}
           </div>
         ) : (
           <div className="flex gap-4">
@@ -218,7 +224,7 @@ export default function GalleryTab({ draft, update, orgId, onError }: Props) {
               onDragEnd={handleDragEnd}
             >
               <SortableContext items={sortableIds} strategy={rectSortingStrategy}>
-                <div className="grid flex-1 grid-cols-3 gap-2">
+                <div className="grid flex-1 grid-cols-4 gap-1.5 sm:grid-cols-5 lg:grid-cols-6">
                   {media.map((item, i) => (
                     <SortableTile
                       key={stableId(item, i)}
@@ -303,7 +309,7 @@ function TileContent({
         <img src={item.src} alt={item.alt} className="h-full w-full object-cover" />
       )}
       {item.type === "video" && (
-        <div className="absolute bottom-1.5 left-1.5 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium uppercase text-white">
+        <div className="absolute bottom-1 left-1 rounded bg-black/60 px-1 py-0.5 text-[9px] font-medium uppercase text-white">
           Video
         </div>
       )}
@@ -352,7 +358,7 @@ function SortableTile({
       )}
 
       {item.type === "video" && (
-        <div className="absolute bottom-1.5 left-1.5 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium uppercase text-white">
+        <div className="absolute bottom-1 left-1 rounded bg-black/60 px-1 py-0.5 text-[9px] font-medium uppercase text-white">
           Video
         </div>
       )}
@@ -365,9 +371,9 @@ function SortableTile({
           onDelete();
         }}
         onPointerDown={(e) => e.stopPropagation()}
-        className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-600"
+        className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-600"
       >
-        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -376,5 +382,24 @@ function SortableTile({
         </svg>
       </button>
     </div>
+  );
+}
+
+function UploadIcon() {
+  return (
+    <svg
+      className="h-4 w-4"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2}
+      aria-hidden
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
+      />
+    </svg>
   );
 }

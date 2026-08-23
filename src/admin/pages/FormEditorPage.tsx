@@ -11,14 +11,13 @@ import type {
 } from "../../locations/types";
 import type { LocationRow } from "../../locations/fromDb";
 import { tryGetLocation } from "../../locations";
+import { mergeInfoPageIntoMoreDetails } from "../../utils/richText";
 import {
   getLocationById,
   updateLocation,
   type LocationUpdate,
 } from "../api";
-import ContentTab from "../components/editor/ContentTab";
-import GalleryTab from "../components/editor/GalleryTab";
-import OptionsTab from "../components/editor/OptionsTab";
+import LandingTab from "../components/editor/LandingTab";
 import StepsTab from "../components/editor/StepsTab";
 import ThemeTab from "../components/editor/ThemeTab";
 import AdvancedTab from "../components/editor/AdvancedTab";
@@ -44,10 +43,8 @@ export interface EditableLocation {
 }
 
 const TABS = [
-  { id: "content", label: "Content" },
-  { id: "gallery", label: "Gallery" },
-  { id: "options", label: "Venues & Budgets" },
-  { id: "steps", label: "Form Steps" },
+  { id: "landing", label: "Landing page" },
+  { id: "form", label: "Form" },
   { id: "theme", label: "Theme" },
   { id: "embed", label: "Embed" },
   { id: "advanced", label: "Advanced" },
@@ -72,10 +69,16 @@ function toEditable(row: LocationRow): EditableLocation {
         : bundled?.steps ?? [],
     step_more_details: {
       ...bundled?.stepMoreDetails,
-      ...row.step_more_details,
+      ...mergeInfoPageIntoMoreDetails(
+        row.step_more_details ?? {},
+        row.info_page ?? bundled?.infoPage,
+      ),
     },
     timing_style: row.timing_style || bundled?.timingStyle || "standard",
-    info_page: row.info_page ?? bundled?.infoPage ?? null,
+    info_page: (() => {
+      const page = row.info_page ?? bundled?.infoPage ?? null;
+      return page ? { title: page.title } : null;
+    })(),
     tripleseat: row.tripleseat ?? {},
     theme: row.theme ?? {},
     published: row.published,
@@ -87,7 +90,7 @@ export default function FormEditorPage() {
 
   const [orgId, setOrgId] = useState<string | null>(null);
   const [draft, setDraft] = useState<EditableLocation | null>(null);
-  const [tab, setTab] = useState<TabId>("content");
+  const [tab, setTab] = useState<TabId>("form");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -138,7 +141,9 @@ export default function FormEditorPage() {
         form_steps: draft.form_steps,
         step_more_details: draft.step_more_details,
         timing_style: draft.timing_style,
-        info_page: draft.info_page,
+        info_page: draft.info_page
+          ? { title: draft.info_page.title }
+          : null,
         tripleseat: draft.tripleseat,
         theme: draft.theme,
         published: draft.published,
@@ -234,14 +239,12 @@ export default function FormEditorPage() {
       </div>
 
       <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-        {tab === "content" && <ContentTab draft={draft} update={update} />}
-        {tab === "gallery" && (
-          <GalleryTab draft={draft} update={update} orgId={orgId} onError={setError} />
+        {tab === "landing" && (
+          <LandingTab draft={draft} update={update} orgId={orgId} onError={setError} />
         )}
-        {tab === "options" && (
-          <OptionsTab draft={draft} update={update} orgId={orgId} onError={setError} />
+        {tab === "form" && (
+          <StepsTab draft={draft} update={update} orgId={orgId} onError={setError} />
         )}
-        {tab === "steps" && <StepsTab draft={draft} update={update} />}
         {tab === "theme" && (
           <ThemeTab draft={draft} update={update} orgId={orgId} onError={setError} />
         )}

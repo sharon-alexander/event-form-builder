@@ -4,6 +4,7 @@ import { useLocationConfig } from "../../context/LocationContext";
 import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
 import FormStep from "../FormStep";
 import MediaGalleryModal from "../MediaGalleryModal";
+import { MediaThumb } from "../MediaThumb";
 import type { StepProps } from "./stepProps";
 
 const copy = DEFAULT_STEP_COPY.venue_space;
@@ -47,9 +48,8 @@ export default function VenueSpaceStep({
                 >
                   {preview && (
                     <div className="mb-3 overflow-hidden rounded-md">
-                      <img
-                        src={preview.type === "video" ? (preview.poster ?? preview.src) : preview.src}
-                        alt={preview.alt}
+                      <MediaThumb
+                        item={preview}
                         className="h-32 w-full object-cover"
                         loading="lazy"
                       />

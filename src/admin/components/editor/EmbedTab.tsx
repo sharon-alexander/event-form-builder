@@ -33,8 +33,9 @@ export default function EmbedTab({ draft }: Props) {
       <section>
         <h2 className="text-sm font-semibold text-zinc-900">Embed on your website</h2>
         <p className="mt-1 text-sm text-zinc-500">
-          Paste this into a Squarespace <span className="font-medium">Code</span> block (set
-          the block type to HTML). Works on any site that allows custom HTML + scripts.
+          Paste this snippet into any page that allows custom HTML and scripts. For example,
+          in Squarespace, add a <span className="font-medium">Code</span> block and set the
+          block type to HTML.
         </p>
 
         {!draft.published && (

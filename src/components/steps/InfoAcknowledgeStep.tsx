@@ -1,5 +1,6 @@
 import { useLocationConfig } from "../../context/LocationContext";
 import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
+import { toDisplayHtml } from "../../utils/richText";
 import FormStep from "../FormStep";
 import type { StepProps } from "./stepProps";
 
@@ -13,17 +14,24 @@ export default function InfoAcknowledgeStep({
 }: StepProps) {
   const { infoPage } = useLocationConfig();
   const title = infoPage?.title ?? DEFAULT_STEP_COPY.info_acknowledge.title;
+  const detailsHtml = moreDetails ? toDisplayHtml(moreDetails) : "";
 
   return (
     <FormStep
       title={title}
-      moreDetails={moreDetails}
       onNext={onNext}
       onBack={onBack}
       nextLabel={nextLabel}
       nextDisabled={!data.infoAcknowledged}
     >
       <div className="space-y-8">
+        {detailsHtml ? (
+          <div
+            className="efb-rich-text text-sm text-gray-600"
+            dangerouslySetInnerHTML={{ __html: detailsHtml }}
+          />
+        ) : null}
+
         <button
           type="button"
           onClick={() => onChange({ infoAcknowledged: !data.infoAcknowledged })}
@@ -35,30 +43,6 @@ export default function InfoAcknowledgeStep({
         >
           I Understand
         </button>
-
-        {(infoPage?.intro || infoPage?.sections?.length) && (
-          <div className="space-y-4 border-t border-brand-100 pt-6">
-            <h3 className="font-display text-sm font-semibold uppercase tracking-wide text-brand-800">
-              More Details
-            </h3>
-            {infoPage?.intro && <p className="text-sm text-gray-600">{infoPage.intro}</p>}
-            {infoPage?.sections?.map((section, i) => (
-              <div key={i} className="space-y-1">
-                {section.heading && (
-                  <p className="text-sm font-semibold text-gray-900">{section.heading}</p>
-                )}
-                {section.body && <p className="text-sm text-gray-600">{section.body}</p>}
-                {section.bullets && section.bullets.length > 0 && (
-                  <ul className="list-disc space-y-1 pl-5 text-sm text-gray-600">
-                    {section.bullets.map((bullet, j) => (
-                      <li key={j}>{bullet}</li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     </FormStep>
   );
