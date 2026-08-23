@@ -1,9 +1,12 @@
-import { type DragEvent, useRef, useState } from "react";
+import { type DragEvent, useEffect, useRef, useState } from "react";
 import type { MediaItem } from "../../../locations/types";
 import { uploadGalleryFile } from "../../api";
 import MediaPicker from "./MediaPicker";
 
 interface Props {
+  open: boolean;
+  onClose: () => void;
+  title: string;
   media: MediaItem[];
   libraryMedia: MediaItem[];
   onChange: (next: MediaItem[]) => void;
@@ -13,6 +16,9 @@ interface Props {
 }
 
 export default function VenueGalleryEditor({
+  open,
+  onClose,
+  title,
   media,
   libraryMedia,
   onChange,
@@ -25,8 +31,32 @@ export default function VenueGalleryEditor({
   const [pickerOpen, setPickerOpen] = useState(false);
   const [dragOver, setDragOver] = useState(false);
 
+  useEffect(() => {
+    if (!open) {
+      setPickerOpen(false);
+      setDragOver(false);
+      return;
+    }
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
   function remove(index: number) {
     onChange(media.filter((_, i) => i !== index));
+  }
+
+  function setAsThumbnail(index: number) {
+    if (index <= 0 || index >= media.length) return;
+    const next = [...media];
+    const [item] = next.splice(index, 1);
+    if (!item) return;
+    next.unshift(item);
+    onChange(next);
   }
 
   async function handleFiles(files: FileList | null) {
@@ -66,103 +96,183 @@ export default function VenueGalleryEditor({
     if (e.dataTransfer.files.length > 0) handleFiles(e.dataTransfer.files);
   }
 
+  const thumbnail = media[0];
+
   return (
-    <div className="rounded-lg border border-zinc-200 bg-zinc-50/50 p-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs font-medium text-zinc-700">Photos</p>
-        <div className="flex flex-wrap gap-2">
-          {libraryMedia.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setPickerOpen((v) => !v)}
-              className="adm-btn-secondary px-2 py-1 text-xs"
-            >
-              {pickerOpen ? "Cancel" : "Choose existing"}
-            </button>
-          )}
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 font-sans"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${title} photos`}
+    >
+      <button
+        type="button"
+        aria-label="Close"
+        className="absolute inset-0 bg-zinc-900/50 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      <div className="relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl">
+        <div className="flex shrink-0 items-center justify-between border-b border-zinc-200 px-5 py-4">
+          <div className="min-w-0">
+            <h2 className="truncate text-sm font-semibold text-zinc-900">
+              {title.trim() || "Untitled space"}
+            </h2>
+            <p className="mt-0.5 text-xs text-zinc-400">
+              Click a photo to set the card thumbnail.
+            </p>
+          </div>
           <button
             type="button"
-            onClick={() => fileInput.current?.click()}
-            disabled={uploading}
-            className="adm-btn-secondary px-2 py-1 text-xs"
+            onClick={onClose}
+            aria-label="Close"
+            className="ml-3 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-700"
           >
-            {uploading ? "Uploading…" : "Upload"}
+            <CloseIcon />
           </button>
         </div>
-        <input
-          ref={fileInput}
-          type="file"
-          accept="image/*,video/*"
-          multiple
-          className="hidden"
-          onChange={(e) => handleFiles(e.target.files)}
-        />
-      </div>
 
-      {pickerOpen && (
-        <div className="mt-3">
-          <MediaPicker
-            library={libraryMedia}
-            selected={media}
-            onSelect={addExisting}
-            onClose={() => setPickerOpen(false)}
-          />
-        </div>
-      )}
-
-      {media.length === 0 ? (
-        <div
-          onDrop={handleDrop}
-          onDragOver={(e) => {
-            e.preventDefault();
-            setDragOver(true);
-          }}
-          onDragLeave={() => setDragOver(false)}
-          className={`mt-3 rounded-lg border-2 border-dashed px-4 py-5 text-center transition-colors ${
-            dragOver ? "border-zinc-400 bg-zinc-100" : "border-zinc-200"
-          }`}
-        >
-          <p className="text-xs text-zinc-400">{uploading ? "Uploading…" : "Drop or upload"}</p>
-        </div>
-      ) : (
-        <div className="mt-3 space-y-2">
-          {media.map((item, i) => (
-            <div key={`${item.src}-${i}`} className="flex items-center gap-2">
-              <div className="relative h-12 w-16 shrink-0 overflow-hidden rounded-md bg-zinc-100">
-                {item.type === "video" ? (
-                  <video src={item.src} className="h-full w-full object-cover" />
-                ) : (
-                  <img src={item.src} alt={item.alt} className="h-full w-full object-cover" />
-                )}
-              </div>
-              <div className="min-w-0 flex-1">
-                {i === 0 && (
-                  <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-zinc-500">
-                    Card preview
-                  </p>
-                )}
-                <input
-                  className="adm-input min-w-0 w-full py-1.5 text-xs"
-                  placeholder="Alt text"
-                  value={item.alt}
-                  onChange={(e) =>
-                    onChange(media.map((m, idx) => (idx === i ? { ...m, alt: e.target.value } : m)))
-                  }
-                />
-              </div>
+        <div className="min-h-0 flex-1 overflow-y-auto p-5">
+          <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
+            {libraryMedia.length > 0 && (
               <button
                 type="button"
-                aria-label="Remove"
-                onClick={() => remove(i)}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-red-200 text-red-500 hover:bg-red-50"
+                onClick={() => setPickerOpen((v) => !v)}
+                className="adm-btn-secondary px-3 py-1.5 text-xs"
               >
-                <TrashIcon />
+                {pickerOpen ? "Cancel" : "Choose existing"}
               </button>
+            )}
+            <button
+              type="button"
+              onClick={() => fileInput.current?.click()}
+              disabled={uploading}
+              className="adm-btn-primary px-3 py-1.5 text-xs"
+            >
+              {uploading ? "Uploading…" : "Upload"}
+            </button>
+            <input
+              ref={fileInput}
+              type="file"
+              accept="image/*,video/*"
+              multiple
+              className="hidden"
+              onChange={(e) => handleFiles(e.target.files)}
+            />
+          </div>
+
+          {pickerOpen && (
+            <div className="mb-4">
+              <MediaPicker
+                library={libraryMedia}
+                selected={media}
+                onSelect={addExisting}
+                onClose={() => setPickerOpen(false)}
+              />
             </div>
-          ))}
+          )}
+
+          <div
+            onDrop={handleDrop}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragOver(true);
+            }}
+            onDragLeave={() => setDragOver(false)}
+            className={`rounded-xl border-2 border-dashed p-3 transition-colors ${
+              dragOver
+                ? "border-zinc-400 bg-zinc-50"
+                : media.length === 0
+                  ? "border-zinc-300"
+                  : "border-transparent p-0"
+            }`}
+          >
+            {media.length === 0 ? (
+              <div className="px-4 py-10 text-center">
+                <p className="text-sm text-zinc-400">
+                  {uploading
+                    ? "Uploading…"
+                    : "Drop images or videos here, or click Upload."}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                {media.map((item, i) => {
+                  const src = item.type === "video" ? (item.poster ?? item.src) : item.src;
+                  const isThumb = i === 0;
+                  return (
+                    <div
+                      key={`${item.src}-${i}`}
+                      className={`group relative aspect-square overflow-hidden rounded-lg bg-zinc-100 ring-offset-2 ${
+                        isThumb ? "ring-2 ring-zinc-900" : "hover:ring-2 hover:ring-zinc-300"
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setAsThumbnail(i)}
+                        aria-label={
+                          isThumb
+                            ? `${item.alt || "Photo"} (card thumbnail)`
+                            : `Set ${item.alt || "photo"} as card thumbnail`
+                        }
+                        aria-current={isThumb ? "true" : undefined}
+                        className="absolute inset-0"
+                      >
+                        {item.type === "video" && !item.poster ? (
+                          <video src={item.src} className="h-full w-full object-cover" muted />
+                        ) : (
+                          <img src={src} alt={item.alt} className="h-full w-full object-cover" />
+                        )}
+                        {item.type === "video" && (
+                          <span className="absolute bottom-1.5 left-1.5 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium uppercase text-white">
+                            Video
+                          </span>
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Remove"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          remove(i);
+                        }}
+                        className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-600"
+                      >
+                        <TrashIcon />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {thumbnail && (
+            <div className="mt-4">
+              <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-500">
+                Alt text (thumbnail)
+              </label>
+              <input
+                className="adm-input w-full py-2 text-sm"
+                placeholder="Describe this photo..."
+                value={thumbnail.alt}
+                onChange={(e) =>
+                  onChange(media.map((m, idx) => (idx === 0 ? { ...m, alt: e.target.value } : m)))
+                }
+              />
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+    </svg>
   );
 }
 

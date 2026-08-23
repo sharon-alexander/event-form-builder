@@ -59,6 +59,7 @@ export default function VenueSpacesEditor({ draft, update, orgId, onError }: Pro
 
   const [spaceIds, setSpaceIds] = useState(() => venues.map(newId));
   const [focusId, setFocusId] = useState<string | null>(null);
+  const [openSpaceId, setOpenSpaceId] = useState<string | null>(null);
   const focusRef = useRef<HTMLInputElement | null>(null);
 
   const sensors = useSensors(
@@ -153,17 +154,21 @@ export default function VenueSpacesEditor({ draft, update, orgId, onError }: Pro
                     orgId={orgId}
                     slug={draft.slug}
                     onError={onError}
+                    galleryOpen={openSpaceId === id}
+                    onOpenGallery={() => setOpenSpaceId(id)}
+                    onCloseGallery={() => setOpenSpaceId(null)}
                     onChange={(patch) =>
                       setVenues(
                         venues.map((row, idx) => (idx === i ? { ...row, ...patch } : row)),
                       )
                     }
-                    onRemove={() =>
+                    onRemove={() => {
+                      if (openSpaceId === id) setOpenSpaceId(null);
                       setVenues(
                         venues.filter((_, idx) => idx !== i),
                         spaceIds.filter((_, idx) => idx !== i),
-                      )
-                    }
+                      );
+                    }}
                   />
                 );
               })}
@@ -184,6 +189,9 @@ function SortableSpaceCard({
   orgId,
   slug,
   onError,
+  galleryOpen,
+  onOpenGallery,
+  onCloseGallery,
   onChange,
   onRemove,
 }: {
@@ -195,6 +203,9 @@ function SortableSpaceCard({
   orgId: string | null;
   slug: string;
   onError: (msg: string) => void;
+  galleryOpen: boolean;
+  onOpenGallery: () => void;
+  onCloseGallery: () => void;
   onChange: (patch: Partial<VenueSpaceOption>) => void;
   onRemove: () => void;
 }) {
@@ -213,7 +224,12 @@ function SortableSpaceCard({
       }`}
     >
       <div className="flex flex-col gap-3 sm:flex-row">
-        <GuestCardPreview label={venue.label} price={venue.price} preview={preview} />
+        <GuestCardPreview
+          label={venue.label}
+          price={venue.price}
+          preview={preview}
+          onOpenGallery={onOpenGallery}
+        />
 
         <div className="min-w-0 flex-1">
           <div className="flex items-start gap-2">
@@ -263,16 +279,17 @@ function SortableSpaceCard({
         </div>
       </div>
 
-      <div className="mt-3">
-        <VenueGalleryEditor
-          media={media}
-          libraryMedia={libraryMedia}
-          onChange={(galleryMedia) => onChange({ galleryMedia })}
-          orgId={orgId}
-          slug={slug}
-          onError={onError}
-        />
-      </div>
+      <VenueGalleryEditor
+        open={galleryOpen}
+        onClose={onCloseGallery}
+        title={venue.label}
+        media={media}
+        libraryMedia={libraryMedia}
+        onChange={(galleryMedia) => onChange({ galleryMedia })}
+        orgId={orgId}
+        slug={slug}
+        onError={onError}
+      />
     </div>
   );
 }
@@ -281,30 +298,63 @@ function GuestCardPreview({
   label,
   price,
   preview,
+  onOpenGallery,
 }: {
   label: string;
   price: string;
   preview?: { type: string; src: string; poster?: string; alt: string };
+  onOpenGallery: () => void;
 }) {
   const src =
     preview && (preview.type === "video" ? (preview.poster ?? preview.src) : preview.src);
+  const actionLabel = src ? "Edit photos" : "Add photos";
 
   return (
     <div className="w-full shrink-0 rounded-lg border border-zinc-200 bg-white p-2 sm:w-36">
-      <div className="mb-2 h-20 overflow-hidden rounded-md bg-zinc-100">
+      <button
+        type="button"
+        onClick={onOpenGallery}
+        aria-label={actionLabel}
+        className="group relative mb-2 block h-20 w-full overflow-hidden rounded-md bg-zinc-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900 focus-visible:ring-offset-1"
+      >
         {src ? (
           <img src={src} alt={preview?.alt ?? ""} className="h-full w-full object-cover" />
         ) : (
-          <div className="flex h-full items-center justify-center border border-dashed border-zinc-200 text-[10px] text-zinc-400">
-            No photo
-          </div>
+          <span className="flex h-full flex-col items-center justify-center gap-1 border border-dashed border-zinc-200 text-zinc-400">
+            <CameraIcon className="h-4 w-4" />
+            <span className="text-[10px]">No photo</span>
+          </span>
         )}
-      </div>
+        <span className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-zinc-900/55 text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+          <CameraIcon className="h-4 w-4" />
+          <span className="text-[10px] font-medium">{actionLabel}</span>
+        </span>
+      </button>
       <p className="text-xs font-semibold text-zinc-900">
         {label.trim() || "Untitled space"}
       </p>
       {price.trim() ? <p className="mt-0.5 text-[10px] text-zinc-500">{price}</p> : null}
     </div>
+  );
+}
+
+function CameraIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2}
+      aria-hidden
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+      />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
   );
 }
 
