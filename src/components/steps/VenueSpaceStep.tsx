@@ -36,7 +36,12 @@ export default function VenueSpaceStep({
           {venueSpaces.map((v) => {
             const media = v.galleryMedia ?? [];
             const hasGallery = media.length > 0;
-            const preview = media[0];
+            const preview = media.find((item) => item.type === "image" || item.poster);
+            const previewSrc = preview
+              ? preview.type === "video"
+                ? preview.poster
+                : preview.src
+              : undefined;
 
             return (
               <div key={v.value} className="relative break-inside-avoid">
@@ -45,11 +50,11 @@ export default function VenueSpaceStep({
                   onClick={() => onChange({ venueSpace: v.value })}
                   className={`efb-card w-full text-left ${data.venueSpace === v.value ? "efb-card-selected" : ""}`}
                 >
-                  {preview && (
+                  {previewSrc && (
                     <div className="mb-3 overflow-hidden rounded-md">
                       <img
-                        src={preview.type === "video" ? (preview.poster ?? preview.src) : preview.src}
-                        alt={preview.alt}
+                        src={previewSrc}
+                        alt={preview?.alt ?? ""}
                         className="h-32 w-full object-cover"
                         loading="lazy"
                       />

@@ -213,7 +213,7 @@ function SortableSpaceCard({
     id,
   });
   const media = venue.galleryMedia ?? [];
-  const preview = media[0];
+  const preview = media.find((item) => item.type === "image" || item.poster);
 
   return (
     <div
@@ -305,8 +305,7 @@ function GuestCardPreview({
   preview?: { type: string; src: string; poster?: string; alt: string };
   onOpenGallery: () => void;
 }) {
-  const src =
-    preview && (preview.type === "video" ? (preview.poster ?? preview.src) : preview.src);
+  const src = preview && (preview.type === "video" ? preview.poster : preview.src);
   const actionLabel = src ? "Edit photos" : "Add photos";
 
   return (
