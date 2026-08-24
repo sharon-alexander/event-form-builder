@@ -16,10 +16,9 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { MediaItem, VenueSpaceOption } from "../../../locations/types";
+import type { VenueSpaceOption } from "../../../locations/types";
 import type { EditableLocation } from "../../pages/FormEditorPage";
 import { collectFormMedia } from "../../utils/formMediaLibrary";
-import { MediaThumb } from "../../../components/MediaThumb";
 import VenueGalleryEditor from "./VenueGalleryEditor";
 
 interface Props {
@@ -110,9 +109,6 @@ export default function VenueSpacesEditor({ draft, update, orgId, onError }: Pro
       <div className="flex items-center justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold text-zinc-900">Spaces</h3>
-          <p className="mt-0.5 text-xs text-zinc-400">
-            Options people pick on this step. Add photos per space.
-          </p>
         </div>
         {venues.length > 0 && (
           <button
@@ -214,7 +210,6 @@ function SortableSpaceCard({
     id,
   });
   const media = venue.galleryMedia ?? [];
-  const preview = media[0];
 
   return (
     <div
@@ -224,60 +219,58 @@ function SortableSpaceCard({
         isDragging ? "relative z-10 shadow-md ring-1 ring-zinc-200" : ""
       }`}
     >
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <GuestCardPreview
-          label={venue.label}
-          price={venue.price}
-          preview={preview}
-          onOpenGallery={onOpenGallery}
-        />
-
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start gap-2">
-            <button
-              type="button"
-              aria-label="Reorder space"
-              className="mt-6 flex h-9 w-7 shrink-0 cursor-grab items-center justify-center rounded-md text-zinc-300 hover:bg-zinc-50 hover:text-zinc-500 active:cursor-grabbing"
-              {...attributes}
-              {...listeners}
-            >
-              <GripIcon />
-            </button>
-            <span className="mt-8 w-5 shrink-0 text-center text-xs font-medium tabular-nums text-zinc-400">
-              {index + 1}
-            </span>
-            <div className="min-w-0 flex-1 space-y-3">
-              <div>
-                <label className="adm-label" htmlFor={`space-name-${id}`}>
-                  Space name
-                </label>
-                <input
-                  id={`space-name-${id}`}
-                  ref={inputRef}
-                  className="adm-input py-2"
-                  placeholder="e.g. 1st Floor Salon"
-                  value={venue.label}
-                  onChange={(e) => onChange({ label: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="adm-label" htmlFor={`space-price-${id}`}>
-                  Starting price
-                </label>
-                <input
-                  id={`space-price-${id}`}
-                  className="adm-input py-2"
-                  placeholder="e.g. Starting at $3,000"
-                  value={venue.price}
-                  onChange={(e) => onChange({ price: e.target.value })}
-                />
-              </div>
-            </div>
-            <IconButton label="Remove" onClick={onRemove} destructive>
-              <TrashIcon />
-            </IconButton>
+      <div className="flex items-start gap-2">
+        <button
+          type="button"
+          aria-label="Reorder space"
+          className="mt-6 flex h-9 w-7 shrink-0 cursor-grab items-center justify-center rounded-md text-zinc-300 hover:bg-zinc-50 hover:text-zinc-500 active:cursor-grabbing"
+          {...attributes}
+          {...listeners}
+        >
+          <GripIcon />
+        </button>
+        <span className="mt-8 w-5 shrink-0 text-center text-xs font-medium tabular-nums text-zinc-400">
+          {index + 1}
+        </span>
+        <div className="min-w-0 flex-1 space-y-3">
+          <div>
+            <label className="adm-label" htmlFor={`space-name-${id}`}>
+              Space name
+            </label>
+            <input
+              id={`space-name-${id}`}
+              ref={inputRef}
+              className="adm-input py-2"
+              placeholder="e.g. 1st Floor Salon"
+              value={venue.label}
+              onChange={(e) => onChange({ label: e.target.value })}
+            />
           </div>
+          <div>
+            <label className="adm-label" htmlFor={`space-price-${id}`}>
+              Starting price
+            </label>
+            <input
+              id={`space-price-${id}`}
+              className="adm-input py-2"
+              placeholder="e.g. Starting at $3,000"
+              value={venue.price}
+              onChange={(e) => onChange({ price: e.target.value })}
+            />
+          </div>
+          <button
+            type="button"
+            onClick={onOpenGallery}
+            className="adm-btn-secondary px-3 py-1.5 text-xs"
+          >
+            {media.length > 0
+              ? `Edit photos (${media.length})`
+              : "Add photos"}
+          </button>
         </div>
+        <IconButton label="Remove" onClick={onRemove} destructive>
+          <TrashIcon />
+        </IconButton>
       </div>
 
       <VenueGalleryEditor
@@ -295,67 +288,6 @@ function SortableSpaceCard({
   );
 }
 
-function GuestCardPreview({
-  label,
-  price,
-  preview,
-  onOpenGallery,
-}: {
-  label: string;
-  price: string;
-  preview?: MediaItem;
-  onOpenGallery: () => void;
-}) {
-  const actionLabel = preview ? "Edit photos" : "Add photos";
-
-  return (
-    <div className="w-full shrink-0 rounded-lg border border-zinc-200 bg-white p-2 sm:w-36">
-      <button
-        type="button"
-        onClick={onOpenGallery}
-        aria-label={actionLabel}
-        className="group relative mb-2 block h-20 w-full overflow-hidden rounded-md bg-zinc-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900 focus-visible:ring-offset-1"
-      >
-        {preview ? (
-          <MediaThumb item={preview} className="h-full w-full object-cover" />
-        ) : (
-          <span className="flex h-full flex-col items-center justify-center gap-1 border border-dashed border-zinc-200 text-zinc-400">
-            <CameraIcon className="h-4 w-4" />
-            <span className="text-[10px]">No photo</span>
-          </span>
-        )}
-        <span className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-zinc-900/55 text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
-          <CameraIcon className="h-4 w-4" />
-          <span className="text-[10px] font-medium">{actionLabel}</span>
-        </span>
-      </button>
-      <p className="text-xs font-semibold text-zinc-900">
-        {label.trim() || "Untitled space"}
-      </p>
-      {price.trim() ? <p className="mt-0.5 text-[10px] text-zinc-500">{price}</p> : null}
-    </div>
-  );
-}
-
-function CameraIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth={2}
-      aria-hidden
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-      />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-    </svg>
-  );
-}
 
 function EmptyState({
   title,

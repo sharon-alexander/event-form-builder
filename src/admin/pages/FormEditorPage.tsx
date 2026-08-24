@@ -17,8 +17,7 @@ import {
   updateLocation,
   type LocationUpdate,
 } from "../api";
-import LandingTab from "../components/editor/LandingTab";
-import StepsTab from "../components/editor/StepsTab";
+import FormBuilderTab from "../components/editor/FormBuilderTab";
 import ThemeTab from "../components/editor/ThemeTab";
 import AdvancedTab from "../components/editor/AdvancedTab";
 import EmbedTab from "../components/editor/EmbedTab";
@@ -43,8 +42,7 @@ export interface EditableLocation {
 }
 
 const TABS = [
-  { id: "landing", label: "Landing page" },
-  { id: "form", label: "Form" },
+  { id: "builder", label: "Form Builder" },
   { id: "theme", label: "Theme" },
   { id: "embed", label: "Embed" },
   { id: "advanced", label: "Advanced" },
@@ -90,7 +88,7 @@ export default function FormEditorPage() {
 
   const [orgId, setOrgId] = useState<string | null>(null);
   const [draft, setDraft] = useState<EditableLocation | null>(null);
-  const [tab, setTab] = useState<TabId>("form");
+  const [tab, setTab] = useState<TabId>("builder");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -238,12 +236,9 @@ export default function FormEditorPage() {
         ))}
       </div>
 
-      <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-        {tab === "landing" && (
-          <LandingTab draft={draft} update={update} orgId={orgId} onError={setError} />
-        )}
-        {tab === "form" && (
-          <StepsTab draft={draft} update={update} orgId={orgId} onError={setError} />
+      <div className={`rounded-2xl border border-zinc-200 bg-white shadow-sm ${tab === "builder" ? "p-4 lg:p-6" : "p-6"}`}>
+        {tab === "builder" && (
+          <FormBuilderTab draft={draft} update={update} orgId={orgId} onError={setError} />
         )}
         {tab === "theme" && (
           <ThemeTab draft={draft} update={update} orgId={orgId} onError={setError} />

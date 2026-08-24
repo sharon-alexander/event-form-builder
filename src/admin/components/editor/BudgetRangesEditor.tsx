@@ -103,9 +103,6 @@ export default function BudgetRangesEditor({ draft, update }: Props) {
       <div className="flex items-center justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold text-zinc-900">Budget ranges</h3>
-          <p className="mt-0.5 text-xs text-zinc-400">
-            Options people pick on this step.
-          </p>
         </div>
         {budgets.length > 0 && (
           <button
@@ -133,17 +130,6 @@ export default function BudgetRangesEditor({ draft, update }: Props) {
         />
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {budgets.map((budget, i) => (
-              <div
-                key={budgetIds[i] ?? `budget-preview-${i}`}
-                className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-center text-xs font-medium text-zinc-700"
-              >
-                {budget.label.trim() || "Untitled range"}
-              </div>
-            ))}
-          </div>
-
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
