@@ -43,8 +43,9 @@ export default function IframePreview({ draft, selectedId }: Props) {
       doc.head.appendChild(el.cloneNode(true));
     });
 
-    // Base styles for the iframe body
+    doc.documentElement.style.height = "100%";
     doc.body.style.margin = "0";
+    doc.body.style.height = "100%";
     doc.body.style.padding = "16px 20px";
     doc.body.style.overflow = "auto";
     doc.body.style.fontFamily =
@@ -93,12 +94,12 @@ export default function IframePreview({ draft, selectedId }: Props) {
   }, [mountNode, config, selectedId, stepProps]);
 
   return (
-    <div className="flex h-full items-start justify-center">
-      <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-lg">
+    <div className="flex h-full min-h-[600px] flex-1 justify-center">
+      <div className="relative h-full min-h-[600px] w-full max-w-xl overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-lg">
         <iframe
           ref={iframeRef}
           title="Form preview"
-          className="h-[600px] w-full border-0"
+          className="absolute inset-0 h-full w-full border-0"
           sandbox="allow-same-origin"
         />
       </div>

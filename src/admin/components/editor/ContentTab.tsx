@@ -1,4 +1,5 @@
 import type { EditableLocation } from "../../pages/FormEditorPage";
+import RichTextEditor from "./RichTextEditor";
 
 interface Props {
   draft: EditableLocation;
@@ -63,15 +64,15 @@ export default function ContentTab({ draft, update }: Props) {
         <label className="adm-label" htmlFor="about_blurb">
           About blurb
         </label>
-        <textarea
+        <RichTextEditor
           id="about_blurb"
-          rows={5}
-          className="adm-input"
           value={draft.about_blurb}
-          onChange={(e) => update({ about_blurb: e.target.value })}
+          onChange={(html) => update({ about_blurb: html })}
+          placeholder="A short introduction shown below the venue name."
         />
         <p className="mt-1 text-xs text-zinc-400">
-          Paragraph shown on the landing page below the venue name.
+          Shown on the landing page below the venue name. Supports bold, bullets,
+          and numbered lists.
         </p>
       </div>
     </div>

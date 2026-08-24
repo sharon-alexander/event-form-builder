@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useLocationConfig } from "../context/LocationContext";
 import type { MediaItem } from "../locations/types";
+import { toDisplayHtml } from "../utils/richText";
 
 const SPLIT_BLURB_CHARS = 300;
 
@@ -82,12 +83,17 @@ function Gallery({
   );
 }
 
+function visibleBlurbLength(html: string): number {
+  return html.replace(/<[^>]+>/g, "").replace(/&nbsp;/gi, " ").trim().length;
+}
+
 export default function LandingPage({ onStart }: LandingPageProps) {
   const location = useLocationConfig();
   const [activeIndex, setActiveIndex] = useState(0);
   const active = location.galleryMedia[activeIndex];
+  const aboutHtml = toDisplayHtml(location.aboutBlurb);
   const splitLayout =
-    location.aboutBlurb.length > SPLIT_BLURB_CHARS && Boolean(active);
+    visibleBlurbLength(aboutHtml) > SPLIT_BLURB_CHARS && Boolean(active);
 
   return (
     <div className="px-4 py-10 sm:px-6">
@@ -105,10 +111,11 @@ export default function LandingPage({ onStart }: LandingPageProps) {
         <h1 className="font-display text-4xl font-semibold text-gray-900 sm:text-5xl">
           {location.name}
         </h1>
-        {!splitLayout && (
-          <p className="mt-4 text-base leading-relaxed text-gray-600">
-            {location.aboutBlurb}
-          </p>
+        {!splitLayout && aboutHtml && (
+          <div
+            className="efb-rich-text mt-4 text-base leading-relaxed text-gray-600"
+            dangerouslySetInnerHTML={{ __html: aboutHtml }}
+          />
         )}
       </div>
 
@@ -120,9 +127,10 @@ export default function LandingPage({ onStart }: LandingPageProps) {
             activeIndex={activeIndex}
             onSelect={setActiveIndex}
           />
-          <p className="text-base leading-relaxed text-gray-600 md:pt-1">
-            {location.aboutBlurb}
-          </p>
+          <div
+            className="efb-rich-text text-base leading-relaxed text-gray-600 md:pt-1"
+            dangerouslySetInnerHTML={{ __html: aboutHtml }}
+          />
         </div>
       ) : (
         active && (

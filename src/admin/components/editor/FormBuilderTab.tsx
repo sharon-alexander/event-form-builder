@@ -167,12 +167,16 @@ export default function FormBuilderTab({ draft, update, orgId, onError }: Props)
   }
 
   return (
-    <div className="space-y-4 lg:space-y-0 lg:flex lg:gap-6">
+    <div className="space-y-4 lg:flex lg:items-stretch lg:gap-6 lg:space-y-0">
       {/* Left: Preview (desktop) */}
-      <div className="hidden w-[55%] shrink-0 lg:block">
-        <div className="sticky top-6">
-          <IframePreview draft={draft} selectedId={selectedId} />
-        </div>
+      <div
+        className={`hidden w-[55%] shrink-0 lg:flex lg:flex-col ${
+          showConfig
+            ? "lg:sticky lg:top-6 lg:max-h-[calc(100dvh-5rem)] lg:self-start"
+            : ""
+        }`}
+      >
+        <IframePreview draft={draft} selectedId={selectedId} />
       </div>
 
       {/* Right: Navigation OR Config */}
