@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { EditableLocation } from "../../pages/FormEditorPage";
-import { buildEmbedCode, buildPreviewUrl } from "../../embedCode";
+import { buildEmbedCode, buildPublicFormUrl } from "../../embedCode";
 
 interface Props {
   draft: EditableLocation;
@@ -8,7 +8,7 @@ interface Props {
 
 export default function EmbedTab({ draft }: Props) {
   const embedCode = buildEmbedCode(draft.slug);
-  const previewUrl = buildPreviewUrl(draft.slug);
+  const publicUrl = buildPublicFormUrl(draft.slug);
   const [copied, setCopied] = useState<"embed" | "preview" | null>(null);
 
   async function copy(text: string, which: "embed" | "preview") {
@@ -67,16 +67,16 @@ export default function EmbedTab({ draft }: Props) {
         </p>
         <div className="mt-3 flex items-center gap-2">
           <code className="min-w-0 flex-1 truncate rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-700">
-            {previewUrl}
+            {publicUrl}
           </code>
           <IconButton
             label={copied === "preview" ? "Copied" : "Copy link"}
-            onClick={() => copy(previewUrl, "preview")}
+            onClick={() => copy(publicUrl, "preview")}
           >
             {copied === "preview" ? <CheckIcon /> : <CopyIcon />}
           </IconButton>
           <a
-            href={previewUrl}
+            href={publicUrl}
             target="_blank"
             rel="noreferrer"
             aria-label="Open preview in new tab"

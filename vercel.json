@@ -8,6 +8,7 @@
   ],
   "rewrites": [
     { "source": "/admin", "destination": "/admin.html" },
+    { "source": "/form/:slug/preview", "destination": "/index.html" },
     { "source": "/form/:slug", "destination": "/index.html" }
   ]
 }

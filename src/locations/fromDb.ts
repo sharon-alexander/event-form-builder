@@ -1,4 +1,4 @@
-import { supabasePublic } from "../lib/supabase";
+import { supabase, supabasePublic } from "../lib/supabase";
 import type { ThemeTokens } from "../theme/theme";
 import { mergeInfoPageIntoMoreDetails } from "../utils/richText";
 import { DEFAULT_LOCATION_ID, tryGetLocation } from "./index";
@@ -82,25 +82,29 @@ export function locationConfigFromRow(row: LocationRow): LocationConfig {
 export interface ResolvedLocation {
   config: LocationConfig;
   theme: ThemeTokens | null;
+  published: boolean;
 }
 
 export async function fetchLocationBySlug(
   slug: string | null | undefined,
+  options?: { preview?: boolean },
 ): Promise<ResolvedLocation | null> {
-  if (!supabasePublic) return null;
+  const preview = options?.preview === true;
+  const client = preview ? supabase : supabasePublic;
+  if (!client) return null;
 
   const target = slug || DEFAULT_LOCATION_ID;
-  const { data, error } = await supabasePublic
-    .from("locations")
-    .select("*")
-    .eq("slug", target)
-    .eq("published", true)
-    .maybeSingle<LocationRow>();
+  let query = client.from("locations").select("*").eq("slug", target);
+  if (!preview) {
+    query = query.eq("published", true);
+  }
+  const { data, error } = await query.maybeSingle<LocationRow>();
 
   if (error || !data) return null;
 
   return {
     config: locationConfigFromRow(data),
     theme: data.theme ?? null,
+    published: data.published,
   };
 }
