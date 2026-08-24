@@ -15,6 +15,14 @@ export function buildEmbedCode(slug: string): string {
   return `<div id="${MOUNT_ID}" data-location="${slug}"></div>\n<script src="${base}${WIDGET_PATH}"></script>`;
 }
 
-export function buildPreviewUrl(slug: string): string {
+/** Published standalone form URL (public). */
+export function buildPublicFormUrl(slug: string): string {
   return `${getPublicSiteUrl()}/form/${encodeURIComponent(slug)}`;
+}
+
+/** Auth-gated preview URL. Same origin as the admin tab so the signed-in
+ *  session is available — `getPublicSiteUrl()` can point elsewhere
+ *  (`VITE_SITE_URL`, production host, or a Vercel preview deploy). */
+export function buildPreviewUrl(slug: string): string {
+  return `${window.location.origin}/form/${encodeURIComponent(slug)}/preview`;
 }

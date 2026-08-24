@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import type { LocationRow } from "../../locations/fromDb";
 import { useAuth } from "../auth";
 import { createLocation, deleteLocation, listLocations, updateLocation } from "../api";
+import { buildPreviewUrl } from "../embedCode";
 import CreateFormModal from "../components/CreateFormModal";
 import { DEFAULT_FORM_STEPS } from "../constants/defaultFormSteps";
 
@@ -154,7 +155,7 @@ export default function FormsListPage() {
               key={form.id}
               form={form}
               onNavigate={() => navigate(`/forms/${form.id}`)}
-              onPreview={() => window.open(`/form/${encodeURIComponent(form.slug)}`, "_blank")}
+              onPreview={() => window.open(buildPreviewUrl(form.slug), "_blank")}
               onTogglePublish={() => handleTogglePublish(form)}
               onDelete={() => handleDelete(form)}
             />
