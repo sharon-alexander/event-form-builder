@@ -25,7 +25,11 @@ export function escapeHtml(text: string): string {
 }
 
 export function looksLikeHtml(value: string): boolean {
-  return /<\/?[a-z][\s\S]*>/i.test(value);
+  // Contenteditable often emits entities with no tags (`hello&nbsp;`). Treat
+  // those as HTML so toDisplayHtml does not escape `&` a second time.
+  return (
+    /<\/?[a-z][\s\S]*>/i.test(value) || /&(?:[a-z]+|#\d+|#x[\da-f]+);/i.test(value)
+  );
 }
 
 export function isEmptyRichText(html: string): boolean {
