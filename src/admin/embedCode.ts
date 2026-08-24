@@ -20,7 +20,9 @@ export function buildPublicFormUrl(slug: string): string {
   return `${getPublicSiteUrl()}/form/${encodeURIComponent(slug)}`;
 }
 
-/** Auth-gated preview URL — works for unpublished drafts when admin is signed in. */
+/** Auth-gated preview URL. Same origin as the admin tab so the signed-in
+ *  session is available — `getPublicSiteUrl()` can point elsewhere
+ *  (`VITE_SITE_URL`, production host, or a Vercel preview deploy). */
 export function buildPreviewUrl(slug: string): string {
-  return `${buildPublicFormUrl(slug)}/preview`;
+  return `${window.location.origin}/form/${encodeURIComponent(slug)}/preview`;
 }
