@@ -44,10 +44,13 @@ export default function IframePreview({ draft, selectedId }: Props) {
     });
 
     doc.documentElement.style.height = "100%";
+    doc.documentElement.style.backgroundColor = "#fff";
+    doc.documentElement.style.colorScheme = "light";
     doc.body.style.margin = "0";
     doc.body.style.height = "100%";
     doc.body.style.padding = "16px 20px";
     doc.body.style.overflow = "auto";
+    doc.body.style.backgroundColor = "#fff";
     doc.body.style.fontFamily =
       'var(--font-sans, "Inter", system-ui, sans-serif)';
 
@@ -99,7 +102,7 @@ export default function IframePreview({ draft, selectedId }: Props) {
         <iframe
           ref={iframeRef}
           title="Form preview"
-          className="absolute inset-0 h-full w-full border-0"
+          className="absolute inset-0 h-full w-full border-0 bg-white"
           sandbox="allow-same-origin"
         />
       </div>

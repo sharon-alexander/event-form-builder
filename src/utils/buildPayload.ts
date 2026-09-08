@@ -20,7 +20,9 @@ function buildAdditionalInfo(data: FormData, location: LocationConfig): string {
   lines.push(`Headcount May Change: ${data.headcountMayChange ? "Yes" : "No"}`);
 
   if (data.eventFormat) {
-    lines.push(`Format: ${labelFor(EVENT_FORMATS, data.eventFormat)}`);
+    lines.push(
+      `Format: ${labelFor(location.eventFormats ?? EVENT_FORMATS, data.eventFormat)}`,
+    );
   }
   if (data.budget) {
     lines.push(`Budget: ${labelFor(location.budgetOptions, data.budget)}`);
@@ -100,7 +102,7 @@ export function buildPayload(
   const eventDescription =
     data.eventCategory === "other"
       ? data.eventCategoryOther
-      : labelFor(EVENT_CATEGORIES, data.eventCategory);
+      : labelFor(location.eventCategories ?? EVENT_CATEGORIES, data.eventCategory);
 
   const lead: TripleseatLeadPayload["lead"] = {
     first_name: data.firstName.trim(),

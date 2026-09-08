@@ -1,9 +1,11 @@
 import { supabase, supabasePublic } from "../lib/supabase";
+import { EVENT_CATEGORIES, EVENT_FORMATS } from "../types";
 import type { ThemeTokens } from "../theme/theme";
 import { mergeInfoPageIntoMoreDetails } from "../utils/richText";
 import { DEFAULT_LOCATION_ID, tryGetLocation } from "./index";
 import type {
   BudgetOption,
+  EventChoiceOption,
   InfoPageConfig,
   LocationConfig,
   MediaItem,
@@ -22,6 +24,8 @@ export interface LocationRow {
   gallery_media: MediaItem[] | null;
   venue_spaces: VenueSpaceOption[] | null;
   budget_options: BudgetOption[] | null;
+  event_categories: EventChoiceOption[] | null;
+  event_formats: EventChoiceOption[] | null;
   tripleseat: Partial<TripleseatConfig> | null;
   referral_source_ids: Record<string, number> | null;
   referral_other_source_id: number | null;
@@ -51,6 +55,8 @@ export function locationConfigFromRow(row: LocationRow): LocationConfig {
     galleryMedia: row.gallery_media ?? [],
     venueSpaces: row.venue_spaces ?? [],
     budgetOptions: row.budget_options ?? [],
+    eventCategories: row.event_categories ?? EVENT_CATEGORIES,
+    eventFormats: row.event_formats ?? EVENT_FORMATS,
     steps,
     stepMoreDetails: {
       ...bundled?.stepMoreDetails,

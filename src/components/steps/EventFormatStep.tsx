@@ -1,4 +1,5 @@
 import { EVENT_CATEGORIES, EVENT_FORMATS } from "../../types";
+import { useLocationConfig } from "../../context/LocationContext";
 import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
 import FormStep from "../FormStep";
 import type { StepProps } from "./stepProps";
@@ -15,6 +16,10 @@ export default function EventFormatStep({
   title = copy.title,
   subtitle = copy.subtitle,
 }: StepProps) {
+  const location = useLocationConfig();
+  const categories = location.eventCategories ?? EVENT_CATEGORIES;
+  const formats = location.eventFormats ?? EVENT_FORMATS;
+
   const categoryValid =
     data.eventCategory !== null &&
     (data.eventCategory !== "other" || data.eventCategoryOther.trim() !== "");
@@ -33,7 +38,7 @@ export default function EventFormatStep({
         <div>
           <p className="efb-label">Event Type</p>
           <div className="grid grid-cols-2 gap-3">
-            {EVENT_CATEGORIES.map((cat) => (
+            {categories.map((cat) => (
               <button
                 key={cat.value}
                 type="button"
@@ -61,7 +66,7 @@ export default function EventFormatStep({
         <div>
           <p className="efb-label">Format</p>
           <div className="grid grid-cols-2 gap-3">
-            {EVENT_FORMATS.map((f) => (
+            {formats.map((f) => (
               <button
                 key={f.value}
                 type="button"

@@ -18,6 +18,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import type { StepId } from "../../../locations/types";
 import { DEFAULT_STEP_COPY } from "../../../form/defaultStepCopy";
+import { EVENT_CATEGORIES, EVENT_FORMATS } from "../../../types";
 import { isEmptyRichText } from "../../../utils/richText";
 import type { EditableLocation } from "../../pages/FormEditorPage";
 import {
@@ -26,6 +27,7 @@ import {
   STEP_LABELS,
 } from "../../constants/defaultFormSteps";
 import BudgetRangesEditor from "./BudgetRangesEditor";
+import EventOptionsEditor from "./EventOptionsEditor";
 import InfoPageEditor from "./InfoPageEditor";
 import RichTextEditor from "./RichTextEditor";
 import TimingStyleEditor from "./TimingStyleEditor";
@@ -62,6 +64,17 @@ function stepStatus(stepId: StepId, draft: EditableLocation): StepStatus {
         ? { kind: "ok", label: `${n} range${n === 1 ? "" : "s"}` }
         : { kind: "needs", label: "Needs setup" };
     }
+    case "event_format": {
+      const cats = draft.event_categories?.length ?? 0;
+      const fmts = draft.event_formats?.length ?? 0;
+      if (cats === 0 || fmts === 0) {
+        return { kind: "needs", label: "Needs setup" };
+      }
+      return {
+        kind: "ok",
+        label: `${cats} type${cats === 1 ? "" : "s"} · ${fmts} format${fmts === 1 ? "" : "s"}`,
+      };
+    }
     case "timing":
       return draft.timing_style
         ? null
@@ -90,6 +103,8 @@ function needsSetupBanner(
       return "No spaces yet. This step will look empty on the form until you add at least one.";
     case "budget":
       return "No budget ranges yet. This step will look empty on the form until you add at least one.";
+    case "event_format":
+      return "Pick at least one event type and one format. This step will look empty until you do.";
     case "info_acknowledge":
       return "No info content yet. Add a title and details people should acknowledge.";
     default:
@@ -161,9 +176,20 @@ export default function FormBuilderTab({ draft, update, orgId, onError }: Props)
   }
 
   function addStep(stepId: StepId) {
-    setSteps([...steps, stepId]);
+    const patch: Partial<EditableLocation> = {
+      form_steps: [...steps, stepId],
+    };
+    if (stepId === "event_format") {
+      if (!draft.event_categories?.length) {
+        patch.event_categories = EVENT_CATEGORIES;
+      }
+      if (!draft.event_formats?.length) {
+        patch.event_formats = EVENT_FORMATS;
+      }
+    }
+    update(patch);
     setSelectedId(stepId);
-    setShowConfig(false);
+    setShowConfig(true);
   }
 
   return (
@@ -375,6 +401,9 @@ function StepConfig({
       )}
       {stepId === "budget" && (
         <BudgetRangesEditor draft={draft} update={update} />
+      )}
+      {stepId === "event_format" && (
+        <EventOptionsEditor draft={draft} update={update} />
       )}
       {stepId === "timing" && (
         <TimingStyleEditor draft={draft} update={update} />

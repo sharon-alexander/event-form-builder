@@ -43,10 +43,10 @@ export interface FormData {
   guestCount: number | null;
   headcountMayChange: boolean;
 
-  eventCategory: EventCategory | null;
+  eventCategory: string | null;
   eventCategoryOther: string;
 
-  eventFormat: EventFormat | null;
+  eventFormat: string | null;
 
   datesFlexible: boolean;
   eventDate: string;
