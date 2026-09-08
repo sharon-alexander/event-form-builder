@@ -52,9 +52,11 @@ export default function ChoiceListEditor({
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const ignoreBlurRef = useRef(false);
 
   useEffect(() => {
     if (!adding) return;
+    ignoreBlurRef.current = false;
     inputRef.current?.focus();
   }, [adding]);
 
@@ -73,11 +75,18 @@ export default function ChoiceListEditor({
     onChange(selected.filter((s) => s.value !== value));
   }
 
+  function closeAdd() {
+    ignoreBlurRef.current = true;
+    setAdding(false);
+    setDraft("");
+  }
+
   function commitAdd() {
+    if (ignoreBlurRef.current) return;
+
     const label = draft.trim();
     if (!label) {
-      setAdding(false);
-      setDraft("");
+      closeAdd();
       return;
     }
 
@@ -90,14 +99,12 @@ export default function ChoiceListEditor({
         nextEnabled.add(catalogMatch.value);
         onChange(rebuild(catalog, selected, nextEnabled));
       }
-      setAdding(false);
-      setDraft("");
+      closeAdd();
       return;
     }
 
     if (selected.some((s) => s.label.toLowerCase() === label.toLowerCase())) {
-      setAdding(false);
-      setDraft("");
+      closeAdd();
       return;
     }
 
@@ -106,13 +113,7 @@ export default function ChoiceListEditor({
       ...selected.map((s) => s.value),
     ]);
     onChange([...rebuild(catalog, selected, selectedValues), { value, label }]);
-    setAdding(false);
-    setDraft("");
-  }
-
-  function cancelAdd() {
-    setAdding(false);
-    setDraft("");
+    closeAdd();
   }
 
   return (
@@ -168,7 +169,7 @@ export default function ChoiceListEditor({
               }
               if (e.key === "Escape") {
                 e.preventDefault();
-                cancelAdd();
+                closeAdd();
               }
             }}
             onBlur={commitAdd}
