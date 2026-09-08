@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { EventChoiceOption } from "../../../locations/types";
+import { RequiredCheckbox } from "./RequiredCheckbox";
 
 interface Props {
   title: string;
@@ -7,6 +8,8 @@ interface Props {
   catalog: EventChoiceOption[];
   selected: EventChoiceOption[];
   onChange: (next: EventChoiceOption[]) => void;
+  requiredChecked?: boolean;
+  onRequiredChange?: (required: boolean) => void;
 }
 
 function slugifyValue(s: string): string {
@@ -48,6 +51,8 @@ export default function ChoiceListEditor({
   catalog,
   selected = [],
   onChange,
+  requiredChecked,
+  onRequiredChange,
 }: Props) {
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState("");
@@ -118,7 +123,15 @@ export default function ChoiceListEditor({
 
   return (
     <section className="space-y-2">
-      <h3 className="text-sm font-semibold text-zinc-900">{title}</h3>
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-sm font-semibold text-zinc-900">{title}</h3>
+        {onRequiredChange && (
+          <RequiredCheckbox
+            checked={requiredChecked ?? false}
+            onChange={onRequiredChange}
+          />
+        )}
+      </div>
       {hint && <p className="text-xs text-zinc-400">{hint}</p>}
       <div className="flex flex-wrap gap-2">
         {catalog.map((item) => {

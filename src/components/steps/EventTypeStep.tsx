@@ -1,5 +1,8 @@
 import type { EventBookingType } from "../../types";
+import { useLocationConfig } from "../../context/LocationContext";
 import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
+import { isFieldRequired, isStepValid } from "../../form/fieldCatalog";
+import RequiredMark from "../../form/RequiredMark";
 import FormStep from "../FormStep";
 import type { StepProps } from "./stepProps";
 
@@ -20,6 +23,9 @@ export default function EventTypeStep({
   title = copy.title,
   subtitle = copy.subtitle,
 }: StepProps) {
+  const location = useLocationConfig();
+  const required = isFieldRequired(location, "bookingType");
+
   return (
     <FormStep
       title={title}
@@ -28,8 +34,12 @@ export default function EventTypeStep({
       onNext={onNext}
       onBack={onBack}
       nextLabel={nextLabel}
-      nextDisabled={!data.bookingType}
+      nextDisabled={!isStepValid("event_type", data, location)}
     >
+      <p className="efb-label">
+        Booking type
+        <RequiredMark required={required} />
+      </p>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {BOOKING_TYPES.map((t) => (
           <button

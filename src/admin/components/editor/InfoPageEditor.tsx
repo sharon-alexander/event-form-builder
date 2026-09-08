@@ -1,5 +1,6 @@
 import type { InfoPageConfig } from "../../../locations/types";
 import type { EditableLocation } from "../../pages/FormEditorPage";
+import { fieldIsRequired, RequiredCheckbox, setFieldRequired } from "./RequiredCheckbox";
 
 interface Props {
   draft: EditableLocation;
@@ -18,7 +19,7 @@ export default function InfoPageEditor({ draft, update }: Props) {
       <div>
         <h3 className="text-sm font-semibold text-zinc-900">Step title</h3>
         <p className="mt-0.5 text-xs text-zinc-400">
-          Heading on the form. People must tap “I Understand” to continue.
+          Heading on the form.
         </p>
       </div>
 
@@ -29,6 +30,16 @@ export default function InfoPageEditor({ draft, update }: Props) {
         value={page.title}
         onChange={(e) => update({ info_page: { title: e.target.value } })}
       />
+
+      <div className="flex items-center justify-between gap-3 border-t border-zinc-100 pt-3">
+        <p className="text-sm font-medium text-zinc-900">I Understand</p>
+        <RequiredCheckbox
+          checked={fieldIsRequired(draft, "infoAcknowledged")}
+          onChange={(required) =>
+            setFieldRequired(draft, update, "infoAcknowledged", required)
+          }
+        />
+      </div>
     </section>
   );
 }

@@ -1,5 +1,8 @@
 import { REFERRAL_SOURCES } from "../../types";
+import { useLocationConfig } from "../../context/LocationContext";
 import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
+import { isFieldRequired, isStepValid } from "../../form/fieldCatalog";
+import RequiredMark from "../../form/RequiredMark";
 import FormStep from "../FormStep";
 import type { StepProps } from "./stepProps";
 
@@ -15,11 +18,8 @@ export default function OtherVenuesReferralStep({
   title = copy.title,
   subtitle = copy.subtitle,
 }: StepProps) {
-  const referralValid =
-    data.referralSource !== null &&
-    (data.referralSource !== "other" || data.referralSourceOther.trim() !== "");
-
-  const isValid = data.consideringOtherVenues !== null && referralValid;
+  const location = useLocationConfig();
+  const detailsRequired = isFieldRequired(location, "otherVenuesDetails");
 
   return (
     <FormStep
@@ -29,11 +29,14 @@ export default function OtherVenuesReferralStep({
       onNext={onNext}
       onBack={onBack}
       nextLabel={nextLabel}
-      nextDisabled={!isValid}
+      nextDisabled={!isStepValid("other_venues_referral", data, location)}
     >
       <div className="space-y-8">
         <div>
-          <p className="efb-label">Considering any other venues?</p>
+          <p className="efb-label">
+            Considering any other venues?
+            <RequiredMark required={isFieldRequired(location, "consideringOtherVenues")} />
+          </p>
           <div className="grid grid-cols-2 gap-4">
             <button
               type="button"
@@ -51,18 +54,28 @@ export default function OtherVenuesReferralStep({
             </button>
           </div>
           {data.consideringOtherVenues && (
-            <textarea
-              className="efb-input mt-3"
-              rows={2}
-              placeholder="Which venues are you considering?"
-              value={data.otherVenuesDetails}
-              onChange={(e) => onChange({ otherVenuesDetails: e.target.value })}
-            />
+            <>
+              <label htmlFor="other-venues-details" className="efb-label mt-3">
+                Which venues are you considering?
+                <RequiredMark required={detailsRequired} />
+              </label>
+              <textarea
+                id="other-venues-details"
+                className="efb-input"
+                rows={2}
+                placeholder="Which venues are you considering?"
+                value={data.otherVenuesDetails}
+                onChange={(e) => onChange({ otherVenuesDetails: e.target.value })}
+              />
+            </>
           )}
         </div>
 
         <div>
-          <p className="efb-label">How did you hear about us?</p>
+          <p className="efb-label">
+            How did you hear about us?
+            <RequiredMark required={isFieldRequired(location, "referralSource")} />
+          </p>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {REFERRAL_SOURCES.map((r) => (
               <button

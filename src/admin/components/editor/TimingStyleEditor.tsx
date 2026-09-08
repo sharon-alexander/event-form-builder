@@ -1,5 +1,6 @@
 import type { TimingStyle } from "../../../locations/types";
 import type { EditableLocation } from "../../pages/FormEditorPage";
+import { fieldIsRequired, RequiredCheckbox, setFieldRequired } from "./RequiredCheckbox";
 
 interface Props {
   draft: EditableLocation;
@@ -24,11 +25,19 @@ export default function TimingStyleEditor({ draft, update }: Props) {
 
   return (
     <section className="space-y-3">
-      <div>
-        <h3 className="text-sm font-semibold text-zinc-900">Timing style</h3>
-        <p className="mt-0.5 text-xs text-zinc-400">
-          Controls which timing questions appear on this step.
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-semibold text-zinc-900">Timing</h3>
+          <p className="mt-0.5 text-xs text-zinc-400">
+            Controls which timing questions appear on this step.
+          </p>
+        </div>
+        <RequiredCheckbox
+          checked={fieldIsRequired(draft, "timing")}
+          onChange={(required) =>
+            setFieldRequired(draft, update, "timing", required)
+          }
+        />
       </div>
 
       <div className="space-y-2">
