@@ -90,8 +90,11 @@ export default function ReviewStep({ data, onSubmit, onBack, isSubmitting, error
         )}
         {dateDisplay && <Row title="Date" value={dateDisplay} />}
         {data.budget && <Row title="Budget" value={label(location.budgetOptions, data.budget)} />}
-        {data.venueSpace && (
-          <Row title="Venue Space" value={label(location.venueSpaces, data.venueSpace)} />
+        {data.venueSpace.length > 0 && (
+          <Row
+            title={data.venueSpace.length > 1 ? "Venue Spaces" : "Venue Space"}
+            value={data.venueSpace.map((val) => label(location.venueSpaces, val)).join(", ")}
+          />
         )}
         {(data.startTime || data.timingFlexible || data.mealService) && (
           <Row title="Timing" value={timingDisplay} />

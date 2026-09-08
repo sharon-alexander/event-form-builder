@@ -57,6 +57,8 @@ export interface LocationConfig {
   logoUrl?: string;
   galleryMedia: MediaItem[];
   venueSpaces: VenueSpaceOption[];
+  /** When true, guests can pick more than one space of interest. */
+  allowMultipleVenueSpaces?: boolean;
   budgetOptions: BudgetOption[];
   /** Options shown on the event_format step. Undefined = starter catalog. */
   eventCategories?: EventChoiceOption[];

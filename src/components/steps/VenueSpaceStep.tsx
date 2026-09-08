@@ -19,8 +19,21 @@ export default function VenueSpaceStep({
   title = copy.title,
   subtitle = copy.subtitle,
 }: StepProps) {
-  const { venueSpaces } = useLocationConfig();
+  const { venueSpaces, allowMultipleVenueSpaces } = useLocationConfig();
+  const allowMultiple = !!allowMultipleVenueSpaces;
+  const selected = data.venueSpace;
   const [galleryVenue, setGalleryVenue] = useState<VenueSpaceOption | null>(null);
+
+  function selectSpace(value: string) {
+    if (!allowMultiple) {
+      onChange({ venueSpace: [value] });
+      return;
+    }
+    const next = selected.includes(value)
+      ? selected.filter((v) => v !== value)
+      : [...selected, value];
+    onChange({ venueSpace: next });
+  }
 
   return (
     <>
@@ -31,20 +44,25 @@ export default function VenueSpaceStep({
         onNext={onNext}
         onBack={onBack}
         nextLabel={nextLabel}
-        nextDisabled={!data.venueSpace}
+        nextDisabled={selected.length === 0}
       >
+        {allowMultiple && (
+          <p className="-mt-1 mb-3 text-sm text-gray-500">Select all that apply.</p>
+        )}
         <div className="gap-4 sm:columns-2 [&>*]:mb-4">
           {venueSpaces.map((v) => {
             const media = v.galleryMedia ?? [];
             const hasGallery = media.length > 0;
             const preview = media[0];
+            const isSelected = selected.includes(v.value);
 
             return (
               <div key={v.value} className="relative break-inside-avoid">
                 <button
                   type="button"
-                  onClick={() => onChange({ venueSpace: v.value })}
-                  className={`efb-card w-full text-left ${data.venueSpace === v.value ? "efb-card-selected" : ""}`}
+                  onClick={() => selectSpace(v.value)}
+                  aria-pressed={isSelected}
+                  className={`efb-card w-full text-left ${isSelected ? "efb-card-selected" : ""}`}
                 >
                   {preview && (
                     <div className="mb-3 overflow-hidden rounded-md">
@@ -55,8 +73,27 @@ export default function VenueSpaceStep({
                       />
                     </div>
                   )}
-                  <div className="font-semibold text-gray-900">{v.label}</div>
-                  {v.price && <div className="mt-1 text-xs text-brand-600">{v.price}</div>}
+                  <div className="flex items-start gap-2">
+                    {allowMultiple && (
+                      <span
+                        className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border ${
+                          isSelected
+                            ? "border-brand-500 bg-brand-500 text-white"
+                            : "border-gray-300"
+                        }`}
+                      >
+                        {isSelected && (
+                          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </span>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="font-semibold text-gray-900">{v.label}</div>
+                      {v.price && <div className="mt-1 text-xs text-brand-600">{v.price}</div>}
+                    </div>
+                  </div>
                 </button>
 
                 {hasGallery && (

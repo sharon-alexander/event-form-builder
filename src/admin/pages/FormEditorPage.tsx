@@ -33,6 +33,7 @@ export interface EditableLocation {
   about_blurb: string;
   gallery_media: MediaItem[];
   venue_spaces: VenueSpaceOption[];
+  allow_multiple_venue_spaces: boolean;
   budget_options: BudgetOption[];
   event_categories: EventChoiceOption[];
   event_formats: EventChoiceOption[];
@@ -64,6 +65,10 @@ function toEditable(row: LocationRow): EditableLocation {
     about_blurb: row.about_blurb,
     gallery_media: row.gallery_media ?? [],
     venue_spaces: row.venue_spaces ?? [],
+    allow_multiple_venue_spaces:
+      row.allow_multiple_venue_spaces ??
+      bundled?.allowMultipleVenueSpaces ??
+      false,
     budget_options: row.budget_options ?? [],
     event_categories: row.event_categories ?? EVENT_CATEGORIES,
     event_formats: row.event_formats ?? EVENT_FORMATS,
@@ -141,6 +146,7 @@ export default function FormEditorPage() {
         about_blurb: draft.about_blurb,
         gallery_media: draft.gallery_media,
         venue_spaces: draft.venue_spaces,
+        allow_multiple_venue_spaces: draft.allow_multiple_venue_spaces,
         budget_options: draft.budget_options,
         event_categories: draft.event_categories,
         event_formats: draft.event_formats,

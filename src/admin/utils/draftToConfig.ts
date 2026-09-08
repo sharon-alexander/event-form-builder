@@ -18,6 +18,7 @@ export function draftToLocationConfig(draft: EditableLocation): LocationConfig {
     logoUrl: draft.theme?.logoUrl,
     galleryMedia: draft.gallery_media,
     venueSpaces: draft.venue_spaces,
+    allowMultipleVenueSpaces: draft.allow_multiple_venue_spaces,
     budgetOptions: draft.budget_options,
     eventCategories: draft.event_categories ?? EVENT_CATEGORIES,
     eventFormats: draft.event_formats ?? EVENT_FORMATS,

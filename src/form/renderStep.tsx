@@ -70,7 +70,7 @@ export function hasStepData(stepId: StepId, data: FormData): boolean {
     case "budget":
       return data.budget !== null;
     case "venue_space":
-      return data.venueSpace !== null;
+      return data.venueSpace.length > 0;
     case "timing":
       return (
         data.timingFlexible ||

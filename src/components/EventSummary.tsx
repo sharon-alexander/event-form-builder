@@ -75,8 +75,11 @@ export default function EventSummary({ data }: EventSummaryProps) {
     rows.push({ title: "Budget", value: label(location.budgetOptions, data.budget) });
   }
 
-  if (data.venueSpace) {
-    rows.push({ title: "Space", value: label(location.venueSpaces, data.venueSpace) });
+  if (data.venueSpace.length > 0) {
+    rows.push({
+      title: data.venueSpace.length > 1 ? "Spaces" : "Space",
+      value: data.venueSpace.map((val) => label(location.venueSpaces, val)).join(", "),
+    });
   }
 
   if (location.timingStyle === "meal_service" && data.mealService) {

@@ -54,7 +54,7 @@ export interface FormData {
   flexibleDatePreferences: FlexibleDatePreferences;
 
   budget: string | null;
-  venueSpace: string | null;
+  venueSpace: string[];
 
   startTime: string;
   endTime: string;
@@ -97,7 +97,7 @@ export const INITIAL_FORM_DATA: FormData = {
   flexibleDatePreferences: { preferredMonths: [], preferredDays: [] },
 
   budget: null,
-  venueSpace: null,
+  venueSpace: [],
 
   startTime: "",
   endTime: "",
