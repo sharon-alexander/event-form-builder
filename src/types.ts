@@ -2,9 +2,21 @@ export type EventBookingType = "private_event" | "large_party";
 
 export type EventCategory =
   | "birthday"
+  | "brand_activations"
+  | "corporate"
+  | "engagement_party"
+  | "going_away_party"
   | "happy_hour"
   | "holiday_party"
-  | "corporate"
+  | "intimate_weddings"
+  | "listening_parties"
+  | "networking_event"
+  | "personal_celebrations"
+  | "pop_ups"
+  | "private_dinners"
+  | "product_launches"
+  | "rehearsal_dinner"
+  | "team_building"
   | "wedding"
   | "other";
 
@@ -25,12 +37,15 @@ export type ServiceInterest =
   | "full_production";
 
 export type ReferralSource =
+  | "eventup"
   | "instagram"
-  | "tiktok"
   | "facebook"
+  | "tiktok"
+  | "venues_by_tripleseat"
   | "google"
+  | "email"
   | "friend"
-  | "blog"
+  | "past_guest"
   | "other";
 
 export interface FlexibleDatePreferences {
@@ -126,9 +141,21 @@ export const INITIAL_FORM_DATA: FormData = {
 
 export const EVENT_CATEGORIES: { value: EventCategory; label: string }[] = [
   { value: "birthday", label: "Birthday" },
+  { value: "brand_activations", label: "Brand Activations" },
+  { value: "corporate", label: "Corporate Events" },
+  { value: "engagement_party", label: "Engagement Party" },
+  { value: "going_away_party", label: "Going Away Party" },
   { value: "happy_hour", label: "Happy Hour" },
   { value: "holiday_party", label: "Holiday Party" },
-  { value: "corporate", label: "Corporate Event" },
+  { value: "intimate_weddings", label: "Intimate Weddings" },
+  { value: "listening_parties", label: "Listening Parties" },
+  { value: "networking_event", label: "Networking Event" },
+  { value: "personal_celebrations", label: "Personal Celebrations" },
+  { value: "pop_ups", label: "Pop-ups" },
+  { value: "private_dinners", label: "Private Dinners" },
+  { value: "product_launches", label: "Product Launches" },
+  { value: "rehearsal_dinner", label: "Rehearsal Dinner" },
+  { value: "team_building", label: "Team Building" },
   { value: "wedding", label: "Wedding" },
   { value: "other", label: "Other" },
 ];
@@ -150,12 +177,15 @@ export const SERVICE_OPTIONS: { value: ServiceInterest; label: string }[] = [
 ];
 
 export const REFERRAL_SOURCES: { value: ReferralSource; label: string }[] = [
+  { value: "eventup", label: "EventUp" },
   { value: "instagram", label: "Instagram" },
-  { value: "tiktok", label: "TikTok" },
   { value: "facebook", label: "Facebook" },
-  { value: "google", label: "Google" },
-  { value: "friend", label: "Friend / Word of Mouth" },
-  { value: "blog", label: "Blog / Press" },
+  { value: "tiktok", label: "TikTok" },
+  { value: "venues_by_tripleseat", label: "Venues by Tripleseat" },
+  { value: "google", label: "Search Engine" },
+  { value: "email", label: "Email" },
+  { value: "friend", label: "Friends/Family" },
+  { value: "past_guest", label: "Past Guest" },
   { value: "other", label: "Other" },
 ];
 

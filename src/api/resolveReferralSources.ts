@@ -21,12 +21,15 @@ interface TripleseatSite {
 /** Fallback when the API is unreachable. Matches Airmax Hospitality's Tripleseat account. */
 const DEFAULT_MAPPING: ReferralSourceMapping = {
   referralSourceIds: {
+    eventup: 7,
     instagram: 6,
-    tiktok: 11888,
     facebook: 5,
+    tiktok: 11888,
+    venues_by_tripleseat: 4,
     google: 3,
+    email: 2,
     friend: 10746,
-    blog: 1,
+    past_guest: 10747,
     other: 1,
   },
   referralOtherSourceId: 1,
@@ -34,12 +37,15 @@ const DEFAULT_MAPPING: ReferralSourceMapping = {
 
 /** Maps our form option keys to substrings in Tripleseat referral source names. */
 const LABEL_MATCHERS: Record<ReferralSource, string[]> = {
+  eventup: ["eventup", "event up"],
   instagram: ["instagram"],
-  tiktok: ["tiktok"],
   facebook: ["facebook"],
+  tiktok: ["tiktok"],
+  venues_by_tripleseat: ["venues by tripleseat"],
   google: ["search engine", "google"],
+  email: ["email"],
   friend: ["friends", "family", "word of mouth", "friend"],
-  blog: ["blog", "press"],
+  past_guest: ["past guest"],
   other: ["other"],
 };
 
@@ -137,8 +143,6 @@ function mapReferralSources(sources: TripleseatReferralSource[]): ReferralSource
     DEFAULT_MAPPING.referralOtherSourceId;
 
   referralSourceIds.other ??= otherId;
-  // No native Blog/Press in Tripleseat — submit as "Other" with descriptive text.
-  referralSourceIds.blog ??= otherId;
 
   return {
     referralSourceIds: { ...DEFAULT_MAPPING.referralSourceIds, ...referralSourceIds },
