@@ -17,6 +17,11 @@ export interface BudgetOption {
   label: string;
 }
 
+export interface EventChoiceOption {
+  value: string;
+  label: string;
+}
+
 export interface InfoPageConfig {
   title: string;
 }
@@ -53,6 +58,9 @@ export interface LocationConfig {
   galleryMedia: MediaItem[];
   venueSpaces: VenueSpaceOption[];
   budgetOptions: BudgetOption[];
+  /** Options shown on the event_format step. Undefined = starter catalog. */
+  eventCategories?: EventChoiceOption[];
+  eventFormats?: EventChoiceOption[];
 
   /** Ordered list of form steps for this location. */
   steps: StepId[];

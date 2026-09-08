@@ -39,7 +39,7 @@ export default function ReviewStep({ data, onSubmit, onBack, isSubmitting, error
   const categoryLabel =
     data.eventCategory === "other"
       ? data.eventCategoryOther
-      : label(EVENT_CATEGORIES, data.eventCategory);
+      : label(location.eventCategories ?? EVENT_CATEGORIES, data.eventCategory);
 
   const dateDisplay = data.datesFlexible
     ? `Flexible — Months: ${data.flexibleDatePreferences.preferredMonths.join(", ") || "Any"}; Days: ${data.flexibleDatePreferences.preferredDays.join(", ") || "Any"}`
@@ -82,7 +82,12 @@ export default function ReviewStep({ data, onSubmit, onBack, isSubmitting, error
           />
         )}
         {data.eventCategory && <Row title="Event Type" value={categoryLabel} />}
-        {data.eventFormat && <Row title="Format" value={label(EVENT_FORMATS, data.eventFormat)} />}
+        {data.eventFormat && (
+          <Row
+            title="Format"
+            value={label(location.eventFormats ?? EVENT_FORMATS, data.eventFormat)}
+          />
+        )}
         {dateDisplay && <Row title="Date" value={dateDisplay} />}
         {data.budget && <Row title="Budget" value={label(location.budgetOptions, data.budget)} />}
         {data.venueSpace && (

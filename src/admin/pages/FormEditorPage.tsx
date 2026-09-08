@@ -3,12 +3,14 @@ import { Link, useParams } from "react-router-dom";
 import type { ThemeTokens } from "../../theme/theme";
 import type {
   BudgetOption,
+  EventChoiceOption,
   InfoPageConfig,
   MediaItem,
   StepId,
   TripleseatConfig,
   VenueSpaceOption,
 } from "../../locations/types";
+import { EVENT_CATEGORIES, EVENT_FORMATS } from "../../types";
 import type { LocationRow } from "../../locations/fromDb";
 import { tryGetLocation } from "../../locations";
 import { mergeInfoPageIntoMoreDetails } from "../../utils/richText";
@@ -32,6 +34,8 @@ export interface EditableLocation {
   gallery_media: MediaItem[];
   venue_spaces: VenueSpaceOption[];
   budget_options: BudgetOption[];
+  event_categories: EventChoiceOption[];
+  event_formats: EventChoiceOption[];
   form_steps: StepId[];
   step_more_details: Partial<Record<StepId, string>>;
   timing_style: string;
@@ -61,6 +65,8 @@ function toEditable(row: LocationRow): EditableLocation {
     gallery_media: row.gallery_media ?? [],
     venue_spaces: row.venue_spaces ?? [],
     budget_options: row.budget_options ?? [],
+    event_categories: row.event_categories ?? EVENT_CATEGORIES,
+    event_formats: row.event_formats ?? EVENT_FORMATS,
     form_steps:
       row.form_steps && row.form_steps.length > 0
         ? row.form_steps
@@ -136,6 +142,8 @@ export default function FormEditorPage() {
         gallery_media: draft.gallery_media,
         venue_spaces: draft.venue_spaces,
         budget_options: draft.budget_options,
+        event_categories: draft.event_categories,
+        event_formats: draft.event_formats,
         form_steps: draft.form_steps,
         step_more_details: draft.step_more_details,
         timing_style: draft.timing_style,

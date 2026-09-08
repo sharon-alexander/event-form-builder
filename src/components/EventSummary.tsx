@@ -45,12 +45,15 @@ export default function EventSummary({ data }: EventSummaryProps) {
       value:
         data.eventCategory === "other"
           ? data.eventCategoryOther || "Other"
-          : label(EVENT_CATEGORIES, data.eventCategory),
+          : label(location.eventCategories ?? EVENT_CATEGORIES, data.eventCategory),
     });
   }
 
   if (data.eventFormat) {
-    rows.push({ title: "Format", value: label(EVENT_FORMATS, data.eventFormat) });
+    rows.push({
+      title: "Format",
+      value: label(location.eventFormats ?? EVENT_FORMATS, data.eventFormat),
+    });
   }
 
   if (data.datesFlexible) {

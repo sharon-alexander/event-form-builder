@@ -1,4 +1,5 @@
 import type { LocationConfig } from "../../locations/types";
+import { EVENT_CATEGORIES, EVENT_FORMATS } from "../../types";
 import { mergeInfoPageIntoMoreDetails } from "../../utils/richText";
 import type { EditableLocation } from "../pages/FormEditorPage";
 
@@ -18,6 +19,8 @@ export function draftToLocationConfig(draft: EditableLocation): LocationConfig {
     galleryMedia: draft.gallery_media,
     venueSpaces: draft.venue_spaces,
     budgetOptions: draft.budget_options,
+    eventCategories: draft.event_categories ?? EVENT_CATEGORIES,
+    eventFormats: draft.event_formats ?? EVENT_FORMATS,
     steps,
     stepMoreDetails: mergeInfoPageIntoMoreDetails(
       draft.step_more_details ?? {},
