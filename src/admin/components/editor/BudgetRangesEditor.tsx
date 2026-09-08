@@ -39,6 +39,60 @@ function slugifyValue(s: string): string {
     .replace(/^_+|_+$/g, "");
 }
 
+const AMOUNT_PATTERN = String.raw`\$?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?k?\+?`;
+const RANGE_SEP_PATTERN = String.raw`\s*(?:[-–—]|to)\s*`;
+const SINGLE_AMOUNT_RE = new RegExp(`^(${AMOUNT_PATTERN})$`, "i");
+const RANGE_AMOUNT_RE = new RegExp(
+  `^(${AMOUNT_PATTERN})(${RANGE_SEP_PATTERN})(${AMOUNT_PATTERN})$`,
+  "i",
+);
+const UNIT_AFTER_RE =
+  /^(?:\s+)(?:people|person|guests?|pax|attendees?|heads?|headcount|hours?|hrs?|days?|nights?)(?:\b|$)/i;
+
+function withDollarPrefix(amount: string): string {
+  return amount.startsWith("$") ? amount : `$${amount}`;
+}
+
+function amountLooksLikeMoney(amount: string): boolean {
+  const token = amount.replace(/^\$/, "");
+  if (/,/.test(token) || /k/i.test(token) || /\+$/.test(token)) return true;
+  const n = Number(token);
+  return Number.isFinite(n) && n >= 100;
+}
+
+function formatBudgetLabel(raw: string): string {
+  const trimmed = raw.trim();
+  if (!trimmed) return raw;
+
+  const range = trimmed.match(RANGE_AMOUNT_RE);
+  if (range?.[1] && range[3] != null) {
+    return `${withDollarPrefix(range[1])}${range[2] ?? ""}${withDollarPrefix(range[3])}`;
+  }
+
+  const single = trimmed.match(SINGLE_AMOUNT_RE);
+  if (single?.[1]) return withDollarPrefix(single[1]);
+
+  const tokenRe = new RegExp(
+    `(${AMOUNT_PATTERN})(?:(${RANGE_SEP_PATTERN})(${AMOUNT_PATTERN}))?`,
+    "gi",
+  );
+
+  return trimmed.replace(tokenRe, (match, left: string, sep: string, right: string, offset: number) => {
+    if (offset > 0 && /\w/.test(trimmed[offset - 1] ?? "")) return match;
+    const after = trimmed.slice(offset + match.length);
+    if (UNIT_AFTER_RE.test(after)) return match;
+
+    if (sep != null && right != null) {
+      const nextLeft = amountLooksLikeMoney(left) ? withDollarPrefix(left) : left;
+      const nextRight = amountLooksLikeMoney(right) ? withDollarPrefix(right) : right;
+      return `${nextLeft}${sep}${nextRight}`;
+    }
+
+    if (!amountLooksLikeMoney(left)) return match;
+    return withDollarPrefix(left);
+  });
+}
+
 function withGeneratedValues(items: BudgetOption[]): BudgetOption[] {
   return items.map((item, i) => ({
     ...item,
@@ -220,6 +274,7 @@ function SortableBudgetRow({
           placeholder="e.g. $5,000 – $10,000"
           value={budget.label}
           onChange={(e) => onChange(e.target.value)}
+          onBlur={(e) => onChange(formatBudgetLabel(e.target.value))}
         />
       </div>
       <IconButton label="Remove" onClick={onRemove} destructive>

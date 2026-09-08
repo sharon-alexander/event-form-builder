@@ -13,6 +13,7 @@ import type {
 import { EVENT_CATEGORIES, EVENT_FORMATS } from "../../types";
 import type { LocationRow } from "../../locations/fromDb";
 import { tryGetLocation } from "../../locations";
+import { hasOptionLabel } from "../../locations/presentableOptions";
 import { mergeInfoPageIntoMoreDetails } from "../../utils/richText";
 import {
   getLocationById,
@@ -139,15 +140,17 @@ export default function FormEditorPage() {
     setError(null);
     setNotice(null);
     try {
+      const venue_spaces = draft.venue_spaces.filter(hasOptionLabel);
+      const budget_options = draft.budget_options.filter(hasOptionLabel);
       const patch: LocationUpdate = {
         slug: draft.slug,
         name: draft.name,
         form_title: draft.form_title,
         about_blurb: draft.about_blurb,
         gallery_media: draft.gallery_media,
-        venue_spaces: draft.venue_spaces,
+        venue_spaces,
         allow_multiple_venue_spaces: draft.allow_multiple_venue_spaces,
-        budget_options: draft.budget_options,
+        budget_options,
         event_categories: draft.event_categories,
         event_formats: draft.event_formats,
         form_steps: draft.form_steps,
@@ -161,6 +164,7 @@ export default function FormEditorPage() {
         published: draft.published,
       };
       await updateLocation(id, patch);
+      setDraft((prev) => (prev ? { ...prev, venue_spaces, budget_options } : prev));
       setDirty(false);
       setNotice("Saved.");
     } catch (err) {
