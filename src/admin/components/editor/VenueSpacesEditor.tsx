@@ -104,6 +104,8 @@ export default function VenueSpacesEditor({ draft, update, orgId, onError }: Pro
     setVenues(arrayMove(venues, oldIndex, newIndex), arrayMove(spaceIds, oldIndex, newIndex));
   }
 
+  const allowMultiple = draft.allow_multiple_venue_spaces;
+
   return (
     <section className="space-y-4">
       <div className="flex items-center justify-between gap-3">
@@ -119,6 +121,31 @@ export default function VenueSpacesEditor({ draft, update, orgId, onError }: Pro
             Add space
           </button>
         )}
+      </div>
+
+      <div className="flex items-start justify-between gap-4 rounded-xl border border-zinc-200 bg-white px-4 py-3">
+        <div>
+          <p className="text-sm font-medium text-zinc-900">Allow multiple spaces</p>
+          <p className="mt-0.5 text-xs text-zinc-500">
+            Guests can select more than one space of interest.
+          </p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={allowMultiple}
+          aria-label="Allow multiple spaces"
+          onClick={() => update({ allow_multiple_venue_spaces: !allowMultiple })}
+          className={`relative mt-0.5 inline-flex h-5 w-9 shrink-0 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:ring-offset-2 ${
+            allowMultiple ? "bg-zinc-900" : "bg-zinc-300"
+          }`}
+        >
+          <span
+            className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
+              allowMultiple ? "translate-x-4" : "translate-x-0"
+            }`}
+          />
+        </button>
       </div>
 
       {venues.length === 0 ? (

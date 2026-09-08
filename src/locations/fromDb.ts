@@ -32,6 +32,7 @@ export interface LocationRow {
   form_steps: StepId[] | null;
   step_more_details: Partial<Record<StepId, string>> | null;
   timing_style: string | null;
+  allow_multiple_venue_spaces: boolean | null;
   info_page: InfoPageConfig | null;
   theme: ThemeTokens | null;
   published: boolean;
@@ -54,6 +55,10 @@ export function locationConfigFromRow(row: LocationRow): LocationConfig {
     logoUrl: row.theme?.logoUrl,
     galleryMedia: row.gallery_media ?? [],
     venueSpaces: row.venue_spaces ?? [],
+    allowMultipleVenueSpaces:
+      row.allow_multiple_venue_spaces ??
+      bundled?.allowMultipleVenueSpaces ??
+      false,
     budgetOptions: row.budget_options ?? [],
     eventCategories: row.event_categories ?? EVENT_CATEGORIES,
     eventFormats: row.event_formats ?? EVENT_FORMATS,

@@ -27,8 +27,14 @@ function buildAdditionalInfo(data: FormData, location: LocationConfig): string {
   if (data.budget) {
     lines.push(`Budget: ${labelFor(location.budgetOptions, data.budget)}`);
   }
-  if (data.venueSpace) {
-    lines.push(`Venue Space: ${labelFor(location.venueSpaces, data.venueSpace)}`);
+  if (data.venueSpace.length > 0) {
+    const spaceLabel = data.venueSpace
+      .map((val) => labelFor(location.venueSpaces, val))
+      .filter(Boolean)
+      .join(", ");
+    lines.push(
+      `${data.venueSpace.length > 1 ? "Venue Spaces" : "Venue Space"}: ${spaceLabel}`,
+    );
   }
 
   if (data.datesFlexible) {
