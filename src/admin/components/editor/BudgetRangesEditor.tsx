@@ -18,6 +18,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import type { BudgetOption } from "../../../locations/types";
 import type { EditableLocation } from "../../pages/FormEditorPage";
+import { fieldIsRequired, RequiredCheckbox, setFieldRequired } from "./RequiredCheckbox";
 
 interface Props {
   draft: EditableLocation;
@@ -155,8 +156,14 @@ export default function BudgetRangesEditor({ draft, update }: Props) {
   return (
     <section className="space-y-4">
       <div className="flex items-center justify-between gap-3">
-        <div>
+        <div className="flex min-w-0 items-center gap-3">
           <h3 className="text-sm font-semibold text-zinc-900">Budget ranges</h3>
+          <RequiredCheckbox
+            checked={fieldIsRequired(draft, "budget")}
+            onChange={(required) =>
+              setFieldRequired(draft, update, "budget", required)
+            }
+          />
         </div>
         {budgets.length > 0 && (
           <button

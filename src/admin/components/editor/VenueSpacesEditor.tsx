@@ -19,6 +19,7 @@ import { CSS } from "@dnd-kit/utilities";
 import type { VenueSpaceOption } from "../../../locations/types";
 import type { EditableLocation } from "../../pages/FormEditorPage";
 import { collectFormMedia } from "../../utils/formMediaLibrary";
+import { fieldIsRequired, RequiredCheckbox, setFieldRequired } from "./RequiredCheckbox";
 import VenueGalleryEditor from "./VenueGalleryEditor";
 
 interface Props {
@@ -109,8 +110,14 @@ export default function VenueSpacesEditor({ draft, update, orgId, onError }: Pro
   return (
     <section className="space-y-4">
       <div className="flex items-center justify-between gap-3">
-        <div>
+        <div className="flex min-w-0 items-center gap-3">
           <h3 className="text-sm font-semibold text-zinc-900">Spaces</h3>
+          <RequiredCheckbox
+            checked={fieldIsRequired(draft, "venueSpace")}
+            onChange={(required) =>
+              setFieldRequired(draft, update, "venueSpace", required)
+            }
+          />
         </div>
         {venues.length > 0 && (
           <button
