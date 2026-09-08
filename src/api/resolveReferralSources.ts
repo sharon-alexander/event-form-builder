@@ -74,7 +74,7 @@ async function fetchMapping(
 ): Promise<ReferralSourceMapping> {
   try {
     const url = `${apiBase}/sites.json?public_key=${encodeURIComponent(publicKey)}`;
-    const res = await fetch(url);
+    const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
     if (!res.ok) return DEFAULT_MAPPING;
 
     const data: unknown = await res.json();

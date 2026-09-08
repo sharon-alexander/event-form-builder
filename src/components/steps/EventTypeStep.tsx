@@ -6,9 +6,9 @@ import RequiredMark from "../../form/RequiredMark";
 import FormStep from "../FormStep";
 import type { StepProps } from "./stepProps";
 
-const BOOKING_TYPES: { value: EventBookingType; label: string; desc: string }[] = [
-  { value: "private_event", label: "Private Event", desc: "An intimate gathering or celebration" },
-  { value: "large_party", label: "Large Party Booking", desc: "A bigger group or multi-room event" },
+const BOOKING_TYPES: { value: EventBookingType; label: string }[] = [
+  { value: "private_event", label: "Private Event" },
+  { value: "large_party", label: "Large Party Booking" },
 ];
 
 const copy = DEFAULT_STEP_COPY.event_type;
@@ -49,7 +49,6 @@ export default function EventTypeStep({
             className={`efb-card text-left ${data.bookingType === t.value ? "efb-card-selected" : ""}`}
           >
             <div className="font-semibold text-gray-900">{t.label}</div>
-            <div className="mt-1 text-sm text-gray-500">{t.desc}</div>
           </button>
         ))}
       </div>

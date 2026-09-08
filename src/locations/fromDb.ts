@@ -1,4 +1,4 @@
-import { supabase, supabasePublic } from "../lib/supabase";
+import { getSupabase, supabasePublic } from "../lib/supabase";
 import { EVENT_CATEGORIES, EVENT_FORMATS } from "../types";
 import type { ThemeTokens } from "../theme/theme";
 import { mergeInfoPageIntoMoreDetails } from "../utils/richText";
@@ -106,7 +106,10 @@ export async function fetchLocationBySlug(
   options?: { preview?: boolean },
 ): Promise<ResolvedLocation | null> {
   const preview = options?.preview === true;
-  const client = preview ? supabase : supabasePublic;
+  // Preview needs the signed-in client for unpublished rows. Don't call
+  // getSupabase() on the public path — that would start auth recovery and can
+  // stall the first load on "Loading…".
+  const client = preview ? getSupabase() : supabasePublic;
   if (!client) return null;
 
   const target = slug || DEFAULT_LOCATION_ID;
