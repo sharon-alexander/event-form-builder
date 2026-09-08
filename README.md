@@ -60,16 +60,34 @@ What you can edit per form:
 
 ### Supabase setup
 
-The backend (database, auth, storage) lives in Supabase. Full setup,
-migrations, and the seed script are documented in
+The backend (database, auth, storage) lives in Supabase. Seed script, Edge
+Functions, and data model are documented in
 [`supabase/README.md`](supabase/README.md). In short:
 
-1. Create a Supabase project and run the SQL in `supabase/migrations/`.
+1. Create a Supabase project and apply the migrations (see below).
 2. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to `.env` (and Vercel).
 3. Seed the launch data and create an admin login:
    ```bash
    node supabase/seed/seed.mjs
    ```
+
+### Applying migrations
+
+```bash
+supabase login
+supabase init                              # first time only
+supabase link --project-ref YOUR_PROJECT_REF
+supabase db push
+```
+
+Project ref: **Project Settings → General → Reference ID**. Re-run `db push` for new files in `supabase/migrations/`.
+
+If older migrations were already applied in the SQL Editor, mark them applied first (`supabase migration list` for IDs):
+
+```bash
+supabase migration repair --status applied 0001 0002 0003 0004 0005 0006 0008
+supabase db push
+```
 
 ### Theming
 

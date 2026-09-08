@@ -14,19 +14,23 @@ Settings → API** grab:
 
 ## 2. Apply the migrations
 
-Run the SQL in `migrations/` in order. Either paste each file into the Supabase
-**SQL Editor**, or use the Supabase CLI:
-
 ```bash
-supabase db push           # if you use the CLI with this folder linked
-# or, manually:
-psql "$SUPABASE_DB_URL" -f migrations/0001_init.sql
-psql "$SUPABASE_DB_URL" -f migrations/0002_storage.sql
-psql "$SUPABASE_DB_URL" -f migrations/0003_admin_users.sql
+supabase login
+supabase init                              # first time only
+supabase link --project-ref YOUR_PROJECT_REF
+supabase db push
 ```
 
-This creates the `organizations`, `profiles`, and `locations` tables with Row
-Level Security, plus a public `gallery` storage bucket.
+Project ref: **Project Settings → General → Reference ID**. Re-run `db push` for new files in `migrations/`.
+
+If older migrations were already applied in the SQL Editor, mark them applied first (`supabase migration list` for IDs):
+
+```bash
+supabase migration repair --status applied 0001 0002 0003 0004 0005 0006 0008
+supabase db push
+```
+
+Creates `organizations`, `profiles`, and `locations` with RLS, plus a public `gallery` bucket.
 
 ## 3. Seed the launch data
 
