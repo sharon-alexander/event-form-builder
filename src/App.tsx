@@ -4,6 +4,7 @@ import { INITIAL_FORM_DATA } from "./types";
 import { useLocationConfig } from "./context/LocationContext";
 import { buildPayload } from "./utils/buildPayload";
 import { submitLead } from "./api/tripleseat";
+import { resolveReferralSources } from "./api/resolveReferralSources";
 import { getStepProps, renderStep } from "./form/renderStep";
 import LandingPage from "./components/LandingPage";
 import ProgressBar from "./components/ProgressBar";
@@ -37,7 +38,15 @@ export default function App() {
     setSubmitError(null);
 
     try {
-      const payload = buildPayload(data, location);
+      const referral = await resolveReferralSources(
+        location.tripleseat,
+        location.name,
+      );
+      const payload = buildPayload(data, {
+        ...location,
+        referralSourceIds: referral.referralSourceIds,
+        referralOtherSourceId: referral.referralOtherSourceId,
+      });
       await submitLead(payload, location.tripleseat);
       setSubmitted(true);
     } catch (err) {

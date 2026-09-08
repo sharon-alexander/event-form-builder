@@ -7,8 +7,11 @@ import {
   useState,
 } from "react";
 import type { Session } from "@supabase/supabase-js";
-import { supabase } from "../lib/supabase";
+import { getSupabase } from "../lib/supabase";
+import { withTimeout } from "../lib/withTimeout";
 import { consumeAuthCallback } from "./authCallback";
+
+const supabase = getSupabase();
 
 export type AdminRole = "super_admin" | "editor";
 
@@ -107,27 +110,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const client = supabase;
 
     async function init() {
-      // Drop legacy redirect flags from earlier builds (caused set-password loops).
-      sessionStorage.removeItem("efb_needs_password");
-      sessionStorage.removeItem("efb_password_recovery");
+      try {
+        // Drop legacy redirect flags from earlier builds (caused set-password loops).
+        sessionStorage.removeItem("efb_needs_password");
+        sessionStorage.removeItem("efb_password_recovery");
 
-      const callback = await consumeAuthCallback(client);
-      if (!active) return;
-      if (callback.error) setAuthCallbackError(callback.error);
-      if (callback.didAuthenticate) {
-        // Functional update: the PASSWORD_RECOVERY auth event may have
-        // already set isRecovery=true before this line runs. Don't
-        // overwrite the more specific value with the code path's false.
-        setPasswordSetup((prev) =>
-          prev?.isRecovery ? prev : { isRecovery: callback.isRecovery },
+        const callback = await consumeAuthCallback(client);
+        if (!active) return;
+        if (callback.error) setAuthCallbackError(callback.error);
+        if (callback.didAuthenticate) {
+          // Functional update: the PASSWORD_RECOVERY auth event may have
+          // already set isRecovery=true before this line runs. Don't
+          // overwrite the more specific value with the code path's false.
+          setPasswordSetup((prev) =>
+            prev?.isRecovery ? prev : { isRecovery: callback.isRecovery },
+          );
+        }
+
+        const sessionResult = await withTimeout(
+          client.auth.getSession(),
+          5000,
+          { data: { session: null }, error: null },
         );
+        if (!active) return;
+        setSession(sessionResult.data.session);
+        if (sessionResult.data.session?.user) {
+          await loadProfile(sessionResult.data.session.user.id);
+        }
+      } finally {
+        if (active) setLoading(false);
       }
-
-      const { data } = await client.auth.getSession();
-      if (!active) return;
-      setSession(data.session);
-      if (data.session?.user) await loadProfile(data.session.user.id);
-      if (active) setLoading(false);
     }
 
     void init();

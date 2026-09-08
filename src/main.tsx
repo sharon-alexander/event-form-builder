@@ -6,8 +6,9 @@ import { getLocation, tryGetLocation } from "./locations";
 import type { LocationConfig } from "./locations";
 import { fetchLocationBySlug } from "./locations/fromDb";
 import { resolveReferralSources } from "./api/resolveReferralSources";
-import { supabase } from "./lib/supabase";
+import { getSupabase } from "./lib/supabase";
 import { applyTheme, type ThemeTokens } from "./theme/theme";
+import { withTimeout } from "./lib/withTimeout";
 import "./index.css";
 
 const MOUNT_ID = "roscioli-event-form";
@@ -33,38 +34,6 @@ function resolveLocationId(container: HTMLElement): string | null {
 
   const params = new URLSearchParams(window.location.search);
   return params.get("location");
-}
-
-/**
- * Resolve a promise but never hang the initial render: if it doesn't settle in
- * time (e.g. a slow/stalled network request), fall back to `fallback` so the
- * form can render from bundled config instead of getting stuck on "Loading…".
- */
-function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
-  return new Promise((resolve) => {
-    let settled = false;
-    const timer = setTimeout(() => {
-      if (!settled) {
-        settled = true;
-        resolve(fallback);
-      }
-    }, ms);
-    promise
-      .then((value) => {
-        if (!settled) {
-          settled = true;
-          clearTimeout(timer);
-          resolve(value);
-        }
-      })
-      .catch(() => {
-        if (!settled) {
-          settled = true;
-          clearTimeout(timer);
-          resolve(fallback);
-        }
-      });
-  });
 }
 
 function LoadingState() {
@@ -157,94 +126,94 @@ async function mount() {
     return;
   }
 
-  if (previewMode) {
-    if (!supabase) {
-      root.render(
-        <React.StrictMode>
-          <SignInToPreviewState />
-        </React.StrictMode>,
-      );
-      return;
-    }
-    const { data: sessionData } = await supabase.auth.getSession();
-    if (!sessionData.session) {
-      root.render(
-        <React.StrictMode>
-          <SignInToPreviewState />
-        </React.StrictMode>,
-      );
-      return;
-    }
-  }
-
-  // Prefer live config from Supabase; fall back to the bundled TS config so the
-  // form still works if Supabase is unconfigured or unreachable.
-  let config: LocationConfig | null = null;
-  let theme: ThemeTokens | null = null;
-  let published = true;
   try {
-    const resolved = await withTimeout(
-      fetchLocationBySlug(slug, { preview: previewMode }),
-      8000,
-      null,
+    if (previewMode) {
+      const supabase = getSupabase();
+      if (!supabase) {
+        root.render(
+          <React.StrictMode>
+            <SignInToPreviewState />
+          </React.StrictMode>,
+        );
+        return;
+      }
+      const sessionData = await withTimeout(
+        supabase.auth.getSession(),
+        5000,
+        { data: { session: null }, error: null },
+      );
+      if (!sessionData.data.session) {
+        root.render(
+          <React.StrictMode>
+            <SignInToPreviewState />
+          </React.StrictMode>,
+        );
+        return;
+      }
+    }
+
+    // Prefer live config from Supabase; fall back to the bundled TS config so the
+    // form still works if Supabase is unconfigured or unreachable.
+    let config: LocationConfig | null = null;
+    let theme: ThemeTokens | null = null;
+    let published = true;
+    try {
+      const resolved = await withTimeout(
+        fetchLocationBySlug(slug, { preview: previewMode }),
+        8000,
+        null,
+      );
+      if (resolved) {
+        config = resolved.config;
+        theme = resolved.theme;
+        published = resolved.published;
+      }
+    } catch {
+      // Supabase unavailable — try bundled configs below.
+    }
+
+    if (!config) {
+      // Preview mode: no bundled fallback when signed in but row missing —
+      // avoid showing a different location's config as an "unpublished" draft.
+      if (!previewMode) {
+        config = isWidget ? getLocation(slug) : tryGetLocation(slug);
+      }
+    }
+
+    if (!config) {
+      root.render(
+        <React.StrictMode>
+          <NotFoundState />
+        </React.StrictMode>,
+      );
+      return;
+    }
+
+    // Warm the Tripleseat referral-ID cache without blocking first paint.
+    // Submit resolves (and awaits) the same cached promise.
+    void resolveReferralSources(config.tripleseat, config.name);
+
+    applyTheme(mountPoint, theme);
+
+    const showPreviewBanner = previewMode && !published;
+
+    root.render(
+      <React.StrictMode>
+        <>
+          {showPreviewBanner && <PreviewBanner />}
+          <LocationProvider config={config}>
+            <App />
+          </LocationProvider>
+        </>
+      </React.StrictMode>,
     );
-    if (resolved) {
-      config = resolved.config;
-      theme = resolved.theme;
-      published = resolved.published;
-    }
   } catch {
-    // Supabase unavailable — try bundled configs below.
-  }
-
-  if (!config) {
-    // Preview mode: no bundled fallback when signed in but row missing —
-    // avoid showing a different location's config as an "unpublished" draft.
-    if (!previewMode) {
-      config = isWidget ? getLocation(slug) : tryGetLocation(slug);
-    }
-  }
-
-  if (!config) {
     root.render(
       <React.StrictMode>
         <NotFoundState />
       </React.StrictMode>,
     );
-    return;
   }
-
-  try {
-    const referral = await withTimeout(
-      resolveReferralSources(config.tripleseat, config.name),
-      8000,
-      null,
-    );
-    if (referral) {
-      config = {
-        ...config,
-        referralSourceIds: referral.referralSourceIds,
-        referralOtherSourceId: referral.referralOtherSourceId,
-      };
-    }
-  } catch {
-    // Keep referral IDs from the bundled/DB config if the Tripleseat lookup fails.
-  }
-
-  applyTheme(mountPoint, theme);
-
-  const showPreviewBanner = previewMode && !published;
-
-  root.render(
-    <React.StrictMode>
-      <>
-        {showPreviewBanner && <PreviewBanner />}
-        <LocationProvider config={config}>
-          <App />
-        </LocationProvider>
-      </>
-    </React.StrictMode>,
-  );
 }
 
 if (document.readyState === "loading") {
