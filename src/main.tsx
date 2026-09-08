@@ -139,10 +139,11 @@ async function mount() {
         return;
       }
       const session = await waitForAuthSession(supabase, 5000);
-      // Only bounce when auth confirmed there is no session. A timeout
-      // (`undefined`) is not signed-out — getSession may have stalled after
-      // onAuthStateChange already received INITIAL_SESSION / SIGNED_IN.
-      if (session === null) {
+      // null = confirmed signed-out. undefined = timeout with no
+      // INITIAL_SESSION / SIGNED_IN / TOKEN_REFRESHED and no session from
+      // getSession. Same hung client would stall fetchLocationBySlug, then
+      // surface NotFound after the fetch timeout. Bounce to the sign-in gate.
+      if (!session) {
         root.render(
           <React.StrictMode>
             <SignInToPreviewState />
