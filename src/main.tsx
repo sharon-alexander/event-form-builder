@@ -9,6 +9,7 @@ import { resolveReferralSources } from "./api/resolveReferralSources";
 import { getSupabase } from "./lib/supabase";
 import { applyTheme, type ThemeTokens } from "./theme/theme";
 import { withTimeout } from "./lib/withTimeout";
+import { waitForAuthSession } from "./lib/waitForAuthSession";
 import "./index.css";
 
 const MOUNT_ID = "roscioli-event-form";
@@ -137,12 +138,11 @@ async function mount() {
         );
         return;
       }
-      const sessionData = await withTimeout(
-        supabase.auth.getSession(),
-        5000,
-        { data: { session: null }, error: null },
-      );
-      if (!sessionData.data.session) {
+      const session = await waitForAuthSession(supabase, 5000);
+      // Only bounce when auth confirmed there is no session. A timeout
+      // (`undefined`) is not signed-out — getSession may have stalled after
+      // onAuthStateChange already received INITIAL_SESSION / SIGNED_IN.
+      if (session === null) {
         root.render(
           <React.StrictMode>
             <SignInToPreviewState />

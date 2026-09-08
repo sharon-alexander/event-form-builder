@@ -8,7 +8,7 @@ import {
 } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { getSupabase } from "../lib/supabase";
-import { withTimeout } from "../lib/withTimeout";
+import { waitForAuthSession } from "../lib/waitForAuthSession";
 import { consumeAuthCallback } from "./authCallback";
 
 const supabase = getSupabase();
@@ -127,15 +127,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           );
         }
 
-        const sessionResult = await withTimeout(
-          client.auth.getSession(),
-          5000,
-          { data: { session: null }, error: null },
-        );
+        const session = await waitForAuthSession(client, 5000);
         if (!active) return;
-        setSession(sessionResult.data.session);
-        if (sessionResult.data.session?.user) {
-          await loadProfile(sessionResult.data.session.user.id);
+        // Timeout (`undefined`) must not overwrite a session already delivered
+        // by onAuthStateChange (e.g. SIGNED_IN from consumeAuthCallback).
+        if (session !== undefined && !(callback.didAuthenticate && !session)) {
+          setSession(session);
+          if (session?.user) await loadProfile(session.user.id);
         }
       } finally {
         if (active) setLoading(false);
