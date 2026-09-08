@@ -1,3 +1,4 @@
+import { hasOptionLabel } from "../../locations/presentableOptions";
 import type { LocationConfig } from "../../locations/types";
 import { EVENT_CATEGORIES, EVENT_FORMATS } from "../../types";
 import { mergeInfoPageIntoMoreDetails } from "../../utils/richText";
@@ -17,9 +18,9 @@ export function draftToLocationConfig(draft: EditableLocation): LocationConfig {
     aboutBlurb: draft.about_blurb,
     logoUrl: draft.theme?.logoUrl,
     galleryMedia: draft.gallery_media,
-    venueSpaces: draft.venue_spaces,
+    venueSpaces: draft.venue_spaces.filter(hasOptionLabel),
     allowMultipleVenueSpaces: draft.allow_multiple_venue_spaces,
-    budgetOptions: draft.budget_options,
+    budgetOptions: draft.budget_options.filter(hasOptionLabel),
     eventCategories: draft.event_categories ?? EVENT_CATEGORIES,
     eventFormats: draft.event_formats ?? EVENT_FORMATS,
     steps,

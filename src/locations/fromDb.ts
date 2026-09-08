@@ -3,6 +3,7 @@ import { EVENT_CATEGORIES, EVENT_FORMATS } from "../types";
 import type { ThemeTokens } from "../theme/theme";
 import { mergeInfoPageIntoMoreDetails } from "../utils/richText";
 import { DEFAULT_LOCATION_ID, tryGetLocation } from "./index";
+import { hasOptionLabel } from "./presentableOptions";
 import type {
   BudgetOption,
   EventChoiceOption,
@@ -54,12 +55,12 @@ export function locationConfigFromRow(row: LocationRow): LocationConfig {
     aboutBlurb: row.about_blurb,
     logoUrl: row.theme?.logoUrl,
     galleryMedia: row.gallery_media ?? [],
-    venueSpaces: row.venue_spaces ?? [],
+    venueSpaces: (row.venue_spaces ?? []).filter(hasOptionLabel),
     allowMultipleVenueSpaces:
       row.allow_multiple_venue_spaces ??
       bundled?.allowMultipleVenueSpaces ??
       false,
-    budgetOptions: row.budget_options ?? [],
+    budgetOptions: (row.budget_options ?? []).filter(hasOptionLabel),
     eventCategories: row.event_categories ?? EVENT_CATEGORIES,
     eventFormats: row.event_formats ?? EVENT_FORMATS,
     steps,
