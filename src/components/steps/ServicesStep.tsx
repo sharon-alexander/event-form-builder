@@ -3,6 +3,7 @@ import { SERVICE_OPTIONS } from "../../types";
 import { useLocationConfig } from "../../context/LocationContext";
 import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
 import { isFieldRequired, isStepValid } from "../../form/fieldCatalog";
+import RequiredMark from "../../form/RequiredMark";
 import FormStep from "../FormStep";
 import type { StepProps } from "./stepProps";
 
@@ -36,9 +37,10 @@ export default function ServicesStep({
       nextLabel={nextLabel}
       nextDisabled={!isStepValid("services", data, location)}
     >
-      {!isFieldRequired(location, "services") && (
-        <p className="-mt-1 mb-3 text-sm text-gray-400">(optional)</p>
-      )}
+      <p className="efb-label">
+        Add-on services
+        <RequiredMark required={isFieldRequired(location, "services")} />
+      </p>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {SERVICE_OPTIONS.map((option) => {
           const selected = data.services.includes(option.value);
