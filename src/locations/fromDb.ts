@@ -2,11 +2,13 @@ import { supabase, supabasePublic } from "../lib/supabase";
 import { EVENT_CATEGORIES, EVENT_FORMATS } from "../types";
 import type { ThemeTokens } from "../theme/theme";
 import { mergeInfoPageIntoMoreDetails } from "../utils/richText";
+import { parseRequiredFields } from "../form/fieldCatalog";
 import { DEFAULT_LOCATION_ID, tryGetLocation } from "./index";
 import { hasOptionLabel } from "./presentableOptions";
 import type {
   BudgetOption,
   EventChoiceOption,
+  FieldId,
   InfoPageConfig,
   LocationConfig,
   MediaItem,
@@ -35,6 +37,7 @@ export interface LocationRow {
   timing_style: string | null;
   allow_multiple_venue_spaces: boolean | null;
   info_page: InfoPageConfig | null;
+  required_fields: Partial<Record<FieldId, boolean>> | null;
   theme: ThemeTokens | null;
   published: boolean;
   created_at?: string;
@@ -80,6 +83,7 @@ export function locationConfigFromRow(row: LocationRow): LocationConfig {
       return page ? { title: page.title } : undefined;
     })(),
     stepCopy: bundled?.stepCopy,
+    requiredFields: parseRequiredFields(row.required_fields),
     tripleseat: {
       publicKey: row.tripleseat?.publicKey ?? "",
       leadFormId: row.tripleseat?.leadFormId,

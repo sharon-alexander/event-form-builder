@@ -1,5 +1,7 @@
 import { useLocationConfig } from "../../context/LocationContext";
 import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
+import { isFieldRequired, isStepValid } from "../../form/fieldCatalog";
+import RequiredMark from "../../form/RequiredMark";
 import FormStep from "../FormStep";
 import type { StepProps } from "./stepProps";
 
@@ -15,7 +17,8 @@ export default function BudgetStep({
   title = copy.title,
   subtitle = copy.subtitle,
 }: StepProps) {
-  const { budgetOptions } = useLocationConfig();
+  const location = useLocationConfig();
+  const { budgetOptions } = location;
 
   return (
     <FormStep
@@ -25,8 +28,12 @@ export default function BudgetStep({
       onNext={onNext}
       onBack={onBack}
       nextLabel={nextLabel}
-      nextDisabled={!data.budget}
+      nextDisabled={!isStepValid("budget", data, location)}
     >
+      <p className="efb-label">
+        Budget range
+        <RequiredMark required={isFieldRequired(location, "budget")} />
+      </p>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {budgetOptions.map((b) => (
           <button

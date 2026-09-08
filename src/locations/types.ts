@@ -41,6 +41,31 @@ export type StepId =
   | "other_venues_referral"
   | "contact";
 
+/** Guest-facing questions whose requiredness can be stored per location. */
+export type FieldId =
+  | "bookingType"
+  | "guestCount"
+  | "eventCategory"
+  | "eventFormat"
+  | "eventDate"
+  | "backupDate"
+  | "preferredDays"
+  | "budget"
+  | "venueSpace"
+  | "timing"
+  | "services"
+  | "infoAcknowledged"
+  | "consideringOtherVenues"
+  | "otherVenuesDetails"
+  | "referralSource"
+  | "firstName"
+  | "lastName"
+  | "email"
+  | "phone"
+  | "company"
+  | "preferredSiteVisitDates"
+  | "additionalNotes";
+
 export interface TripleseatConfig {
   publicKey: string;
   leadFormId?: number;
@@ -77,6 +102,9 @@ export interface LocationConfig {
 
   /** Override labels/copy for specific steps. */
   stepCopy?: Partial<Record<StepId, { title?: string; subtitle?: string }>>;
+
+  /** Per-question required overrides. Missing keys use catalog defaults. */
+  requiredFields?: Partial<Record<FieldId, boolean>>;
 
   tripleseat: TripleseatConfig;
   referralSourceIds: Record<string, number>;

@@ -1,5 +1,8 @@
 import { MONTHS, DAYS_OF_WEEK } from "../../types";
+import { useLocationConfig } from "../../context/LocationContext";
 import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
+import { isFieldRequired, isStepValid } from "../../form/fieldCatalog";
+import RequiredMark from "../../form/RequiredMark";
 import FormStep from "../FormStep";
 import type { StepProps } from "./stepProps";
 
@@ -15,6 +18,11 @@ export default function EventDateStep({
   title = copy.title,
   subtitle = copy.subtitle,
 }: StepProps) {
+  const location = useLocationConfig();
+  const dateRequired = isFieldRequired(location, "eventDate");
+  const backupRequired = isFieldRequired(location, "backupDate");
+  const daysRequired = isFieldRequired(location, "preferredDays");
+
   const toggleMonth = (m: string) => {
     const current = data.flexibleDatePreferences.preferredMonths;
     const next = current.includes(m) ? current.filter((x) => x !== m) : [...current, m];
@@ -31,10 +39,6 @@ export default function EventDateStep({
     });
   };
 
-  const isValid = data.datesFlexible
-    ? data.flexibleDatePreferences.preferredMonths.length > 0
-    : data.eventDate !== "";
-
   return (
     <FormStep
       title={title}
@@ -43,7 +47,7 @@ export default function EventDateStep({
       onNext={onNext}
       onBack={onBack}
       nextLabel={nextLabel}
-      nextDisabled={!isValid}
+      nextDisabled={!isStepValid("event_date", data, location)}
     >
       <div className="space-y-5">
         <label className="flex cursor-pointer items-center gap-3">
@@ -59,7 +63,10 @@ export default function EventDateStep({
         {!data.datesFlexible ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label htmlFor="event-date" className="efb-label">Event Date</label>
+              <label htmlFor="event-date" className="efb-label">
+                Event Date
+                <RequiredMark required={dateRequired} />
+              </label>
               <input
                 id="event-date"
                 type="date"
@@ -70,7 +77,8 @@ export default function EventDateStep({
             </div>
             <div>
               <label htmlFor="backup-date" className="efb-label">
-                Backup Date <span className="text-gray-400">(optional)</span>
+                Backup Date
+                <RequiredMark required={backupRequired} />
               </label>
               <input
                 id="backup-date"
@@ -84,7 +92,10 @@ export default function EventDateStep({
         ) : (
           <div className="space-y-4">
             <div>
-              <p className="efb-label">Preferred Months</p>
+              <p className="efb-label">
+                Preferred Months
+                <RequiredMark required={dateRequired} />
+              </p>
               <div className="flex flex-wrap gap-2">
                 {MONTHS.map((m) => (
                   <button
@@ -103,7 +114,10 @@ export default function EventDateStep({
               </div>
             </div>
             <div>
-              <p className="efb-label">Preferred Days</p>
+              <p className="efb-label">
+                Preferred Days
+                <RequiredMark required={daysRequired} />
+              </p>
               <div className="flex flex-wrap gap-2">
                 {DAYS_OF_WEEK.map((d) => (
                   <button

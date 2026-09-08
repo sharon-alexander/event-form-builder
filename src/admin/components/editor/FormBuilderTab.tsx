@@ -29,6 +29,7 @@ import {
 import BudgetRangesEditor from "./BudgetRangesEditor";
 import EventOptionsEditor from "./EventOptionsEditor";
 import InfoPageEditor from "./InfoPageEditor";
+import RequiredFieldsEditor from "./RequiredFieldsEditor";
 import RichTextEditor from "./RichTextEditor";
 import TimingStyleEditor from "./TimingStyleEditor";
 import VenueSpacesEditor from "./VenueSpacesEditor";
@@ -411,6 +412,8 @@ function StepConfig({
       {stepId === "info_acknowledge" && (
         <InfoPageEditor draft={draft} update={update} />
       )}
+
+      <RequiredFieldsEditor stepId={stepId} draft={draft} update={update} />
 
       <StepNoteEditor
         value={moreDetails[stepId] ?? ""}

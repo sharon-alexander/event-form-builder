@@ -1,6 +1,8 @@
 import type { ServiceInterest } from "../../types";
 import { SERVICE_OPTIONS } from "../../types";
+import { useLocationConfig } from "../../context/LocationContext";
 import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
+import { isFieldRequired, isStepValid } from "../../form/fieldCatalog";
 import FormStep from "../FormStep";
 import type { StepProps } from "./stepProps";
 
@@ -16,6 +18,7 @@ export default function ServicesStep({
   title = copy.title,
   subtitle = copy.subtitle,
 }: StepProps) {
+  const location = useLocationConfig();
   const toggle = (value: ServiceInterest) => {
     const next = data.services.includes(value)
       ? data.services.filter((s) => s !== value)
@@ -31,7 +34,11 @@ export default function ServicesStep({
       onNext={onNext}
       onBack={onBack}
       nextLabel={nextLabel}
+      nextDisabled={!isStepValid("services", data, location)}
     >
+      {!isFieldRequired(location, "services") && (
+        <p className="-mt-1 mb-3 text-sm text-gray-400">(optional)</p>
+      )}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {SERVICE_OPTIONS.map((option) => {
           const selected = data.services.includes(option.value);

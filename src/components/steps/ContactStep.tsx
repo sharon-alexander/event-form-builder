@@ -1,4 +1,7 @@
+import { useLocationConfig } from "../../context/LocationContext";
 import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
+import { isFieldRequired, isStepValid } from "../../form/fieldCatalog";
+import RequiredMark from "../../form/RequiredMark";
 import FormStep from "../FormStep";
 import type { StepProps } from "./stepProps";
 
@@ -14,11 +17,7 @@ export default function ContactStep({
   title = copy.title,
   subtitle = copy.subtitle,
 }: StepProps) {
-  const isValid =
-    data.firstName.trim() !== "" &&
-    data.lastName.trim() !== "" &&
-    data.email.trim() !== "" &&
-    data.phone.trim() !== "";
+  const location = useLocationConfig();
 
   return (
     <FormStep
@@ -28,12 +27,15 @@ export default function ContactStep({
       onNext={onNext}
       onBack={onBack}
       nextLabel={nextLabel}
-      nextDisabled={!isValid}
+      nextDisabled={!isStepValid("contact", data, location)}
     >
       <div className="space-y-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label htmlFor="first-name" className="efb-label">First Name *</label>
+            <label htmlFor="first-name" className="efb-label">
+              First Name
+              <RequiredMark required />
+            </label>
             <input
               id="first-name"
               type="text"
@@ -44,7 +46,10 @@ export default function ContactStep({
             />
           </div>
           <div>
-            <label htmlFor="last-name" className="efb-label">Last Name *</label>
+            <label htmlFor="last-name" className="efb-label">
+              Last Name
+              <RequiredMark required />
+            </label>
             <input
               id="last-name"
               type="text"
@@ -58,7 +63,10 @@ export default function ContactStep({
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label htmlFor="email" className="efb-label">Email *</label>
+            <label htmlFor="email" className="efb-label">
+              Email
+              <RequiredMark required />
+            </label>
             <input
               id="email"
               type="email"
@@ -69,7 +77,10 @@ export default function ContactStep({
             />
           </div>
           <div>
-            <label htmlFor="phone" className="efb-label">Phone *</label>
+            <label htmlFor="phone" className="efb-label">
+              Phone
+              <RequiredMark required />
+            </label>
             <input
               id="phone"
               type="tel"
@@ -83,7 +94,8 @@ export default function ContactStep({
 
         <div>
           <label htmlFor="company" className="efb-label">
-            Company <span className="text-gray-400">(optional)</span>
+            Company
+            <RequiredMark required={isFieldRequired(location, "company")} />
           </label>
           <input
             id="company"
@@ -97,7 +109,8 @@ export default function ContactStep({
 
         <div>
           <label htmlFor="site-visit" className="efb-label">
-            Preferred Site Visit Dates <span className="text-gray-400">(optional)</span>
+            Preferred Site Visit Dates
+            <RequiredMark required={isFieldRequired(location, "preferredSiteVisitDates")} />
           </label>
           <input
             id="site-visit"
@@ -111,7 +124,8 @@ export default function ContactStep({
 
         <div>
           <label htmlFor="notes" className="efb-label">
-            Additional Notes <span className="text-gray-400">(optional)</span>
+            Additional Notes
+            <RequiredMark required={isFieldRequired(location, "additionalNotes")} />
           </label>
           <textarea
             id="notes"

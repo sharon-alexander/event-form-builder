@@ -2,6 +2,8 @@ import { useState } from "react";
 import type { VenueSpaceOption } from "../../locations/types";
 import { useLocationConfig } from "../../context/LocationContext";
 import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
+import { isFieldRequired, isStepValid } from "../../form/fieldCatalog";
+import RequiredMark from "../../form/RequiredMark";
 import FormStep from "../FormStep";
 import MediaGalleryModal from "../MediaGalleryModal";
 import { MediaThumb } from "../MediaThumb";
@@ -19,7 +21,8 @@ export default function VenueSpaceStep({
   title = copy.title,
   subtitle = copy.subtitle,
 }: StepProps) {
-  const { venueSpaces, allowMultipleVenueSpaces } = useLocationConfig();
+  const location = useLocationConfig();
+  const { venueSpaces, allowMultipleVenueSpaces } = location;
   const allowMultiple = !!allowMultipleVenueSpaces;
   const selected = data.venueSpace;
   const [galleryVenue, setGalleryVenue] = useState<VenueSpaceOption | null>(null);
@@ -44,8 +47,12 @@ export default function VenueSpaceStep({
         onNext={onNext}
         onBack={onBack}
         nextLabel={nextLabel}
-        nextDisabled={selected.length === 0}
+        nextDisabled={!isStepValid("venue_space", data, location)}
       >
+        <p className="efb-label">
+          Venue space
+          <RequiredMark required={isFieldRequired(location, "venueSpace")} />
+        </p>
         {allowMultiple && (
           <p className="-mt-1 mb-3 text-sm text-gray-500">Select all that apply.</p>
         )}

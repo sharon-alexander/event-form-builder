@@ -1,4 +1,7 @@
+import { useLocationConfig } from "../../context/LocationContext";
 import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
+import { isFieldRequired, isStepValid } from "../../form/fieldCatalog";
+import RequiredMark from "../../form/RequiredMark";
 import FormStep from "../FormStep";
 import type { StepProps } from "./stepProps";
 
@@ -14,6 +17,8 @@ export default function HeadcountStep({
   title = copy.title,
   subtitle = copy.subtitle,
 }: StepProps) {
+  const location = useLocationConfig();
+
   return (
     <FormStep
       title={title}
@@ -22,11 +27,14 @@ export default function HeadcountStep({
       onNext={onNext}
       onBack={onBack}
       nextLabel={nextLabel}
-      nextDisabled={!data.guestCount}
+      nextDisabled={!isStepValid("headcount", data, location)}
     >
       <div className="space-y-4">
         <div>
-          <label htmlFor="guest-count" className="efb-label">Estimated Headcount</label>
+          <label htmlFor="guest-count" className="efb-label">
+            Estimated Headcount
+            <RequiredMark required={isFieldRequired(location, "guestCount")} />
+          </label>
           <input
             id="guest-count"
             type="number"
