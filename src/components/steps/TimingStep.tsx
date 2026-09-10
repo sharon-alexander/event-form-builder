@@ -33,16 +33,7 @@ function StandardTiming({
   required,
 }: Pick<StepProps, "data" | "onChange"> & { required: boolean }) {
   return (
-    <div className="space-y-5">
-      <label className="flex cursor-pointer items-center gap-3">
-        <input
-          type="checkbox"
-          checked={data.timingFlexible}
-          onChange={(e) => onChange({ timingFlexible: e.target.checked })}
-          className="h-4 w-4 rounded border-brand-300 text-brand-600 focus:ring-brand-500"
-        />
-        <span className="text-sm font-medium text-gray-700">My timing is flexible</span>
-      </label>
+    <>
       {!data.timingFlexible && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
@@ -81,7 +72,7 @@ function StandardTiming({
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
 
@@ -166,6 +157,8 @@ export default function TimingStep(props: StepProps) {
   const location = useLocationConfig();
   const isMeal = location.timingStyle === "meal_service";
   const required = isFieldRequired(location, "timing");
+  const showCheckboxes =
+    !isMeal || location.showAdditionalLoadInOut || location.showFullDayRental;
 
   return (
     <FormStep
@@ -196,8 +189,23 @@ export default function TimingStep(props: StepProps) {
             required={required}
           />
         )}
-        {(location.showAdditionalLoadInOut || location.showFullDayRental) && (
+        {showCheckboxes && (
           <div className="space-y-3">
+            {!isMeal && (
+              <label className="flex cursor-pointer items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={props.data.timingFlexible}
+                  onChange={(e) =>
+                    props.onChange({ timingFlexible: e.target.checked })
+                  }
+                  className="h-4 w-4 rounded border-brand-300 text-brand-600 focus:ring-brand-500"
+                />
+                <span className="text-sm font-medium text-gray-700">
+                  My timing is flexible
+                </span>
+              </label>
+            )}
             {location.showAdditionalLoadInOut && (
               <label className="flex cursor-pointer items-center gap-3">
                 <input
