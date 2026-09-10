@@ -1,5 +1,6 @@
 import { useLocationConfig } from "../../context/LocationContext";
 import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
+import { isFieldRequired, isStepValid } from "../../form/fieldCatalog";
 import { toDisplayHtml } from "../../utils/richText";
 import FormStep from "../FormStep";
 import type { StepProps } from "./stepProps";
@@ -12,9 +13,10 @@ export default function InfoAcknowledgeStep({
   nextLabel,
   moreDetails,
 }: StepProps) {
-  const { infoPage } = useLocationConfig();
-  const title = infoPage?.title ?? DEFAULT_STEP_COPY.info_acknowledge.title;
+  const location = useLocationConfig();
+  const title = location.infoPage?.title ?? DEFAULT_STEP_COPY.info_acknowledge.title;
   const detailsHtml = moreDetails ? toDisplayHtml(moreDetails) : "";
+  const required = isFieldRequired(location, "infoAcknowledged");
 
   return (
     <FormStep
@@ -22,7 +24,7 @@ export default function InfoAcknowledgeStep({
       onNext={onNext}
       onBack={onBack}
       nextLabel={nextLabel}
-      nextDisabled={!data.infoAcknowledged}
+      nextDisabled={!isStepValid("info_acknowledge", data, location)}
     >
       <div className="space-y-8">
         {detailsHtml ? (
@@ -42,6 +44,11 @@ export default function InfoAcknowledgeStep({
           }`}
         >
           I Understand
+          {!required && (
+            <span className="mt-1 block text-xs font-normal normal-case tracking-normal text-gray-500">
+              (optional)
+            </span>
+          )}
         </button>
       </div>
     </FormStep>

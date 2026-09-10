@@ -4,6 +4,7 @@ import type { ThemeTokens } from "../../theme/theme";
 import type {
   BudgetOption,
   EventChoiceOption,
+  FieldId,
   InfoPageConfig,
   MediaItem,
   StepId,
@@ -14,6 +15,7 @@ import { EVENT_CATEGORIES, EVENT_FORMATS } from "../../types";
 import type { LocationRow } from "../../locations/fromDb";
 import { tryGetLocation } from "../../locations";
 import { hasOptionLabel } from "../../locations/presentableOptions";
+import { parseRequiredFields } from "../../form/fieldCatalog";
 import { mergeInfoPageIntoMoreDetails } from "../../utils/richText";
 import {
   getLocationById,
@@ -42,6 +44,7 @@ export interface EditableLocation {
   step_more_details: Partial<Record<StepId, string>>;
   timing_style: string;
   info_page: InfoPageConfig | null;
+  required_fields: Partial<Record<FieldId, boolean>>;
   tripleseat: Partial<TripleseatConfig>;
   theme: ThemeTokens;
   published: boolean;
@@ -89,6 +92,7 @@ function toEditable(row: LocationRow): EditableLocation {
       const page = row.info_page ?? bundled?.infoPage ?? null;
       return page ? { title: page.title } : null;
     })(),
+    required_fields: parseRequiredFields(row.required_fields),
     tripleseat: row.tripleseat ?? {},
     theme: row.theme ?? {},
     published: row.published,
@@ -159,6 +163,7 @@ export default function FormEditorPage() {
         info_page: draft.info_page
           ? { title: draft.info_page.title }
           : null,
+        required_fields: draft.required_fields,
         tripleseat: draft.tripleseat,
         theme: draft.theme,
         published: draft.published,

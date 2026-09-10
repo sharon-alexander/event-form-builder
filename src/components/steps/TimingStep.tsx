@@ -5,6 +5,8 @@ import {
 } from "../../types";
 import { useLocationConfig } from "../../context/LocationContext";
 import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
+import { isFieldRequired, isStepValid } from "../../form/fieldCatalog";
+import RequiredMark from "../../form/RequiredMark";
 import FormStep from "../FormStep";
 import type { StepProps } from "./stepProps";
 
@@ -25,7 +27,11 @@ function isLunchAvailable(data: StepProps["data"]): boolean {
   return day === 0 || day === 5 || day === 6;
 }
 
-function StandardTiming({ data, onChange }: Pick<StepProps, "data" | "onChange">) {
+function StandardTiming({
+  data,
+  onChange,
+  required,
+}: Pick<StepProps, "data" | "onChange"> & { required: boolean }) {
   return (
     <div className="space-y-5">
       <label className="flex cursor-pointer items-center gap-3">
@@ -40,7 +46,10 @@ function StandardTiming({ data, onChange }: Pick<StepProps, "data" | "onChange">
       {!data.timingFlexible && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label htmlFor="start-time" className="efb-label">Start Time</label>
+            <label htmlFor="start-time" className="efb-label">
+              Start Time
+              <RequiredMark required={required} />
+            </label>
             <select
               id="start-time"
               value={data.startTime}
@@ -54,7 +63,10 @@ function StandardTiming({ data, onChange }: Pick<StepProps, "data" | "onChange">
             </select>
           </div>
           <div>
-            <label htmlFor="end-time" className="efb-label">End Time</label>
+            <label htmlFor="end-time" className="efb-label">
+              End Time
+              <RequiredMark required={required} />
+            </label>
             <select
               id="end-time"
               value={data.endTime}
@@ -73,7 +85,11 @@ function StandardTiming({ data, onChange }: Pick<StepProps, "data" | "onChange">
   );
 }
 
-function MealServiceTiming({ data, onChange }: Pick<StepProps, "data" | "onChange">) {
+function MealServiceTiming({
+  data,
+  onChange,
+  required,
+}: Pick<StepProps, "data" | "onChange"> & { required: boolean }) {
   const lunchAvailable = isLunchAvailable(data);
   const timeOptions =
     data.mealService === "lunch"
@@ -85,7 +101,10 @@ function MealServiceTiming({ data, onChange }: Pick<StepProps, "data" | "onChang
   return (
     <div className="space-y-6">
       <div>
-        <p className="efb-label">Meal Service</p>
+        <p className="efb-label">
+          Meal Service
+          <RequiredMark required={required} />
+        </p>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {MEAL_SERVICE_OPTIONS.map((option) => {
             const disabled = option.value === "lunch" && !lunchAvailable;
@@ -122,7 +141,10 @@ function MealServiceTiming({ data, onChange }: Pick<StepProps, "data" | "onChang
       </div>
       {data.mealService && (
         <div>
-          <label htmlFor="meal-start-time" className="efb-label">Start Time</label>
+          <label htmlFor="meal-start-time" className="efb-label">
+            Start Time
+            <RequiredMark required={required} />
+          </label>
           <select
             id="meal-start-time"
             value={data.startTime}
@@ -141,12 +163,9 @@ function MealServiceTiming({ data, onChange }: Pick<StepProps, "data" | "onChang
 }
 
 export default function TimingStep(props: StepProps) {
-  const { timingStyle } = useLocationConfig();
-  const isMeal = timingStyle === "meal_service";
-
-  const isValid = isMeal
-    ? props.data.mealService !== null && props.data.startTime !== ""
-    : props.data.timingFlexible || (props.data.startTime !== "" && props.data.endTime !== "");
+  const location = useLocationConfig();
+  const isMeal = location.timingStyle === "meal_service";
+  const required = isFieldRequired(location, "timing");
 
   return (
     <FormStep
@@ -161,12 +180,20 @@ export default function TimingStep(props: StepProps) {
       onNext={props.onNext}
       onBack={props.onBack}
       nextLabel={props.nextLabel}
-      nextDisabled={!isValid}
+      nextDisabled={!isStepValid("timing", props.data, location)}
     >
       {isMeal ? (
-        <MealServiceTiming data={props.data} onChange={props.onChange} />
+        <MealServiceTiming
+          data={props.data}
+          onChange={props.onChange}
+          required={required}
+        />
       ) : (
-        <StandardTiming data={props.data} onChange={props.onChange} />
+        <StandardTiming
+          data={props.data}
+          onChange={props.onChange}
+          required={required}
+        />
       )}
     </FormStep>
   );

@@ -1,6 +1,8 @@
 import { EVENT_CATEGORIES, EVENT_FORMATS } from "../../types";
 import { useLocationConfig } from "../../context/LocationContext";
 import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
+import { isFieldRequired, isStepValid } from "../../form/fieldCatalog";
+import RequiredMark from "../../form/RequiredMark";
 import FormStep from "../FormStep";
 import type { StepProps } from "./stepProps";
 
@@ -20,10 +22,6 @@ export default function EventFormatStep({
   const categories = location.eventCategories ?? EVENT_CATEGORIES;
   const formats = location.eventFormats ?? EVENT_FORMATS;
 
-  const categoryValid =
-    data.eventCategory !== null &&
-    (data.eventCategory !== "other" || data.eventCategoryOther.trim() !== "");
-
   return (
     <FormStep
       title={title}
@@ -32,11 +30,14 @@ export default function EventFormatStep({
       onNext={onNext}
       onBack={onBack}
       nextLabel={nextLabel}
-      nextDisabled={!categoryValid || !data.eventFormat}
+      nextDisabled={!isStepValid("event_format", data, location)}
     >
       <div className="space-y-6">
         <div>
-          <p className="efb-label">Event Type</p>
+          <p className="efb-label">
+            Event Type
+            <RequiredMark required={isFieldRequired(location, "eventCategory")} />
+          </p>
           <div className="grid grid-cols-2 gap-3">
             {categories.map((cat) => (
               <button
@@ -64,7 +65,10 @@ export default function EventFormatStep({
           )}
         </div>
         <div>
-          <p className="efb-label">Format</p>
+          <p className="efb-label">
+            Format
+            <RequiredMark required={isFieldRequired(location, "eventFormat")} />
+          </p>
           <div className="grid grid-cols-2 gap-3">
             {formats.map((f) => (
               <button
