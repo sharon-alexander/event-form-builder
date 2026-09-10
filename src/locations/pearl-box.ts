@@ -80,12 +80,15 @@ const pearlBox: LocationConfig = {
   },
 
   referralSourceIds: {
+    eventup: 7,
     instagram: 6,
-    tiktok: 11888,
     facebook: 5,
+    tiktok: 11891,
+    venues_by_tripleseat: 4,
     google: 3,
-    friend: 10746,
-    blog: 1,
+    email: 2,
+    friend: 11889,
+    past_guest: 11890,
     other: 1,
   },
 

@@ -1,6 +1,6 @@
 import { hasOptionLabel } from "../../locations/presentableOptions";
 import type { LocationConfig } from "../../locations/types";
-import { EVENT_CATEGORIES, EVENT_FORMATS } from "../../types";
+import { DEFAULT_EVENT_CATEGORIES, EVENT_FORMATS } from "../../types";
 import { mergeInfoPageIntoMoreDetails } from "../../utils/richText";
 import type { EditableLocation } from "../pages/FormEditorPage";
 
@@ -24,7 +24,7 @@ export function draftToLocationConfig(draft: EditableLocation): LocationConfig {
     showAdditionalLoadInOut: draft.show_additional_load_in_out,
     showFullDayRental: draft.show_full_day_rental,
     budgetOptions: draft.budget_options.filter(hasOptionLabel),
-    eventCategories: draft.event_categories ?? EVENT_CATEGORIES,
+    eventCategories: draft.event_categories ?? DEFAULT_EVENT_CATEGORIES,
     eventFormats: draft.event_formats ?? EVENT_FORMATS,
     steps,
     stepMoreDetails: mergeInfoPageIntoMoreDetails(

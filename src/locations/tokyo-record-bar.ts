@@ -55,12 +55,15 @@ const tokyoRecordBar: LocationConfig = {
   },
 
   referralSourceIds: {
+    eventup: 7,
     instagram: 6,
-    tiktok: 11888,
     facebook: 5,
+    tiktok: 10848,
+    venues_by_tripleseat: 4,
     google: 3,
-    friend: 10746,
-    blog: 1,
+    email: 2,
+    friend: 11893,
+    past_guest: 11894,
     other: 1,
   },
 

@@ -105,7 +105,7 @@ export default function LandingPage({ onStart }: LandingPageProps) {
             className="mx-auto mb-4 h-16 w-auto max-w-[12rem] object-contain sm:h-20"
           />
         )}
-        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">
+        <p className="mb-2 font-sans text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">
           {location.formTitle}
         </p>
         <h1 className="font-display text-4xl font-semibold text-gray-900 sm:text-5xl">

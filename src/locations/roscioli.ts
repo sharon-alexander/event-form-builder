@@ -64,12 +64,15 @@ const roscioli: LocationConfig = {
   },
 
   referralSourceIds: {
+    eventup: 7,
     instagram: 6,
-    tiktok: 11888,
     facebook: 5,
+    tiktok: 11888,
+    venues_by_tripleseat: 4,
     google: 3,
+    email: 2,
     friend: 10746,
-    blog: 1,
+    past_guest: 10747,
     other: 1,
   },
 
