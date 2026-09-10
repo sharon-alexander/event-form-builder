@@ -184,6 +184,24 @@ export default function ThemeTab({ draft, update, orgId, onError }: Props) {
         </div>
 
         <div>
+          <label className="adm-label" htmlFor="fontDisplay">
+            Heading font
+          </label>
+          <select
+            id="fontDisplay"
+            className="adm-input"
+            value={theme.fontDisplay ?? DEFAULT_FONT_DISPLAY}
+            onChange={(e) => setTheme({ fontDisplay: e.target.value })}
+          >
+            {DISPLAY_FONTS.map((f) => (
+              <option key={f.value} value={f.value}>
+                {f.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
           <label className="adm-label" htmlFor="fontSans">
             Body font
           </label>
@@ -200,27 +218,6 @@ export default function ThemeTab({ draft, update, orgId, onError }: Props) {
             ))}
           </select>
         </div>
-
-        <div>
-          <label className="adm-label" htmlFor="fontDisplay">
-            Heading font
-          </label>
-          <select
-            id="fontDisplay"
-            className="adm-input"
-            value={theme.fontDisplay ?? DEFAULT_FONT_DISPLAY}
-            onChange={(e) => setTheme({ fontDisplay: e.target.value })}
-          >
-            {DISPLAY_FONTS.map((f) => (
-              <option key={f.value} value={f.value}>
-                {f.label}
-              </option>
-            ))}
-          </select>
-          <p className="mt-1 text-xs text-zinc-400">
-            Custom Google Fonts must also be loaded on the embedding page.
-          </p>
-        </div>
       </div>
 
       {/* Live preview */}
@@ -228,7 +225,7 @@ export default function ThemeTab({ draft, update, orgId, onError }: Props) {
         <p className="adm-label">Preview</p>
         <div
           ref={previewRef}
-          className="rounded-2xl border border-zinc-200 bg-white p-6 text-center"
+          className="rounded-2xl border border-zinc-200 bg-white p-6 text-center font-sans"
         >
           {theme.logoUrl && (
             <img
@@ -237,7 +234,7 @@ export default function ThemeTab({ draft, update, orgId, onError }: Props) {
               className="mx-auto mb-3 h-14 w-auto max-w-[10rem] object-contain"
             />
           )}
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">
+          <p className="font-sans text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">
             {draft.form_title || "Private Events"}
           </p>
           <h3 className="font-display text-2xl font-semibold text-zinc-900">
