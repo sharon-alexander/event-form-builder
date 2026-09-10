@@ -71,6 +71,10 @@ export default function EventSummary({ data }: EventSummaryProps) {
     });
   }
 
+  if (data.interestedInMultiDayRental) {
+    rows.push({ title: "Multi-day rental", value: "Interested" });
+  }
+
   if (data.budget) {
     rows.push({ title: "Budget", value: label(location.budgetOptions, data.budget) });
   }
@@ -95,6 +99,14 @@ export default function EventSummary({ data }: EventSummaryProps) {
       title: "Timing",
       value: `${data.startTime || "?"} – ${data.endTime || "?"}`,
     });
+  }
+
+  if (data.additionalLoadInOutNeeded) {
+    rows.push({ title: "Load in/out", value: "Additional time needed" });
+  }
+
+  if (data.interestedInFullDayRental) {
+    rows.push({ title: "Full-day rental", value: "Interested" });
   }
 
   if (data.services.length > 0) {

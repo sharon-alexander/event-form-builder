@@ -137,6 +137,22 @@ export default function EventDateStep({
             </div>
           </div>
         )}
+
+        {location.showMultiDayRental && (
+          <label className="flex cursor-pointer items-center gap-3">
+            <input
+              type="checkbox"
+              checked={data.interestedInMultiDayRental}
+              onChange={(e) =>
+                onChange({ interestedInMultiDayRental: e.target.checked })
+              }
+              className="h-4 w-4 rounded border-brand-300 text-brand-600 focus:ring-brand-500"
+            />
+            <span className="text-sm font-medium text-gray-700">
+              I'm also interested in a multi-day rental
+            </span>
+          </label>
+        )}
       </div>
     </FormStep>
   );

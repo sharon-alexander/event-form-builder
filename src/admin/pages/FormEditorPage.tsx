@@ -37,6 +37,9 @@ export interface EditableLocation {
   gallery_media: MediaItem[];
   venue_spaces: VenueSpaceOption[];
   allow_multiple_venue_spaces: boolean;
+  show_multi_day_rental: boolean;
+  show_additional_load_in_out: boolean;
+  show_full_day_rental: boolean;
   budget_options: BudgetOption[];
   event_categories: EventChoiceOption[];
   event_formats: EventChoiceOption[];
@@ -73,6 +76,14 @@ function toEditable(row: LocationRow): EditableLocation {
       row.allow_multiple_venue_spaces ??
       bundled?.allowMultipleVenueSpaces ??
       false,
+    show_multi_day_rental:
+      row.show_multi_day_rental ?? bundled?.showMultiDayRental ?? false,
+    show_additional_load_in_out:
+      row.show_additional_load_in_out ??
+      bundled?.showAdditionalLoadInOut ??
+      false,
+    show_full_day_rental:
+      row.show_full_day_rental ?? bundled?.showFullDayRental ?? false,
     budget_options: row.budget_options ?? [],
     event_categories: row.event_categories ?? EVENT_CATEGORIES,
     event_formats: row.event_formats ?? EVENT_FORMATS,
@@ -154,6 +165,9 @@ export default function FormEditorPage() {
         gallery_media: draft.gallery_media,
         venue_spaces,
         allow_multiple_venue_spaces: draft.allow_multiple_venue_spaces,
+        show_multi_day_rental: draft.show_multi_day_rental,
+        show_additional_load_in_out: draft.show_additional_load_in_out,
+        show_full_day_rental: draft.show_full_day_rental,
         budget_options,
         event_categories: draft.event_categories,
         event_formats: draft.event_formats,

@@ -49,8 +49,20 @@ function buildAdditionalInfo(data: FormData, location: LocationConfig): string {
     lines.push(`Backup Date: ${data.backupDate}`);
   }
 
+  if (data.interestedInMultiDayRental) {
+    lines.push("Interested in Multi-Day Rental: Yes");
+  }
+
   if (data.timingFlexible) {
     lines.push("Timing Flexible: Yes");
+  }
+
+  if (data.additionalLoadInOutNeeded) {
+    lines.push("Additional Load In/Out Time Needed: Yes");
+  }
+
+  if (data.interestedInFullDayRental) {
+    lines.push("Interested in Full-Day Rental: Yes");
   }
 
   if (data.mealService) {
