@@ -50,16 +50,6 @@ export default function EventDateStep({
       nextDisabled={!isStepValid("event_date", data, location)}
     >
       <div className="space-y-5">
-        <label className="flex cursor-pointer items-center gap-3">
-          <input
-            type="checkbox"
-            checked={data.datesFlexible}
-            onChange={(e) => onChange({ datesFlexible: e.target.checked })}
-            className="h-4 w-4 rounded border-brand-300 text-brand-600 focus:ring-brand-500"
-          />
-          <span className="text-sm font-medium text-gray-700">My dates are flexible</span>
-        </label>
-
         {!data.datesFlexible ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
@@ -137,6 +127,33 @@ export default function EventDateStep({
             </div>
           </div>
         )}
+
+        <div className="space-y-3">
+          <label className="flex cursor-pointer items-center gap-3">
+            <input
+              type="checkbox"
+              checked={data.datesFlexible}
+              onChange={(e) => onChange({ datesFlexible: e.target.checked })}
+              className="h-4 w-4 rounded border-brand-300 text-brand-600 focus:ring-brand-500"
+            />
+            <span className="text-sm font-medium text-gray-700">My dates are flexible</span>
+          </label>
+          {location.showMultiDayRental && (
+            <label className="flex cursor-pointer items-center gap-3">
+              <input
+                type="checkbox"
+                checked={data.interestedInMultiDayRental}
+                onChange={(e) =>
+                  onChange({ interestedInMultiDayRental: e.target.checked })
+                }
+                className="h-4 w-4 rounded border-brand-300 text-brand-600 focus:ring-brand-500"
+              />
+              <span className="text-sm font-medium text-gray-700">
+                I'm also interested in a multi-day rental
+              </span>
+            </label>
+          )}
+        </div>
       </div>
     </FormStep>
   );

@@ -36,6 +36,9 @@ export interface LocationRow {
   step_more_details: Partial<Record<StepId, string>> | null;
   timing_style: string | null;
   allow_multiple_venue_spaces: boolean | null;
+  show_multi_day_rental: boolean | null;
+  show_additional_load_in_out: boolean | null;
+  show_full_day_rental: boolean | null;
   info_page: InfoPageConfig | null;
   required_fields: Partial<Record<FieldId, boolean>> | null;
   theme: ThemeTokens | null;
@@ -63,6 +66,14 @@ export function locationConfigFromRow(row: LocationRow): LocationConfig {
       row.allow_multiple_venue_spaces ??
       bundled?.allowMultipleVenueSpaces ??
       false,
+    showMultiDayRental:
+      row.show_multi_day_rental ?? bundled?.showMultiDayRental ?? false,
+    showAdditionalLoadInOut:
+      row.show_additional_load_in_out ??
+      bundled?.showAdditionalLoadInOut ??
+      false,
+    showFullDayRental:
+      row.show_full_day_rental ?? bundled?.showFullDayRental ?? false,
     budgetOptions: (row.budget_options ?? []).filter(hasOptionLabel),
     eventCategories: row.event_categories ?? EVENT_CATEGORIES,
     eventFormats: row.event_formats ?? EVENT_FORMATS,

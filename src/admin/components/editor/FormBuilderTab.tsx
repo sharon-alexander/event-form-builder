@@ -29,6 +29,7 @@ import {
 import BudgetRangesEditor from "./BudgetRangesEditor";
 import EventOptionsEditor from "./EventOptionsEditor";
 import InfoPageEditor from "./InfoPageEditor";
+import OptionalCheckboxesEditor from "./OptionalCheckboxesEditor";
 import RequiredFieldsEditor from "./RequiredFieldsEditor";
 import RichTextEditor from "./RichTextEditor";
 import TimingStyleEditor from "./TimingStyleEditor";
@@ -414,6 +415,7 @@ function StepConfig({
       )}
 
       <RequiredFieldsEditor stepId={stepId} draft={draft} update={update} />
+      <OptionalCheckboxesEditor stepId={stepId} draft={draft} update={update} />
 
       <StepNoteEditor
         value={moreDetails[stepId] ?? ""}

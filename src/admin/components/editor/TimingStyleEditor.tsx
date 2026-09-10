@@ -11,12 +11,12 @@ const OPTIONS: { value: TimingStyle; label: string; hint: string }[] = [
   {
     value: "standard",
     label: "Start & end times",
-    hint: "People pick preferred start and end times.",
+    hint: "Start time and end time.",
   },
   {
     value: "meal_service",
     label: "Meal service",
-    hint: "People pick a meal service (lunch/dinner) plus start time.",
+    hint: "Lunch or dinner, plus a start time. No end time.",
   },
 ];
 
@@ -24,12 +24,12 @@ export default function TimingStyleEditor({ draft, update }: Props) {
   const current = (draft.timing_style || "standard") as TimingStyle;
 
   return (
-    <section className="space-y-3">
+    <section className="space-y-2">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold text-zinc-900">Timing</h3>
           <p className="mt-0.5 text-xs text-zinc-400">
-            Controls which timing questions appear on this step.
+            Choose one. Guests see that version only.
           </p>
         </div>
         <RequiredCheckbox
@@ -40,22 +40,39 @@ export default function TimingStyleEditor({ draft, update }: Props) {
         />
       </div>
 
-      <div className="space-y-2">
+      <div role="radiogroup" aria-label="Timing questions" className="space-y-1.5">
         {OPTIONS.map((opt) => {
           const selected = current === opt.value;
           return (
             <button
               key={opt.value}
               type="button"
+              role="radio"
+              aria-checked={selected}
               onClick={() => update({ timing_style: opt.value })}
-              className={`w-full rounded-xl border px-4 py-3 text-left transition-colors ${
+              className={`flex w-full items-start gap-2.5 rounded-lg border px-3 py-2 text-left transition-colors ${
                 selected
-                  ? "border-zinc-900 bg-zinc-50 ring-1 ring-zinc-900"
+                  ? "border-zinc-900 bg-zinc-50"
                   : "border-zinc-200 bg-white hover:border-zinc-300"
               }`}
             >
-              <p className="text-sm font-medium text-zinc-900">{opt.label}</p>
-              <p className="mt-0.5 text-xs text-zinc-500">{opt.hint}</p>
+              <span
+                className={`mt-0.5 flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border ${
+                  selected ? "border-zinc-900" : "border-zinc-300"
+                }`}
+              >
+                {selected && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-zinc-900" />
+                )}
+              </span>
+              <span>
+                <span className="block text-xs font-medium text-zinc-900">
+                  {opt.label}
+                </span>
+                <span className="mt-0.5 block text-[11px] leading-snug text-zinc-500">
+                  {opt.hint}
+                </span>
+              </span>
             </button>
           );
         })}
