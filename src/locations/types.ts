@@ -84,6 +84,12 @@ export interface LocationConfig {
   venueSpaces: VenueSpaceOption[];
   /** When true, guests can pick more than one space of interest. */
   allowMultipleVenueSpaces?: boolean;
+  /** When true, date step shows a multi-day rental interest checkbox. */
+  showMultiDayRental?: boolean;
+  /** When true, timing step shows an extra load in/out time checkbox. */
+  showAdditionalLoadInOut?: boolean;
+  /** When true, timing step shows a full-day rental interest checkbox. */
+  showFullDayRental?: boolean;
   budgetOptions: BudgetOption[];
   /** Options shown on the event_format step. Undefined = starter catalog. */
   eventCategories?: EventChoiceOption[];

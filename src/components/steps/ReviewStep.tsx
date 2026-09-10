@@ -89,6 +89,9 @@ export default function ReviewStep({ data, onSubmit, onBack, isSubmitting, error
           />
         )}
         {dateDisplay && <Row title="Date" value={dateDisplay} />}
+        {data.interestedInMultiDayRental && (
+          <Row title="Multi-Day Rental" value="Yes" />
+        )}
         {data.budget && <Row title="Budget" value={label(location.budgetOptions, data.budget)} />}
         {data.venueSpace.length > 0 && (
           <Row
@@ -98,6 +101,12 @@ export default function ReviewStep({ data, onSubmit, onBack, isSubmitting, error
         )}
         {(data.startTime || data.timingFlexible || data.mealService) && (
           <Row title="Timing" value={timingDisplay} />
+        )}
+        {data.additionalLoadInOutNeeded && (
+          <Row title="Additional Load In/Out" value="Yes" />
+        )}
+        {data.interestedInFullDayRental && (
+          <Row title="Full-Day Rental" value="Yes" />
         )}
         {location.steps.includes("services") && (
           <Row title="Services" value={servicesDisplay} />

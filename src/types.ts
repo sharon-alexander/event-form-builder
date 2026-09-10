@@ -64,6 +64,7 @@ export interface FormData {
   eventFormat: string | null;
 
   datesFlexible: boolean;
+  interestedInMultiDayRental: boolean;
   eventDate: string;
   backupDate: string;
   flexibleDatePreferences: FlexibleDatePreferences;
@@ -74,6 +75,8 @@ export interface FormData {
   startTime: string;
   endTime: string;
   timingFlexible: boolean;
+  additionalLoadInOutNeeded: boolean;
+  interestedInFullDayRental: boolean;
   mealService: MealService | null;
 
   services: ServiceInterest[];
@@ -107,6 +110,7 @@ export const INITIAL_FORM_DATA: FormData = {
   eventFormat: null,
 
   datesFlexible: false,
+  interestedInMultiDayRental: false,
   eventDate: "",
   backupDate: "",
   flexibleDatePreferences: { preferredMonths: [], preferredDays: [] },
@@ -117,6 +121,8 @@ export const INITIAL_FORM_DATA: FormData = {
   startTime: "",
   endTime: "",
   timingFlexible: false,
+  additionalLoadInOutNeeded: false,
+  interestedInFullDayRental: false,
   mealService: null,
 
   services: [],
