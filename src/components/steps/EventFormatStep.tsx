@@ -4,6 +4,7 @@ import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
 import { isFieldRequired, isStepValid } from "../../form/fieldCatalog";
 import RequiredMark from "../../form/RequiredMark";
 import FormStep from "../FormStep";
+import SearchableCombobox from "../SearchableCombobox";
 import type { StepProps } from "./stepProps";
 
 const copy = DEFAULT_STEP_COPY.event_format;
@@ -34,27 +35,22 @@ export default function EventFormatStep({
     >
       <div className="space-y-6">
         <div>
-          <p className="efb-label">
+          <label htmlFor="event-category" className="efb-label">
             Event Type
             <RequiredMark required={isFieldRequired(location, "eventCategory")} />
-          </p>
-          <div className="grid grid-cols-2 gap-3">
-            {categories.map((cat) => (
-              <button
-                key={cat.value}
-                type="button"
-                onClick={() =>
-                  onChange({
-                    eventCategory: cat.value,
-                    eventCategoryOther: cat.value === "other" ? data.eventCategoryOther : "",
-                  })
-                }
-                className={`efb-card ${data.eventCategory === cat.value ? "efb-card-selected" : ""}`}
-              >
-                {cat.label}
-              </button>
-            ))}
-          </div>
+          </label>
+          <SearchableCombobox
+            id="event-category"
+            value={data.eventCategory}
+            options={categories}
+            placeholder="Search event types"
+            onChange={(eventCategory) =>
+              onChange({
+                eventCategory,
+                eventCategoryOther: eventCategory === "other" ? data.eventCategoryOther : "",
+              })
+            }
+          />
           {data.eventCategory === "other" && (
             <input
               className="efb-input mt-3"
