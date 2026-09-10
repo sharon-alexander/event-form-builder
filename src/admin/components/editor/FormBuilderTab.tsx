@@ -18,7 +18,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import type { StepId } from "../../../locations/types";
 import { DEFAULT_STEP_COPY } from "../../../form/defaultStepCopy";
-import { EVENT_CATEGORIES, EVENT_FORMATS } from "../../../types";
+import { DEFAULT_EVENT_CATEGORIES, EVENT_FORMATS } from "../../../types";
 import { isEmptyRichText } from "../../../utils/richText";
 import type { EditableLocation } from "../../pages/FormEditorPage";
 import {
@@ -183,7 +183,7 @@ export default function FormBuilderTab({ draft, update, orgId, onError }: Props)
     };
     if (stepId === "event_format") {
       if (!draft.event_categories?.length) {
-        patch.event_categories = EVENT_CATEGORIES;
+        patch.event_categories = DEFAULT_EVENT_CATEGORIES;
       }
       if (!draft.event_formats?.length) {
         patch.event_formats = EVENT_FORMATS;

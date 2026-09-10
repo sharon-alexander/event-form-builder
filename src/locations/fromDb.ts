@@ -1,5 +1,5 @@
 import { getSupabase, supabasePublic } from "../lib/supabase";
-import { EVENT_CATEGORIES, EVENT_FORMATS } from "../types";
+import { DEFAULT_EVENT_CATEGORIES, EVENT_FORMATS } from "../types";
 import type { ThemeTokens } from "../theme/theme";
 import { mergeInfoPageIntoMoreDetails } from "../utils/richText";
 import { parseRequiredFields } from "../form/fieldCatalog";
@@ -75,7 +75,7 @@ export function locationConfigFromRow(row: LocationRow): LocationConfig {
     showFullDayRental:
       row.show_full_day_rental ?? bundled?.showFullDayRental ?? false,
     budgetOptions: (row.budget_options ?? []).filter(hasOptionLabel),
-    eventCategories: row.event_categories ?? EVENT_CATEGORIES,
+    eventCategories: row.event_categories ?? DEFAULT_EVENT_CATEGORIES,
     eventFormats: row.event_formats ?? EVENT_FORMATS,
     steps,
     stepMoreDetails: {

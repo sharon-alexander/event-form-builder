@@ -11,7 +11,7 @@ import type {
   TripleseatConfig,
   VenueSpaceOption,
 } from "../../locations/types";
-import { EVENT_CATEGORIES, EVENT_FORMATS } from "../../types";
+import { DEFAULT_EVENT_CATEGORIES, EVENT_FORMATS } from "../../types";
 import type { LocationRow } from "../../locations/fromDb";
 import { tryGetLocation } from "../../locations";
 import { hasOptionLabel } from "../../locations/presentableOptions";
@@ -85,7 +85,7 @@ function toEditable(row: LocationRow): EditableLocation {
     show_full_day_rental:
       row.show_full_day_rental ?? bundled?.showFullDayRental ?? false,
     budget_options: row.budget_options ?? [],
-    event_categories: row.event_categories ?? EVENT_CATEGORIES,
+    event_categories: row.event_categories ?? DEFAULT_EVENT_CATEGORIES,
     event_formats: row.event_formats ?? EVENT_FORMATS,
     form_steps:
       row.form_steps && row.form_steps.length > 0

@@ -1,4 +1,4 @@
-import { EVENT_CATEGORIES, EVENT_FORMATS } from "../../../types";
+import { DEFAULT_EVENT_CATEGORIES, EVENT_CATEGORIES, EVENT_FORMATS } from "../../../types";
 import type { EditableLocation } from "../../pages/FormEditorPage";
 import ChoiceListEditor from "./ChoiceListEditor";
 import { fieldIsRequired, setFieldRequired } from "./RequiredCheckbox";
@@ -15,7 +15,7 @@ export default function EventOptionsEditor({ draft, update }: Props) {
         title="Event types"
         hint="Other still asks them to describe."
         catalog={EVENT_CATEGORIES}
-        selected={draft.event_categories ?? EVENT_CATEGORIES}
+        selected={draft.event_categories ?? DEFAULT_EVENT_CATEGORIES}
         onChange={(event_categories) => update({ event_categories })}
         requiredChecked={fieldIsRequired(draft, "eventCategory")}
         onRequiredChange={(required) =>

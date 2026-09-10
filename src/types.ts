@@ -166,6 +166,20 @@ export const EVENT_CATEGORIES: { value: EventCategory; label: string }[] = [
   { value: "other", label: "Other" },
 ];
 
+/** Starter set for new forms. Full catalog stays in EVENT_CATEGORIES for the editor. */
+const DEFAULT_EVENT_CATEGORY_VALUES = new Set([
+  "birthday",
+  "happy_hour",
+  "holiday_party",
+  "corporate",
+  "wedding",
+  "other",
+]);
+
+export const DEFAULT_EVENT_CATEGORIES = EVENT_CATEGORIES.filter((c) =>
+  DEFAULT_EVENT_CATEGORY_VALUES.has(c.value),
+);
+
 export const EVENT_FORMATS: { value: EventFormat; label: string }[] = [
   { value: "seated", label: "Seated" },
   { value: "standing", label: "Standing" },

@@ -5,6 +5,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type FocusEvent,
   type KeyboardEvent,
 } from "react";
 
@@ -123,6 +124,18 @@ export default function SearchableCombobox({
     };
   }, [open, close]);
 
+  function onFocusOut(e: FocusEvent<HTMLDivElement>) {
+    const root = rootRef.current;
+    if (!root) return;
+    const next = e.relatedTarget;
+    if (next instanceof Node && root.contains(next)) return;
+    requestAnimationFrame(() => {
+      const doc = root.getRootNode() as Document | ShadowRoot;
+      if (root.contains(doc.activeElement)) return;
+      close();
+    });
+  }
+
   function onKeyDown(e: KeyboardEvent<HTMLInputElement>) {
     if (e.nativeEvent.isComposing) return;
 
@@ -159,6 +172,8 @@ export default function SearchableCombobox({
       if (!open) return;
       e.preventDefault();
       close();
+    } else if (e.key === "Tab") {
+      close();
     }
   }
 
@@ -169,6 +184,7 @@ export default function SearchableCombobox({
       ref={rootRef}
       className="relative"
       onPointerDown={(e) => e.stopPropagation()}
+      onFocusOut={onFocusOut}
     >
       <div className="relative">
         <input

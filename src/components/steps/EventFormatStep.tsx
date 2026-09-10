@@ -1,4 +1,4 @@
-import { EVENT_CATEGORIES, EVENT_FORMATS } from "../../types";
+import { DEFAULT_EVENT_CATEGORIES, EVENT_FORMATS } from "../../types";
 import { useLocationConfig } from "../../context/LocationContext";
 import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
 import { isFieldRequired, isStepValid } from "../../form/fieldCatalog";
@@ -20,7 +20,7 @@ export default function EventFormatStep({
   subtitle = copy.subtitle,
 }: StepProps) {
   const location = useLocationConfig();
-  const categories = location.eventCategories ?? EVENT_CATEGORIES;
+  const categories = location.eventCategories ?? DEFAULT_EVENT_CATEGORIES;
   const formats = location.eventFormats ?? EVENT_FORMATS;
 
   return (
