@@ -13,7 +13,6 @@ import type {
 } from "../../locations/types";
 import { DEFAULT_EVENT_CATEGORIES, EVENT_FORMATS } from "../../types";
 import type { LocationRow } from "../../locations/fromDb";
-import { tryGetLocation } from "../../locations";
 import { hasOptionLabel } from "../../locations/presentableOptions";
 import { parseRequiredFields } from "../../form/fieldCatalog";
 import { mergeInfoPageIntoMoreDetails } from "../../utils/richText";
@@ -63,8 +62,6 @@ const TABS = [
 type TabId = (typeof TABS)[number]["id"];
 
 function toEditable(row: LocationRow): EditableLocation {
-  const bundled = tryGetLocation(row.slug);
-
   return {
     slug: row.slug,
     name: row.name,
@@ -72,37 +69,21 @@ function toEditable(row: LocationRow): EditableLocation {
     about_blurb: row.about_blurb,
     gallery_media: row.gallery_media ?? [],
     venue_spaces: row.venue_spaces ?? [],
-    allow_multiple_venue_spaces:
-      row.allow_multiple_venue_spaces ??
-      bundled?.allowMultipleVenueSpaces ??
-      false,
-    show_multi_day_rental:
-      row.show_multi_day_rental ?? bundled?.showMultiDayRental ?? false,
-    show_additional_load_in_out:
-      row.show_additional_load_in_out ??
-      bundled?.showAdditionalLoadInOut ??
-      false,
-    show_full_day_rental:
-      row.show_full_day_rental ?? bundled?.showFullDayRental ?? false,
+    allow_multiple_venue_spaces: row.allow_multiple_venue_spaces ?? false,
+    show_multi_day_rental: row.show_multi_day_rental ?? false,
+    show_additional_load_in_out: row.show_additional_load_in_out ?? false,
+    show_full_day_rental: row.show_full_day_rental ?? false,
     budget_options: row.budget_options ?? [],
     event_categories: row.event_categories ?? DEFAULT_EVENT_CATEGORIES,
     event_formats: row.event_formats ?? EVENT_FORMATS,
     form_steps:
-      row.form_steps && row.form_steps.length > 0
-        ? row.form_steps
-        : bundled?.steps ?? [],
-    step_more_details: {
-      ...bundled?.stepMoreDetails,
-      ...mergeInfoPageIntoMoreDetails(
-        row.step_more_details ?? {},
-        row.info_page ?? bundled?.infoPage,
-      ),
-    },
-    timing_style: row.timing_style || bundled?.timingStyle || "standard",
-    info_page: (() => {
-      const page = row.info_page ?? bundled?.infoPage ?? null;
-      return page ? { title: page.title } : null;
-    })(),
+      row.form_steps && row.form_steps.length > 0 ? row.form_steps : [],
+    step_more_details: mergeInfoPageIntoMoreDetails(
+      row.step_more_details ?? {},
+      row.info_page,
+    ),
+    timing_style: row.timing_style || "standard",
+    info_page: row.info_page ? { title: row.info_page.title } : null,
     required_fields: parseRequiredFields(row.required_fields),
     tripleseat: row.tripleseat ?? {},
     theme: row.theme ?? {},

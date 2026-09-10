@@ -20,7 +20,7 @@ export interface Profile {
   org_id: string;
   role: AdminRole;
   email: string | null;
-  /** Null until the invitee finishes set-password (or seed/backfill). */
+  /** Null until the invitee finishes set-password. */
   joined_at: string | null;
   onboarding_complete: boolean;
 }

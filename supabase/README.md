@@ -8,9 +8,9 @@ logins), and storage (gallery images).
 Create a project at [supabase.com](https://supabase.com). From **Project
 Settings → API** grab:
 
-- **Project URL** → `VITE_SUPABASE_URL` (and `SUPABASE_URL` for the seed)
+- **Project URL** → `VITE_SUPABASE_URL`
 - **anon public key** → `VITE_SUPABASE_ANON_KEY`
-- **service_role key** → `SUPABASE_SERVICE_ROLE_KEY` (seed only — keep secret)
+- **service_role key** → `SUPABASE_SERVICE_ROLE_KEY` (Edge Functions / admin scripts only — keep secret)
 
 ## 2. Apply the migrations
 
@@ -32,24 +32,15 @@ supabase db push
 
 Creates `organizations`, `profiles`, and `locations` with RLS, plus a public `gallery` bucket.
 
-## 3. Seed the launch data
+## 3. First admin and forms
 
-The seed creates one organization, an optional admin login, and the three
-launch locations (uploading any images found under `public/gallery/<slug>/`).
+Launch forms already live in the `locations` table. For a new empty project:
 
-```bash
-# In your project .env (gitignored):
-SUPABASE_URL=https://xxxx.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=eyJ...            # service_role, not anon
-SEED_ORG_NAME="Airmax Hospitality"
-SEED_ORG_SLUG="airmax-hospitality"
-SEED_ADMIN_EMAIL=you@example.com            # optional: creates a login
-SEED_ADMIN_PASSWORD=a-strong-password       # optional
+1. Insert an `organizations` row.
+2. Create an Auth user, then a `profiles` row linking them to that org.
+3. Sign in at `/admin` and create forms there.
 
-node supabase/seed/seed.mjs
-```
-
-The script is idempotent — re-running upserts the org and locations by slug.
+Do not overwrite existing `locations` rows from files — the CMS is the source of truth.
 
 ## 4. Adding more admins / organizations
 

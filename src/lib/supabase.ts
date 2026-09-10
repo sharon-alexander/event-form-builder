@@ -3,8 +3,8 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
-/** Whether Supabase env vars are present. The public form falls back to the
- *  bundled TypeScript configs when this is false. */
+/** Whether Supabase env vars are present. The public form requires Supabase
+ *  to load location configs — without it, forms show "not found". */
 export const isSupabaseConfigured = Boolean(url && anonKey);
 
 /**

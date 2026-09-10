@@ -2,8 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import { LocationProvider } from "./context/LocationContext";
-import { getLocation, tryGetLocation } from "./locations";
-import type { LocationConfig } from "./locations";
+import type { LocationConfig } from "./locations/types";
 import { fetchLocationBySlug } from "./locations/fromDb";
 import { resolveReferralSources } from "./api/resolveReferralSources";
 import { getSupabase } from "./lib/supabase";
@@ -107,8 +106,6 @@ async function mount() {
     mountPoint = appRoot;
   }
 
-  const isWidget = !!widgetCss;
-
   const root = ReactDOM.createRoot(mountPoint);
   root.render(
     <React.StrictMode>
@@ -116,9 +113,7 @@ async function mount() {
     </React.StrictMode>,
   );
 
-  // On standalone pages (/form/:slug), a missing slug means "not found".
-  // Widgets (embeds) can still fall back to the default location.
-  if (!slug && !isWidget) {
+  if (!slug) {
     root.render(
       <React.StrictMode>
         <NotFoundState />
@@ -153,8 +148,6 @@ async function mount() {
       }
     }
 
-    // Prefer live config from Supabase; fall back to the bundled TS config so the
-    // form still works if Supabase is unconfigured or unreachable.
     let config: LocationConfig | null = null;
     let theme: ThemeTokens | null = null;
     let published = true;
@@ -170,15 +163,7 @@ async function mount() {
         published = resolved.published;
       }
     } catch {
-      // Supabase unavailable — try bundled configs below.
-    }
-
-    if (!config) {
-      // Preview mode: no bundled fallback when signed in but row missing —
-      // avoid showing a different location's config as an "unpublished" draft.
-      if (!previewMode) {
-        config = isWidget ? getLocation(slug) : tryGetLocation(slug);
-      }
+      // Supabase unavailable — form not found.
     }
 
     if (!config) {
