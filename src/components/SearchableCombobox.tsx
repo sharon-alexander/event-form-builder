@@ -124,7 +124,7 @@ export default function SearchableCombobox({
     };
   }, [open, close]);
 
-  function onFocusOut(e: FocusEvent<HTMLDivElement>) {
+  function onBlur(e: FocusEvent<HTMLDivElement>) {
     const root = rootRef.current;
     if (!root) return;
     const next = e.relatedTarget;
@@ -184,7 +184,7 @@ export default function SearchableCombobox({
       ref={rootRef}
       className="relative"
       onPointerDown={(e) => e.stopPropagation()}
-      onFocusOut={onFocusOut}
+      onBlur={onBlur}
     >
       <div className="relative">
         <input
