@@ -18,13 +18,10 @@ export function getStepProps(
   stepId: StepId,
   base: Omit<StepProps, "stepId" | "moreDetails" | "title" | "subtitle">,
 ): StepProps {
-  const copy = location.stepCopy?.[stepId];
   return {
     ...base,
     stepId,
     moreDetails: location.stepMoreDetails?.[stepId],
-    title: copy?.title,
-    subtitle: copy?.subtitle,
   };
 }
 

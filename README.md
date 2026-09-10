@@ -2,7 +2,7 @@
 
 A multi-step private event inquiry form that submits leads directly to Tripleseat. Built as an embeddable widget for Squarespace (or any website). Supports multiple locations, each with its own venue spaces, images, budget options, theme, and Tripleseat credentials.
 
-Locations are managed through a **CMS admin dashboard** (`/admin`) backed by Supabase. The public form loads its config from Supabase at runtime, and falls back to the bundled TypeScript configs in `src/locations/` if Supabase isn't configured. See [CMS Admin Dashboard](#cms-admin-dashboard).
+Locations are managed through a **CMS admin dashboard** (`/admin`) backed by Supabase. All form configuration lives in the database — the public form loads its config from Supabase at runtime. Supabase must be configured for forms to load. See [CMS Admin Dashboard](#cms-admin-dashboard).
 
 ## Locations
 
@@ -60,16 +60,14 @@ What you can edit per form:
 
 ### Supabase setup
 
-The backend (database, auth, storage) lives in Supabase. Seed script, Edge
-Functions, and data model are documented in
-[`supabase/README.md`](supabase/README.md). In short:
+The backend (database, auth, storage) lives in Supabase. Edge Functions and
+the data model are documented in [`supabase/README.md`](supabase/README.md).
+In short:
 
 1. Create a Supabase project and apply the migrations (see below).
 2. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to `.env` (and Vercel).
-3. Seed the launch data and create an admin login:
-   ```bash
-   node supabase/seed/seed.mjs
-   ```
+3. Create an admin user in the Supabase dashboard and a matching `profiles` row
+   (see [`supabase/README.md`](supabase/README.md)). Forms are created in `/admin`.
 
 ### Applying migrations
 
@@ -115,24 +113,7 @@ Each location needs its own Tripleseat credentials. From your Tripleseat account
 
 4. **Disable spam detection on each lead form** — Go to **Settings → Lead Forms → Edit** on the relevant form and uncheck "Enable Spam Detection on Embedded Forms" (the widget includes its own honeypot protection).
 
-Add your keys to `.env`:
-
-```env
-# Pearl Box Townhouse
-VITE_PEARL_BOX_TRIPLESEAT_PUBLIC_KEY=your_key
-VITE_PEARL_BOX_TRIPLESEAT_LEAD_FORM_ID=123
-VITE_PEARL_BOX_TRIPLESEAT_LOCATION_ID=456
-
-# Roscioli
-VITE_ROSCIOLI_TRIPLESEAT_PUBLIC_KEY=your_key
-VITE_ROSCIOLI_TRIPLESEAT_LEAD_FORM_ID=789
-VITE_ROSCIOLI_TRIPLESEAT_LOCATION_ID=012
-
-# Tokyo Record Bar
-VITE_TRB_TRIPLESEAT_PUBLIC_KEY=your_key
-VITE_TRB_TRIPLESEAT_LEAD_FORM_ID=345
-VITE_TRB_TRIPLESEAT_LOCATION_ID=678
-```
+Paste those values on the form's **Advanced** tab in `/admin`. They are stored on the location row in Supabase.
 
 ## Build
 
@@ -158,9 +139,8 @@ The repo includes a `vercel.json` and is ready to deploy as-is.
 2. In Vercel, **Add New → Project** and import the repo. Vercel auto-detects the Vite framework and uses `npm run build` → `dist/`.
 3. **Add your Environment Variables** (Project → Settings → Environment Variables). The `.env` file is gitignored, so the build needs these set in Vercel:
    - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (powers the CMS + runtime config)
-   - Optional Tripleseat fallbacks for the bundled configs: `VITE_PEARL_BOX_TRIPLESEAT_*`, `VITE_ROSCIOLI_TRIPLESEAT_*`, `VITE_TRB_TRIPLESEAT_*`
 
-   These are read at **build time**, so after changing them, trigger a redeploy. (Tripleseat credentials managed in the dashboard are stored in Supabase and don't require a redeploy.)
+   Tripleseat credentials are managed per-form in the CMS dashboard (Advanced tab) and stored in Supabase — they don't need to be set as env vars or require a redeploy.
 4. Deploy. Live URLs:
    - **Pearl Box:** https://event-form-builder.vercel.app/form/pearl-box
    - **Roscioli:** https://event-form-builder.vercel.app/form/roscioli
@@ -196,8 +176,8 @@ Once Supabase is set up, the preferred way is through the dashboard:
 To add a location to another **group**, create the organization and its admin in
 Supabase first (see [`supabase/README.md`](supabase/README.md)).
 
-> The bundled TypeScript configs in `src/locations/` remain only as a fallback
-> for when Supabase isn't configured.
+> All form configuration is stored in the `locations` table. The public form
+> loads that row at runtime — there is no bundled or seed fallback.
 
 ## Form Steps
 

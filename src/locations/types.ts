@@ -106,9 +106,6 @@ export interface LocationConfig {
   /** Title for the info acknowledgement step. */
   infoPage?: InfoPageConfig;
 
-  /** Override labels/copy for specific steps. */
-  stepCopy?: Partial<Record<StepId, { title?: string; subtitle?: string }>>;
-
   /** Per-question required overrides. Missing keys use catalog defaults. */
   requiredFields?: Partial<Record<FieldId, boolean>>;
 
