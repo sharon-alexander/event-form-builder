@@ -26,10 +26,18 @@ export default function MediaStage({
   if (item.type === "embed") {
     const provider = providerForItem(item);
     if (!provider || !embedHostAllowed(item.src) || staticPreview) {
-      return <EmbedPoster item={item} alt={item.alt || provider?.label || "Video"} />;
+      return (
+        <EmbedPoster
+          item={item}
+          alt={item.alt || provider?.label || "Video"}
+          className={className}
+        />
+      );
     }
     return (
-      <div className="relative aspect-video w-full bg-black">
+      <div
+        className={`relative aspect-video w-full overflow-hidden bg-black ${className}`}
+      >
         <iframe
           key={item.src}
           title={item.alt || provider.label}
@@ -55,9 +63,19 @@ export default function MediaStage({
   );
 }
 
-function EmbedPoster({ item, alt }: { item: MediaItem; alt: string }) {
+function EmbedPoster({
+  item,
+  alt,
+  className = "",
+}: {
+  item: MediaItem;
+  alt: string;
+  className?: string;
+}) {
   return (
-    <div className="relative aspect-video w-full overflow-hidden bg-black">
+    <div
+      className={`relative aspect-video w-full overflow-hidden bg-black ${className}`}
+    >
       <MediaThumb
         item={item}
         alt={alt}
