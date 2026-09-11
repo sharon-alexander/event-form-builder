@@ -1,10 +1,11 @@
 import type { MediaItem } from "../locations/types";
+import { useStaticPreview } from "../context/StaticPreviewContext";
 
 type ThumbItem = Pick<MediaItem, "type" | "src" | "poster" | "alt">;
 
 export function mediaThumbSrc(item: ThumbItem): string | undefined {
-  if (item.type === "video") return item.poster || undefined;
-  return item.src || undefined;
+  if (item.type === "image") return item.src || undefined;
+  return item.poster || undefined;
 }
 
 export function MediaThumb({
@@ -18,10 +19,18 @@ export function MediaThumb({
   alt?: string;
   loading?: "lazy" | "eager";
 }) {
+  const staticPreview = useStaticPreview();
   const src = mediaThumbSrc(item);
   const label = alt ?? item.alt;
   if (src) {
-    return <img src={src} alt={label} className={className} loading={loading} />;
+    return (
+      <img
+        src={src}
+        alt={label}
+        className={className}
+        loading={staticPreview ? "eager" : (loading ?? "lazy")}
+      />
+    );
   }
   return <VideoThumbFallback className={className} alt={label} />;
 }

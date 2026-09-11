@@ -263,23 +263,22 @@ export default function FormBuilderTab({ draft, update, orgId, onError }: Props)
               <button
                 type="button"
                 onClick={() => openConfig("landing")}
-                className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors ${
-                  selectedId === "landing"
-                    ? "bg-zinc-900 text-white"
-                    : "bg-white hover:bg-zinc-50"
-                }`}
+                aria-label="Edit landing page"
+                className="flex w-full items-center gap-3 bg-white px-4 py-3 text-left transition-colors hover:bg-zinc-50"
               >
-                <LandingIcon selected={selectedId === "landing"} />
-                <div>
-                  <p
-                    className={`text-sm font-medium ${selectedId === "landing" ? "text-white" : "text-zinc-900"}`}
-                  >
+                <LandingIcon />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-zinc-900">
                     Landing Page
                   </p>
                   <p className="text-xs text-zinc-400">
                     Hero, name, and about copy
                   </p>
                 </div>
+                <span className="ml-auto inline-flex shrink-0 items-center gap-0.5 text-xs text-zinc-400">
+                  Edit
+                  <ChevronRightIcon />
+                </span>
               </button>
             </div>
 
@@ -686,19 +685,39 @@ function BackIcon() {
   );
 }
 
-function LandingIcon({ selected }: { selected: boolean }) {
+function LandingIcon() {
   return (
     <svg
-      className={`h-5 w-5 shrink-0 ${selected ? "text-zinc-400" : "text-zinc-400"}`}
+      className="h-5 w-5 shrink-0 text-zinc-400"
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
       strokeWidth={1.5}
+      aria-hidden
     >
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
         d="M2.25 12l8.954-8.955a1.126 1.126 0 011.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"
+      />
+    </svg>
+  );
+}
+
+function ChevronRightIcon() {
+  return (
+    <svg
+      className="h-3.5 w-3.5"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2}
+      aria-hidden
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M8.25 4.5l7.5 7.5-7.5 7.5"
       />
     </svg>
   );

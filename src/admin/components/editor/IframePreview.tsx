@@ -4,6 +4,7 @@ import type { StepId } from "../../../locations/types";
 import type { FormData } from "../../../types";
 import { INITIAL_FORM_DATA } from "../../../types";
 import { LocationProvider } from "../../../context/LocationContext";
+import { StaticPreviewProvider } from "../../../context/StaticPreviewContext";
 import { getStepProps, renderStep } from "../../../form/renderStep";
 import { applyTheme } from "../../../theme/theme";
 import LandingPage from "../../../components/LandingPage";
@@ -32,7 +33,9 @@ export default function IframePreview({ draft, selectedId }: Props) {
     if (!doc) return;
 
     doc.open();
-    doc.write("<!DOCTYPE html><html><head></head><body></body></html>");
+    doc.write(
+      `<!DOCTYPE html><html><head><base href="${escapeHtml(window.location.origin)}/"></head><body></body></html>`,
+    );
     doc.close();
 
     // Copy all stylesheets from parent into iframe head
@@ -89,9 +92,11 @@ export default function IframePreview({ draft, selectedId }: Props) {
     }
 
     return createPortal(
-      <LocationProvider config={config}>
-        <div style={{ pointerEvents: "none" }}>{inner}</div>
-      </LocationProvider>,
+      <StaticPreviewProvider>
+        <LocationProvider config={config}>
+          <div style={{ pointerEvents: "none" }}>{inner}</div>
+        </LocationProvider>
+      </StaticPreviewProvider>,
       mountNode,
     );
   }, [mountNode, config, selectedId, stepProps]);
@@ -109,4 +114,11 @@ export default function IframePreview({ draft, selectedId }: Props) {
       {content}
     </div>
   );
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;");
 }
