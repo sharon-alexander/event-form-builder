@@ -292,6 +292,19 @@ function SortableSpaceCard({
               onChange={(e) => onChange({ price: e.target.value })}
             />
           </div>
+          <div>
+            <label className="adm-label" htmlFor={`space-info-${id}`}>
+              Additional info
+            </label>
+            <textarea
+              id={`space-info-${id}`}
+              rows={2}
+              className="adm-input py-2"
+              placeholder="e.g. Seats 80 / standing 120"
+              value={venue.additionalInfo ?? ""}
+              onChange={(e) => onChange({ additionalInfo: e.target.value })}
+            />
+          </div>
           <button
             type="button"
             onClick={onOpenGallery}

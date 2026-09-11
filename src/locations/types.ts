@@ -9,6 +9,7 @@ export interface VenueSpaceOption {
   value: string;
   label: string;
   price: string;
+  additionalInfo?: string;
   galleryMedia?: MediaItem[];
 }
 

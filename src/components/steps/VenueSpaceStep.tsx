@@ -99,6 +99,11 @@ export default function VenueSpaceStep({
                     <div className="min-w-0 flex-1">
                       <div className="font-semibold text-gray-900">{v.label}</div>
                       {v.price && <div className="mt-1 text-xs text-brand-600">{v.price}</div>}
+                      {v.additionalInfo && (
+                        <div className="mt-1 whitespace-pre-line text-xs text-gray-500">
+                          {v.additionalInfo}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </button>
