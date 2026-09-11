@@ -1,7 +1,9 @@
 import { type DragEvent, useEffect, useRef, useState } from "react";
 import type { MediaItem } from "../../../locations/types";
+import { mediaKindLabel } from "../../../media/embeds";
 import { uploadGalleryFile } from "../../api";
-import { VideoThumbFallback } from "../../../components/MediaThumb";
+import { MediaThumb } from "../../../components/MediaThumb";
+import EmbedPasteField from "./EmbedPasteField";
 import MediaPicker from "./MediaPicker";
 
 interface Props {
@@ -30,11 +32,13 @@ export default function VenueGalleryEditor({
   const fileInput = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [embedOpen, setEmbedOpen] = useState(false);
   const [dragOver, setDragOver] = useState(false);
 
   useEffect(() => {
     if (!open) {
       setPickerOpen(false);
+      setEmbedOpen(false);
       setDragOver(false);
       return;
     }
@@ -147,6 +151,13 @@ export default function VenueGalleryEditor({
             )}
             <button
               type="button"
+              onClick={() => setEmbedOpen((v) => !v)}
+              className="adm-btn-secondary px-3 py-1.5 text-xs"
+            >
+              {embedOpen ? "Cancel" : "Add embed"}
+            </button>
+            <button
+              type="button"
               onClick={() => fileInput.current?.click()}
               disabled={uploading}
               className="adm-btn-primary px-3 py-1.5 text-xs"
@@ -162,6 +173,19 @@ export default function VenueGalleryEditor({
               onChange={(e) => handleFiles(e.target.files)}
             />
           </div>
+
+          {embedOpen && (
+            <div className="mb-4">
+              <EmbedPasteField
+                existingSrcs={media.map((m) => m.src)}
+                onAdd={(item) => {
+                  addExisting(item);
+                  setEmbedOpen(false);
+                }}
+                onError={onError}
+              />
+            </div>
+          )}
 
           {pickerOpen && (
             <div className="mb-4">
@@ -194,14 +218,14 @@ export default function VenueGalleryEditor({
                 <p className="text-sm text-zinc-400">
                   {uploading
                     ? "Uploading…"
-                    : "Drop images or videos here, or click Upload."}
+                    : "Drop images or videos here, click Upload, or add an embed."}
                 </p>
               </div>
             ) : (
               <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                 {media.map((item, i) => {
-                  const src = item.type === "video" ? (item.poster ?? item.src) : item.src;
                   const isThumb = i === 0;
+                  const kind = mediaKindLabel(item);
                   return (
                     <div
                       key={`${item.src}-${i}`}
@@ -214,20 +238,19 @@ export default function VenueGalleryEditor({
                         onClick={() => setAsThumbnail(i)}
                         aria-label={
                           isThumb
-                            ? `${item.alt || "Photo"} (card thumbnail)`
+                            ? `${item.alt || kind || "Photo"} (card thumbnail)`
                             : `Set ${item.alt || "photo"} as card thumbnail`
                         }
                         aria-current={isThumb ? "true" : undefined}
                         className="absolute inset-0"
                       >
-                        {item.type === "video" && !item.poster ? (
-                          <VideoThumbFallback className="h-full w-full" alt={item.alt} />
-                        ) : (
-                          <img src={src} alt={item.alt} className="h-full w-full object-cover" />
-                        )}
-                        {item.type === "video" && (
+                        <MediaThumb
+                          item={item}
+                          className="h-full w-full object-cover"
+                        />
+                        {kind && (
                           <span className="absolute bottom-1.5 left-1.5 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium uppercase text-white">
-                            Video
+                            {kind}
                           </span>
                         )}
                       </button>

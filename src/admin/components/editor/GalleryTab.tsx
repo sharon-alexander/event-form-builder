@@ -18,9 +18,13 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { MediaItem } from "../../../locations/types";
+import { mediaKindLabel } from "../../../media/embeds";
+import { MediaThumb } from "../../../components/MediaThumb";
+import MediaStage from "../../../components/MediaStage";
 import { uploadGalleryFile } from "../../api";
 import { collectFormMedia } from "../../utils/formMediaLibrary";
 import type { EditableLocation } from "../../pages/FormEditorPage";
+import EmbedPasteField from "./EmbedPasteField";
 import MediaPicker from "./MediaPicker";
 
 interface Props {
@@ -38,6 +42,7 @@ export default function GalleryTab({ draft, update, orgId, onError }: Props) {
   const fileInput = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [embedOpen, setEmbedOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [dragActiveId, setDragActiveId] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
@@ -158,11 +163,18 @@ export default function GalleryTab({ draft, update, orgId, onError }: Props) {
             <button
               type="button"
               onClick={() => setPickerOpen((v) => !v)}
-              className="adm-btn-secondary px-4 py-2"
+              className="adm-btn-secondary px-3 py-1.5 text-xs"
             >
               {pickerOpen ? "Cancel" : "Choose existing"}
             </button>
           )}
+          <button
+            type="button"
+            onClick={() => setEmbedOpen((v) => !v)}
+            className="adm-btn-secondary px-3 py-1.5 text-xs"
+          >
+            {embedOpen ? "Cancel" : "Add embed"}
+          </button>
           <button
             type="button"
             onClick={() => fileInput.current?.click()}
@@ -187,6 +199,17 @@ export default function GalleryTab({ draft, update, orgId, onError }: Props) {
           onChange={(e) => handleFiles(e.target.files)}
         />
       </div>
+
+      {embedOpen && (
+        <EmbedPasteField
+          existingSrcs={media.map((m) => m.src)}
+          onAdd={(item) => {
+            addExisting(item);
+            setEmbedOpen(false);
+          }}
+          onError={onError}
+        />
+      )}
 
       {pickerOpen && (
         <MediaPicker
@@ -213,7 +236,7 @@ export default function GalleryTab({ draft, update, orgId, onError }: Props) {
           <div className="p-8 text-center text-sm text-zinc-400">
             {uploading
               ? "Uploading…"
-              : "Drop images or videos here, or click upload."}
+              : "Drop images or videos here, click upload, or add an embed."}
           </div>
         ) : (
           <div className="flex gap-4">
@@ -249,19 +272,11 @@ export default function GalleryTab({ draft, update, orgId, onError }: Props) {
             {selectedItem && selectedIndex !== null && (
               <div className="w-72 shrink-0 space-y-4 rounded-xl border border-zinc-200 p-4">
                 <div className="overflow-hidden rounded-lg bg-zinc-100">
-                  {selectedItem.type === "video" ? (
-                    <video
-                      src={selectedItem.src}
-                      className="h-48 w-full object-cover"
-                      controls
-                    />
-                  ) : (
-                    <img
-                      src={selectedItem.src}
-                      alt={selectedItem.alt}
-                      className="h-48 w-full object-cover"
-                    />
-                  )}
+                  <MediaStage
+                    key={selectedItem.src}
+                    item={selectedItem}
+                    className="h-48 w-full object-cover"
+                  />
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-500">
@@ -293,6 +308,7 @@ function TileContent({
   selected: boolean;
   isOverlay?: boolean;
 }) {
+  const kind = mediaKindLabel(item);
   return (
     <div
       className={`relative aspect-square overflow-hidden rounded-lg bg-zinc-100 ring-offset-2 ${
@@ -303,14 +319,10 @@ function TileContent({
             : ""
       }`}
     >
-      {item.type === "video" ? (
-        <video src={item.src} className="h-full w-full object-cover" muted />
-      ) : (
-        <img src={item.src} alt={item.alt} className="h-full w-full object-cover" />
-      )}
-      {item.type === "video" && (
+      <MediaThumb item={item} className="h-full w-full object-cover" />
+      {kind && (
         <div className="absolute bottom-1 left-1 rounded bg-black/60 px-1 py-0.5 text-[9px] font-medium uppercase text-white">
-          Video
+          {kind}
         </div>
       )}
     </div>
@@ -340,6 +352,8 @@ function SortableTile({
     opacity: isDragging ? 0.4 : 1,
   };
 
+  const kind = mediaKindLabel(item);
+
   return (
     <div
       ref={setNodeRef}
@@ -351,15 +365,11 @@ function SortableTile({
       }`}
       onClick={onClick}
     >
-      {item.type === "video" ? (
-        <video src={item.src} className="h-full w-full object-cover" muted />
-      ) : (
-        <img src={item.src} alt={item.alt} className="h-full w-full object-cover" />
-      )}
+      <MediaThumb item={item} className="h-full w-full object-cover" />
 
-      {item.type === "video" && (
+      {kind && (
         <div className="absolute bottom-1 left-1 rounded bg-black/60 px-1 py-0.5 text-[9px] font-medium uppercase text-white">
-          Video
+          {kind}
         </div>
       )}
 

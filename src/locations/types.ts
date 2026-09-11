@@ -1,8 +1,12 @@
+export type MediaEmbedProvider = "vimeo";
+
 export interface MediaItem {
-  type: "image" | "video";
+  type: "image" | "video" | "embed";
   src: string;
   poster?: string;
   alt: string;
+  /** Required when type is "embed". */
+  provider?: MediaEmbedProvider;
 }
 
 export interface VenueSpaceOption {
