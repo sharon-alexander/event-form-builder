@@ -7,6 +7,7 @@ import {
   MEAL_SERVICE_OPTIONS,
 } from "../../types";
 import { useLocationConfig } from "../../context/LocationContext";
+import { isFieldShown } from "../../form/fieldCatalog";
 import FormStep from "../FormStep";
 
 interface Props {
@@ -82,7 +83,7 @@ export default function ReviewStep({ data, onSubmit, onBack, isSubmitting, error
           />
         )}
         {data.eventCategory && <Row title="Event Type" value={categoryLabel} />}
-        {data.eventFormat && (
+        {data.eventFormat && isFieldShown(location, "eventFormat") && (
           <Row
             title="Format"
             value={label(location.eventFormats ?? EVENT_FORMATS, data.eventFormat)}

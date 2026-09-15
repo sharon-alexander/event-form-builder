@@ -1,7 +1,7 @@
 import { DEFAULT_EVENT_CATEGORIES, EVENT_FORMATS } from "../../types";
 import { useLocationConfig } from "../../context/LocationContext";
 import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
-import { isFieldRequired, isStepValid } from "../../form/fieldCatalog";
+import { isFieldRequired, isFieldShown, isStepValid } from "../../form/fieldCatalog";
 import RequiredMark from "../../form/RequiredMark";
 import FormStep from "../FormStep";
 import SearchableCombobox from "../SearchableCombobox";
@@ -16,17 +16,24 @@ export default function EventFormatStep({
   onBack,
   nextLabel,
   moreDetails,
-  title = copy.title,
-  subtitle = copy.subtitle,
+  title,
+  subtitle,
 }: StepProps) {
   const location = useLocationConfig();
   const categories = location.eventCategories ?? DEFAULT_EVENT_CATEGORIES;
   const formats = location.eventFormats ?? EVENT_FORMATS;
+  const showFormats = isFieldShown(location, "eventFormat");
+  const resolvedTitle = title ?? (showFormats ? copy.title : "Event type");
+  const resolvedSubtitle =
+    subtitle ??
+    (showFormats
+      ? copy.subtitle
+      : "Tell us about the occasion.");
 
   return (
     <FormStep
-      title={title}
-      subtitle={subtitle}
+      title={resolvedTitle}
+      subtitle={resolvedSubtitle}
       moreDetails={moreDetails}
       onNext={onNext}
       onBack={onBack}
@@ -60,24 +67,26 @@ export default function EventFormatStep({
             />
           )}
         </div>
-        <div>
-          <p className="efb-label">
-            Format
-            <RequiredMark required={isFieldRequired(location, "eventFormat")} />
-          </p>
-          <div className="grid grid-cols-2 gap-3">
-            {formats.map((f) => (
-              <button
-                key={f.value}
-                type="button"
-                onClick={() => onChange({ eventFormat: f.value })}
-                className={`efb-card ${data.eventFormat === f.value ? "efb-card-selected" : ""}`}
-              >
-                {f.label}
-              </button>
-            ))}
+        {showFormats && (
+          <div>
+            <p className="efb-label">
+              Format
+              <RequiredMark required={isFieldRequired(location, "eventFormat")} />
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              {formats.map((f) => (
+                <button
+                  key={f.value}
+                  type="button"
+                  onClick={() => onChange({ eventFormat: f.value })}
+                  className={`efb-card ${data.eventFormat === f.value ? "efb-card-selected" : ""}`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </FormStep>
   );

@@ -2,12 +2,13 @@ import { getSupabase, supabasePublic } from "../lib/supabase";
 import { DEFAULT_EVENT_CATEGORIES, EVENT_FORMATS } from "../types";
 import type { ThemeTokens } from "../theme/theme";
 import { mergeInfoPageIntoMoreDetails } from "../utils/richText";
-import { parseRequiredFields } from "../form/fieldCatalog";
+import { resolveFieldSettings } from "../form/fieldCatalog";
 import { hasOptionLabel } from "./presentableOptions";
 import type {
   BudgetOption,
   EventChoiceOption,
   FieldId,
+  FieldSettings,
   InfoPageConfig,
   LocationConfig,
   MediaItem,
@@ -39,6 +40,7 @@ export interface LocationRow {
   show_additional_load_in_out: boolean | null;
   show_full_day_rental: boolean | null;
   info_page: InfoPageConfig | null;
+  field_settings: Partial<Record<FieldId, FieldSettings>> | null;
   required_fields: Partial<Record<FieldId, boolean>> | null;
   theme: ThemeTokens | null;
   published: boolean;
@@ -70,7 +72,7 @@ export function locationConfigFromRow(row: LocationRow): LocationConfig {
     timingStyle:
       (row.timing_style as LocationConfig["timingStyle"]) || "standard",
     infoPage: row.info_page ? { title: row.info_page.title } : undefined,
-    requiredFields: parseRequiredFields(row.required_fields),
+    fieldSettings: resolveFieldSettings(row.field_settings, row.required_fields),
     tripleseat: {
       publicKey: row.tripleseat?.publicKey ?? "",
       leadFormId: row.tripleseat?.leadFormId,

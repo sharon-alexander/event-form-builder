@@ -1,5 +1,10 @@
 import type { FormData } from "../types";
-import type { FieldId, LocationConfig, StepId } from "../locations/types";
+import type {
+  FieldId,
+  FieldSettings,
+  LocationConfig,
+  StepId,
+} from "../locations/types";
 
 export type { FieldId };
 
@@ -8,6 +13,8 @@ export type CatalogField = {
   stepId: StepId;
   label: string;
   defaultRequired: boolean;
+  /** When omitted, the question is shown. */
+  defaultShown?: boolean;
   /** Locked fields cannot be toggled in admin (Tripleseat). */
   locked?: boolean;
 };
@@ -86,27 +93,68 @@ export function fieldsForStep(stepId: StepId): CatalogField[] {
   return FIELD_CATALOG.filter((field) => field.stepId === stepId);
 }
 
-export function parseRequiredFields(
+function parseFieldSettingValue(value: unknown): FieldSettings | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const rec = value as Record<string, unknown>;
+  const settings: FieldSettings = {};
+  if (typeof rec.shown === "boolean") settings.shown = rec.shown;
+  if (typeof rec.required === "boolean") settings.required = rec.required;
+  return Object.keys(settings).length > 0 ? settings : null;
+}
+
+export function parseFieldSettings(
   raw: unknown,
-): Partial<Record<FieldId, boolean>> {
+): Partial<Record<FieldId, FieldSettings>> {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
-  const out: Partial<Record<FieldId, boolean>> = {};
+  const out: Partial<Record<FieldId, FieldSettings>> = {};
+  for (const [key, value] of Object.entries(raw)) {
+    if (!FIELD_ID_SET.has(key)) continue;
+    const settings = parseFieldSettingValue(value);
+    if (settings) out[key as FieldId] = settings;
+  }
+  return out;
+}
+
+function requiredFieldsToSettings(
+  raw: unknown,
+): Partial<Record<FieldId, FieldSettings>> {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+  const out: Partial<Record<FieldId, FieldSettings>> = {};
   for (const [key, value] of Object.entries(raw)) {
     if (FIELD_ID_SET.has(key) && typeof value === "boolean") {
-      out[key as FieldId] = value;
+      out[key as FieldId] = { required: value };
     }
   }
   return out;
 }
 
+/** Prefer field_settings; fall back to legacy required_fields booleans. */
+export function resolveFieldSettings(
+  fieldSettingsRaw: unknown,
+  requiredFieldsRaw?: unknown,
+): Partial<Record<FieldId, FieldSettings>> {
+  const settings = parseFieldSettings(fieldSettingsRaw);
+  if (Object.keys(settings).length > 0) return settings;
+  return requiredFieldsToSettings(requiredFieldsRaw);
+}
+
+export function isFieldShown(
+  location: Pick<LocationConfig, "fieldSettings"> | null | undefined,
+  fieldId: FieldId,
+): boolean {
+  const field = FIELD_BY_ID.get(fieldId);
+  if (!field) return false;
+  return location?.fieldSettings?.[fieldId]?.shown ?? field.defaultShown ?? true;
+}
+
 export function isFieldRequired(
-  location: Pick<LocationConfig, "requiredFields"> | null | undefined,
+  location: Pick<LocationConfig, "fieldSettings"> | null | undefined,
   fieldId: FieldId,
 ): boolean {
   const field = FIELD_BY_ID.get(fieldId);
   if (!field) return false;
   if (field.locked) return true;
-  return location?.requiredFields?.[fieldId] ?? field.defaultRequired;
+  return location?.fieldSettings?.[fieldId]?.required ?? field.defaultRequired;
 }
 
 function isFilled(
@@ -183,9 +231,10 @@ function isFilled(
 export function isStepValid(
   stepId: StepId,
   data: FormData,
-  location: Pick<LocationConfig, "requiredFields" | "timingStyle">,
+  location: Pick<LocationConfig, "fieldSettings" | "timingStyle">,
 ): boolean {
   return fieldsForStep(stepId).every((field) => {
+    if (!isFieldShown(location, field.id)) return true;
     if (!isFieldRequired(location, field.id)) return true;
     return isFilled(field.id, data, location);
   });

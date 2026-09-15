@@ -6,6 +6,7 @@ import {
   REFERRAL_SOURCES,
 } from "../types";
 import type { LocationConfig } from "../locations";
+import { isFieldShown } from "../form/fieldCatalog";
 
 function labelFor(list: { value: string; label: string }[], val: string | null): string {
   return list.find((i) => i.value === val)?.label ?? "";
@@ -19,7 +20,7 @@ function buildAdditionalInfo(data: FormData, location: LocationConfig): string {
   }
   lines.push(`Headcount May Change: ${data.headcountMayChange ? "Yes" : "No"}`);
 
-  if (data.eventFormat) {
+  if (data.eventFormat && isFieldShown(location, "eventFormat")) {
     lines.push(
       `Format: ${labelFor(location.eventFormats ?? EVENT_FORMATS, data.eventFormat)}`,
     );

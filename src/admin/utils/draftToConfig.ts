@@ -34,7 +34,7 @@ export function draftToLocationConfig(draft: EditableLocation): LocationConfig {
     timingStyle:
       (draft.timing_style as LocationConfig["timingStyle"]) || "standard",
     infoPage: draft.info_page ? { title: draft.info_page.title } : undefined,
-    requiredFields: draft.required_fields,
+    fieldSettings: draft.field_settings,
     tripleseat: {
       publicKey: draft.tripleseat?.publicKey ?? "",
       leadFormId: draft.tripleseat?.leadFormId,
