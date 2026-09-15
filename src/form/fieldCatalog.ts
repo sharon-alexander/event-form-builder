@@ -115,29 +115,6 @@ export function parseFieldSettings(
   return out;
 }
 
-function requiredFieldsToSettings(
-  raw: unknown,
-): Partial<Record<FieldId, FieldSettings>> {
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
-  const out: Partial<Record<FieldId, FieldSettings>> = {};
-  for (const [key, value] of Object.entries(raw)) {
-    if (FIELD_ID_SET.has(key) && typeof value === "boolean") {
-      out[key as FieldId] = { required: value };
-    }
-  }
-  return out;
-}
-
-/** Prefer field_settings; fall back to legacy required_fields booleans. */
-export function resolveFieldSettings(
-  fieldSettingsRaw: unknown,
-  requiredFieldsRaw?: unknown,
-): Partial<Record<FieldId, FieldSettings>> {
-  const settings = parseFieldSettings(fieldSettingsRaw);
-  if (Object.keys(settings).length > 0) return settings;
-  return requiredFieldsToSettings(requiredFieldsRaw);
-}
-
 export function isFieldShown(
   location: Pick<LocationConfig, "fieldSettings"> | null | undefined,
   fieldId: FieldId,
