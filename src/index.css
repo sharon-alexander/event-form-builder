@@ -75,6 +75,32 @@
 }
 
 /* More-details HTML (public form + admin editor/preview). */
+.efb-rich-text h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: rgb(17 24 39);
+}
+.efb-rich-text h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: rgb(17 24 39);
+}
+.efb-rich-text h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: rgb(17 24 39);
+}
+.efb-rich-text h1 + *,
+.efb-rich-text h2 + *,
+.efb-rich-text h3 + *,
+.efb-rich-text p + h1,
+.efb-rich-text p + h2,
+.efb-rich-text p + h3 {
+  margin-top: 0.75rem;
+}
 .efb-rich-text p + p {
   margin-top: 0.5rem;
 }

@@ -71,8 +71,8 @@ export default function ContentTab({ draft, update }: Props) {
           placeholder="A short introduction shown below the venue name."
         />
         <p className="mt-1 text-xs text-zinc-400">
-          Shown on the landing page below the venue name. Supports bold, bullets,
-          and numbered lists.
+          Shown on the landing page below the venue name. Supports headings,
+          alignment, bold, bullets, and numbered lists.
         </p>
       </div>
     </div>
