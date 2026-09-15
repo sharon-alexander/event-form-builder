@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { EventChoiceOption } from "../../../locations/types";
-import { RequiredCheckbox } from "./RequiredCheckbox";
+import { RequiredCheckbox, ShowCheckbox } from "./RequiredCheckbox";
 
 interface Props {
   title: string;
@@ -10,6 +10,8 @@ interface Props {
   onChange: (next: EventChoiceOption[]) => void;
   requiredChecked?: boolean;
   onRequiredChange?: (required: boolean) => void;
+  shownChecked?: boolean;
+  onShownChange?: (shown: boolean) => void;
 }
 
 function slugifyValue(s: string): string {
@@ -53,6 +55,8 @@ export default function ChoiceListEditor({
   onChange,
   requiredChecked,
   onRequiredChange,
+  shownChecked,
+  onShownChange,
 }: Props) {
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState("");
@@ -68,6 +72,7 @@ export default function ChoiceListEditor({
   const selectedValues = new Set(selected.map((s) => s.value));
   const catalogSet = catalogValues(catalog);
   const customs = selected.filter((s) => !catalogSet.has(s.value));
+  const shown = shownChecked ?? true;
 
   function toggleCatalog(value: string) {
     const nextEnabled = new Set(selectedValues);
@@ -125,15 +130,23 @@ export default function ChoiceListEditor({
     <section className="space-y-2">
       <div className="flex items-center justify-between gap-3">
         <h3 className="text-sm font-semibold text-zinc-900">{title}</h3>
-        {onRequiredChange && (
-          <RequiredCheckbox
-            checked={requiredChecked ?? false}
-            onChange={onRequiredChange}
-          />
+        {(onShownChange || onRequiredChange) && (
+          <div className="flex items-center gap-3">
+            {onShownChange && (
+              <ShowCheckbox checked={shown} onChange={onShownChange} />
+            )}
+            {onRequiredChange && (
+              <RequiredCheckbox
+                checked={requiredChecked ?? false}
+                onChange={onRequiredChange}
+                disabled={onShownChange ? !shown : undefined}
+              />
+            )}
+          </div>
         )}
       </div>
       {hint && <p className="text-xs text-zinc-400">{hint}</p>}
-      <div className="flex flex-wrap gap-2">
+      <div className={`flex flex-wrap gap-2 ${onShownChange && !shown ? "opacity-50" : ""}`}>
         {catalog.map((item) => {
           const on = selectedValues.has(item.value);
           return (

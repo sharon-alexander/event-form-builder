@@ -7,6 +7,7 @@ import {
   MEAL_SERVICE_OPTIONS,
 } from "../types";
 import { useLocationConfig } from "../context/LocationContext";
+import { isFieldShown } from "../form/fieldCatalog";
 
 interface EventSummaryProps {
   data: FormData;
@@ -49,7 +50,7 @@ export default function EventSummary({ data }: EventSummaryProps) {
     });
   }
 
-  if (data.eventFormat) {
+  if (data.eventFormat && isFieldShown(location, "eventFormat")) {
     rows.push({
       title: "Format",
       value: label(location.eventFormats ?? EVENT_FORMATS, data.eventFormat),

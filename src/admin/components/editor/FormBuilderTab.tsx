@@ -31,6 +31,7 @@ import EventOptionsEditor from "./EventOptionsEditor";
 import InfoPageEditor from "./InfoPageEditor";
 import OptionalCheckboxesEditor from "./OptionalCheckboxesEditor";
 import RequiredFieldsEditor from "./RequiredFieldsEditor";
+import { fieldIsShown } from "./RequiredCheckbox";
 import RichTextEditor from "./RichTextEditor";
 import TimingStyleEditor from "./TimingStyleEditor";
 import VenueSpacesEditor from "./VenueSpacesEditor";
@@ -68,9 +69,16 @@ function stepStatus(stepId: StepId, draft: EditableLocation): StepStatus {
     }
     case "event_format": {
       const cats = draft.event_categories?.length ?? 0;
+      const showFormats = fieldIsShown(draft, "eventFormat");
       const fmts = draft.event_formats?.length ?? 0;
-      if (cats === 0 || fmts === 0) {
+      if (cats === 0 || (showFormats && fmts === 0)) {
         return { kind: "needs", label: "Needs setup" };
+      }
+      if (!showFormats) {
+        return {
+          kind: "ok",
+          label: `${cats} type${cats === 1 ? "" : "s"}`,
+        };
       }
       return {
         kind: "ok",
@@ -106,7 +114,9 @@ function needsSetupBanner(
     case "budget":
       return "No budget ranges yet. This step will look empty on the form until you add at least one.";
     case "event_format":
-      return "Pick at least one event type and one format. This step will look empty until you do.";
+      return fieldIsShown(draft, "eventFormat")
+        ? "Pick at least one event type and one format. This step will look empty until you do."
+        : "Pick at least one event type. This step will look empty until you do.";
     case "info_acknowledge":
       return "No info content yet. Add a title and details people should acknowledge.";
     default:

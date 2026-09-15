@@ -1,7 +1,7 @@
 import { DEFAULT_EVENT_CATEGORIES, EVENT_CATEGORIES, EVENT_FORMATS } from "../../../types";
 import type { EditableLocation } from "../../pages/FormEditorPage";
 import ChoiceListEditor from "./ChoiceListEditor";
-import { fieldIsRequired, setFieldRequired } from "./RequiredCheckbox";
+import { fieldIsRequired, fieldIsShown, setFieldRequired, setFieldShown } from "./RequiredCheckbox";
 
 interface Props {
   draft: EditableLocation;
@@ -24,9 +24,12 @@ export default function EventOptionsEditor({ draft, update }: Props) {
       />
       <ChoiceListEditor
         title="Formats"
+        hint={fieldIsShown(draft, "eventFormat") ? undefined : "Hidden on the guest form."}
         catalog={EVENT_FORMATS}
         selected={draft.event_formats ?? EVENT_FORMATS}
         onChange={(event_formats) => update({ event_formats })}
+        shownChecked={fieldIsShown(draft, "eventFormat")}
+        onShownChange={(shown) => setFieldShown(draft, update, "eventFormat", shown)}
         requiredChecked={fieldIsRequired(draft, "eventFormat")}
         onRequiredChange={(required) =>
           setFieldRequired(draft, update, "eventFormat", required)

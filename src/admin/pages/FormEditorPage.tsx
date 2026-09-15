@@ -5,6 +5,7 @@ import type {
   BudgetOption,
   EventChoiceOption,
   FieldId,
+  FieldSettings,
   InfoPageConfig,
   MediaItem,
   StepId,
@@ -14,7 +15,7 @@ import type {
 import { DEFAULT_EVENT_CATEGORIES, EVENT_FORMATS } from "../../types";
 import type { LocationRow } from "../../locations/fromDb";
 import { hasOptionLabel } from "../../locations/presentableOptions";
-import { parseRequiredFields } from "../../form/fieldCatalog";
+import { parseFieldSettings } from "../../form/fieldCatalog";
 import { mergeInfoPageIntoMoreDetails } from "../../utils/richText";
 import {
   getLocationById,
@@ -46,7 +47,7 @@ export interface EditableLocation {
   step_more_details: Partial<Record<StepId, string>>;
   timing_style: string;
   info_page: InfoPageConfig | null;
-  required_fields: Partial<Record<FieldId, boolean>>;
+  field_settings: Partial<Record<FieldId, FieldSettings>>;
   tripleseat: Partial<TripleseatConfig>;
   theme: ThemeTokens;
   published: boolean;
@@ -84,7 +85,7 @@ function toEditable(row: LocationRow): EditableLocation {
     ),
     timing_style: row.timing_style || "standard",
     info_page: row.info_page ? { title: row.info_page.title } : null,
-    required_fields: parseRequiredFields(row.required_fields),
+    field_settings: parseFieldSettings(row.field_settings),
     tripleseat: row.tripleseat ?? {},
     theme: row.theme ?? {},
     published: row.published,
@@ -158,7 +159,7 @@ export default function FormEditorPage() {
         info_page: draft.info_page
           ? { title: draft.info_page.title }
           : null,
-        required_fields: draft.required_fields,
+        field_settings: draft.field_settings,
         tripleseat: draft.tripleseat,
         theme: draft.theme,
         published: draft.published,

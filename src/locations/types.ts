@@ -46,7 +46,7 @@ export type StepId =
   | "other_venues_referral"
   | "contact";
 
-/** Guest-facing questions whose requiredness can be stored per location. */
+/** Guest-facing questions whose requiredness/visibility can be stored per location. */
 export type FieldId =
   | "bookingType"
   | "guestCount"
@@ -70,6 +70,12 @@ export type FieldId =
   | "company"
   | "preferredSiteVisitDates"
   | "additionalNotes";
+
+/** Per-question overrides. Missing keys use catalog defaults. */
+export interface FieldSettings {
+  shown?: boolean;
+  required?: boolean;
+}
 
 export interface TripleseatConfig {
   publicKey: string;
@@ -111,8 +117,8 @@ export interface LocationConfig {
   /** Title for the info acknowledgement step. */
   infoPage?: InfoPageConfig;
 
-  /** Per-question required overrides. Missing keys use catalog defaults. */
-  requiredFields?: Partial<Record<FieldId, boolean>>;
+  /** Per-question shown/required overrides. Missing keys use catalog defaults. */
+  fieldSettings?: Partial<Record<FieldId, FieldSettings>>;
 
   tripleseat: TripleseatConfig;
   referralSourceIds: Record<string, number>;
