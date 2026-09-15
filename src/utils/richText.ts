@@ -1,6 +1,19 @@
 import type { StepId } from "../locations/types";
 
-const ALLOWED_TAGS = new Set(["P", "BR", "UL", "OL", "LI", "STRONG", "B", "EM", "I"]);
+const ALLOWED_TAGS = new Set([
+  "P",
+  "BR",
+  "UL",
+  "OL",
+  "LI",
+  "STRONG",
+  "B",
+  "EM",
+  "I",
+  "H1",
+  "H2",
+  "H3",
+]);
 const REMOVE_TAGS = new Set([
   "SCRIPT",
   "STYLE",
@@ -15,6 +28,31 @@ const REMOVE_TAGS = new Set([
   "SOURCE",
   "SVG",
 ]);
+const ALLOWED_TEXT_ALIGN = new Set(["left", "center", "right", "justify"]);
+
+/** Keep only a safe `text-align` value from an inline style, if present. */
+function safeTextAlign(style: string | null | undefined): string | null {
+  if (!style) return null;
+  const match = /(?:^|;)\s*text-align\s*:\s*(left|center|right|justify)\s*(?:;|$)/i.exec(
+    style,
+  );
+  if (!match?.[1]) return null;
+  const value = match[1].toLowerCase();
+  return ALLOWED_TEXT_ALIGN.has(value) ? value : null;
+}
+
+/** Keep only a safe text-align from style or the legacy align attribute. */
+function safeAlignFromElement(el: HTMLElement): string | null {
+  const fromStyle = safeTextAlign(el.getAttribute("style"));
+  if (fromStyle) return fromStyle;
+  const attr = el.getAttribute("align")?.toLowerCase();
+  return attr && ALLOWED_TEXT_ALIGN.has(attr) ? attr : null;
+}
+
+function applySafeTextAlign(el: HTMLElement, from: HTMLElement) {
+  const align = safeAlignFromElement(from);
+  if (align) el.setAttribute("style", `text-align: ${align}`);
+}
 
 export function escapeHtml(text: string): string {
   return text
@@ -63,6 +101,7 @@ function scrub(root: Element) {
 
     if (tag === "DIV") {
       const p = el.ownerDocument.createElement("p");
+      applySafeTextAlign(p, el);
       while (el.firstChild) p.appendChild(el.firstChild);
       el.replaceWith(p);
       scrub(p);
@@ -80,9 +119,11 @@ function scrub(root: Element) {
       continue;
     }
 
+    const align = safeAlignFromElement(el);
     for (const attr of Array.from(el.attributes)) {
       el.removeAttribute(attr.name);
     }
+    if (align) el.setAttribute("style", `text-align: ${align}`);
     scrub(el);
   }
 }

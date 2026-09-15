@@ -257,7 +257,7 @@ export default function StepsTab({ draft, update, orgId, onError }: Props) {
                 showDetailsHeading={selectedId !== "info_acknowledge"}
                 hint={
                   selectedId === "info_acknowledge"
-                    ? "Shown above the I Understand button. Supports bold, bullets, and numbered lists."
+                    ? "Shown above the I Understand button. Supports headings, alignment, bold, bullets, and numbered lists."
                     : undefined
                 }
               />
@@ -288,7 +288,7 @@ function StepNoteEditor({
         <h3 className="text-sm font-semibold text-zinc-900">Extra Info</h3>
         <p className="mt-0.5 text-xs text-zinc-400">
           {hint ??
-            "Optional. Shown on the form as extra details for this step. Supports bold, bullets, and numbered lists."}
+            "Optional. Shown on the form as extra details for this step. Supports headings, alignment, bold, bullets, and numbered lists."}
         </p>
       </div>
 

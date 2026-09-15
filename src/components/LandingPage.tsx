@@ -102,13 +102,15 @@ export default function LandingPage({ onStart }: LandingPageProps) {
         <h1 className="font-display text-4xl font-semibold text-gray-900 sm:text-5xl">
           {location.name}
         </h1>
-        {!splitLayout && aboutHtml && (
-          <div
-            className="efb-rich-text mt-4 text-base leading-relaxed text-gray-600"
-            dangerouslySetInnerHTML={{ __html: aboutHtml }}
-          />
-        )}
       </div>
+
+      {/* Outside text-center so inline text-align from the editor wins. */}
+      {!splitLayout && aboutHtml ? (
+        <div
+          className="efb-rich-text mt-4 text-left text-base leading-relaxed text-gray-600"
+          dangerouslySetInnerHTML={{ __html: aboutHtml }}
+        />
+      ) : null}
 
       {splitLayout && active ? (
         <div className="mt-10 grid items-start gap-8 md:grid-cols-2">
@@ -119,7 +121,7 @@ export default function LandingPage({ onStart }: LandingPageProps) {
             onSelect={setActiveIndex}
           />
           <div
-            className="efb-rich-text text-base leading-relaxed text-gray-600 md:pt-1"
+            className="efb-rich-text text-left text-base leading-relaxed text-gray-600 md:pt-1"
             dangerouslySetInnerHTML={{ __html: aboutHtml }}
           />
         </div>
