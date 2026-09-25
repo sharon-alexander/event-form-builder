@@ -455,6 +455,21 @@ function newRuleId(prefix: string): string {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 }
 
+/** Drop Advanced-options hide rules for an option that was removed. */
+export function removeAvailabilityRules(
+  rules: FormRulesDocument | null | undefined,
+  field: RuleFieldRef,
+  optionValue: string,
+): FormRulesDocument {
+  const doc = rules ?? EMPTY_FORM_RULES;
+  return {
+    version: 1,
+    rules: doc.rules.filter(
+      (rule) => !isOwnedAvailabilityRule(rule, field, optionValue),
+    ),
+  };
+}
+
 function isOwnedAvailabilityRule(
   rule: FormRule,
   field: RuleFieldRef,

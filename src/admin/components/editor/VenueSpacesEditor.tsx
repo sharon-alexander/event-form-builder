@@ -20,6 +20,7 @@ import type { StepId, VenueSpaceOption } from "../../../locations/types";
 import type { EditableLocation } from "../../pages/FormEditorPage";
 import { DEFAULT_FORM_STEPS } from "../../constants/defaultFormSteps";
 import AvailabilityEditor from "./AvailabilityEditor";
+import { removeAvailabilityRules } from "../../../form/conditions";
 import { collectFormMedia } from "../../utils/formMediaLibrary";
 import { fieldIsRequired, RequiredCheckbox, setFieldRequired } from "./RequiredCheckbox";
 import VenueGalleryEditor from "./VenueGalleryEditor";
@@ -202,10 +203,17 @@ export default function VenueSpacesEditor({ draft, update, orgId, onError }: Pro
                     }
                     onRemove={() => {
                       if (openSpaceId === id) setOpenSpaceId(null);
-                      setVenues(
-                        venues.filter((_, idx) => idx !== i),
-                        spaceIds.filter((_, idx) => idx !== i),
-                      );
+                      const optionValue = venue.value || `space_${i + 1}`;
+                      const next = venues.filter((_, idx) => idx !== i);
+                      setSpaceIds(spaceIds.filter((_, idx) => idx !== i));
+                      update({
+                        venue_spaces: withGeneratedValues(next),
+                        form_rules: removeAvailabilityRules(
+                          draft.form_rules,
+                          "venueSpace",
+                          optionValue,
+                        ),
+                      });
                     }}
                   />
                 );

@@ -151,6 +151,7 @@ function scrub(root: Element) {
         el.removeAttribute(attr.name);
       }
       el.setAttribute("href", href);
+      el.setAttribute("target", "_blank");
       el.setAttribute("rel", "noopener noreferrer");
       scrub(el);
       continue;

@@ -22,6 +22,7 @@ import type { EditableLocation } from "../../pages/FormEditorPage";
 import { DEFAULT_FORM_STEPS } from "../../constants/defaultFormSteps";
 import { fieldIsRequired, RequiredCheckbox, setFieldRequired } from "./RequiredCheckbox";
 import AvailabilityEditor from "./AvailabilityEditor";
+import { removeAvailabilityRules } from "../../../form/conditions";
 
 interface Props {
   draft: EditableLocation;
@@ -221,12 +222,19 @@ export default function BudgetRangesEditor({ draft, update }: Props) {
                         )
                       }
                       steps={steps}
-                      onRemove={() =>
-                        setBudgets(
-                          budgets.filter((_, idx) => idx !== i),
-                          budgetIds.filter((_, idx) => idx !== i),
-                        )
-                      }
+                      onRemove={() => {
+                        const optionValue = budget.value || `budget_${i + 1}`;
+                        const next = budgets.filter((_, idx) => idx !== i);
+                        setBudgetIds(budgetIds.filter((_, idx) => idx !== i));
+                        update({
+                          budget_options: withGeneratedValues(next),
+                          form_rules: removeAvailabilityRules(
+                            draft.form_rules,
+                            "budget",
+                            optionValue,
+                          ),
+                        });
+                      }}
                     />
                   );
                 })}
