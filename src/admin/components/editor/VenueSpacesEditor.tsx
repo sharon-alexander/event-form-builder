@@ -16,8 +16,10 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { VenueSpaceOption } from "../../../locations/types";
+import type { StepId, VenueSpaceOption } from "../../../locations/types";
 import type { EditableLocation } from "../../pages/FormEditorPage";
+import { DEFAULT_FORM_STEPS } from "../../constants/defaultFormSteps";
+import AvailabilityEditor from "./AvailabilityEditor";
 import { collectFormMedia } from "../../utils/formMediaLibrary";
 import { fieldIsRequired, RequiredCheckbox, setFieldRequired } from "./RequiredCheckbox";
 import VenueGalleryEditor from "./VenueGalleryEditor";
@@ -56,6 +58,8 @@ function newId(): string {
 
 export default function VenueSpacesEditor({ draft, update, orgId, onError }: Props) {
   const venues = draft.venue_spaces;
+  const steps: StepId[] =
+    draft.form_steps.length > 0 ? draft.form_steps : DEFAULT_FORM_STEPS;
   const libraryMedia = collectFormMedia(draft);
 
   const [spaceIds, setSpaceIds] = useState(() => venues.map(newId));
@@ -180,10 +184,13 @@ export default function VenueSpacesEditor({ draft, update, orgId, onError }: Pro
                     id={id}
                     index={i}
                     venue={venue}
+                    draft={draft}
+                    update={update}
                     inputRef={focusId === id ? focusRef : undefined}
                     libraryMedia={libraryMedia}
                     orgId={orgId}
                     slug={draft.slug}
+                    steps={steps}
                     onError={onError}
                     galleryOpen={openSpaceId === id}
                     onOpenGallery={() => setOpenSpaceId(id)}
@@ -215,10 +222,13 @@ function SortableSpaceCard({
   id,
   index,
   venue,
+  draft,
+  update,
   inputRef,
   libraryMedia,
   orgId,
   slug,
+  steps,
   onError,
   galleryOpen,
   onOpenGallery,
@@ -229,10 +239,13 @@ function SortableSpaceCard({
   id: string;
   index: number;
   venue: VenueSpaceOption;
+  draft: EditableLocation;
+  update: (patch: Partial<EditableLocation>) => void;
   inputRef?: Ref<HTMLInputElement>;
   libraryMedia: ReturnType<typeof collectFormMedia>;
   orgId: string | null;
   slug: string;
+  steps: StepId[];
   onError: (msg: string) => void;
   galleryOpen: boolean;
   onOpenGallery: () => void;
@@ -305,6 +318,15 @@ function SortableSpaceCard({
               onChange={(e) => onChange({ additionalInfo: e.target.value })}
             />
           </div>
+          <AvailabilityEditor
+            id={`space-${id}`}
+            draft={draft}
+            update={update}
+            field="venueSpace"
+            optionValue={venue.value || `space_${index + 1}`}
+            steps={steps}
+            stepId="venue_space"
+          />
           <button
             type="button"
             onClick={onOpenGallery}

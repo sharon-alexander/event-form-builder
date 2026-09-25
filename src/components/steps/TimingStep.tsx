@@ -4,6 +4,11 @@ import {
   DINNER_START_TIMES,
 } from "../../types";
 import { useLocationConfig } from "../../context/LocationContext";
+import {
+  evaluateRules,
+  mealServiceDayNote,
+  visibleMealServices,
+} from "../../form/conditions";
 import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
 import { isFieldRequired, isStepValid } from "../../form/fieldCatalog";
 import RequiredMark from "../../form/RequiredMark";
@@ -19,12 +24,6 @@ for (let h = 9; h <= 23; h++) {
     const display = h > 12 ? h - 12 : h === 0 ? 12 : h;
     TIME_OPTIONS.push(`${display}:${m} ${suffix}`);
   }
-}
-
-function isLunchAvailable(data: StepProps["data"]): boolean {
-  if (data.datesFlexible || !data.eventDate) return true;
-  const day = new Date(data.eventDate + "T00:00:00").getDay();
-  return day === 0 || day === 5 || day === 6;
 }
 
 function StandardTiming({
@@ -81,7 +80,9 @@ function MealServiceTiming({
   onChange,
   required,
 }: Pick<StepProps, "data" | "onChange"> & { required: boolean }) {
-  const lunchAvailable = isLunchAvailable(data);
+  const location = useLocationConfig();
+  const evaluation = evaluateRules(location.formRules, data);
+  const options = visibleMealServices(MEAL_SERVICE_OPTIONS, evaluation);
   const timeOptions =
     data.mealService === "lunch"
       ? LUNCH_START_TIMES
@@ -96,38 +97,36 @@ function MealServiceTiming({
           Meal Service
           <RequiredMark required={required} />
         </p>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {MEAL_SERVICE_OPTIONS.map((option) => {
-            const disabled = option.value === "lunch" && !lunchAvailable;
-            return (
-              <button
-                key={option.value}
-                type="button"
-                disabled={disabled}
-                onClick={() =>
-                  onChange({
-                    mealService: option.value,
-                    startTime: "",
-                    endTime: "",
-                    timingFlexible: false,
-                  })
-                }
-                className={`efb-card ${data.mealService === option.value ? "efb-card-selected" : ""} ${
-                  disabled ? "cursor-not-allowed opacity-50" : ""
-                }`}
-              >
-                <span className="block font-medium">{option.label}</span>
-                {option.note && (
-                  <span className="mt-1 block text-xs text-gray-500">{option.note}</span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-        {!lunchAvailable && (
-          <p className="mt-2 text-xs text-gray-500">
-            Lunch is available Friday through Sunday. Your selected date falls on a weekday.
+        {options.length === 0 ? (
+          <p className="text-sm text-gray-500">
+            No meal services match these event details. Go back and adjust your answers.
           </p>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {options.map((option) => {
+              const note = mealServiceDayNote(location.formRules, option.value);
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() =>
+                    onChange({
+                      mealService: option.value,
+                      startTime: "",
+                      endTime: "",
+                      timingFlexible: false,
+                    })
+                  }
+                  className={`efb-card ${data.mealService === option.value ? "efb-card-selected" : ""}`}
+                >
+                  <span className="block font-medium">{option.label}</span>
+                  {note && (
+                    <span className="mt-1 block text-xs text-gray-500">{note}</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         )}
       </div>
       {data.mealService && (

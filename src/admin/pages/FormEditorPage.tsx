@@ -6,6 +6,7 @@ import type {
   EventChoiceOption,
   FieldId,
   FieldSettings,
+  FormRulesDocument,
   InfoPageConfig,
   MediaItem,
   StepId,
@@ -13,6 +14,7 @@ import type {
   VenueSpaceOption,
 } from "../../locations/types";
 import { DEFAULT_EVENT_CATEGORIES, EVENT_FORMATS } from "../../types";
+import { EMPTY_FORM_RULES, parseFormRules } from "../../form/conditions";
 import type { LocationRow } from "../../locations/fromDb";
 import { hasOptionLabel } from "../../locations/presentableOptions";
 import { parseFieldSettings } from "../../form/fieldCatalog";
@@ -48,6 +50,7 @@ export interface EditableLocation {
   timing_style: string;
   info_page: InfoPageConfig | null;
   field_settings: Partial<Record<FieldId, FieldSettings>>;
+  form_rules: FormRulesDocument;
   tripleseat: Partial<TripleseatConfig>;
   theme: ThemeTokens;
   published: boolean;
@@ -86,6 +89,7 @@ function toEditable(row: LocationRow): EditableLocation {
     timing_style: row.timing_style || "standard",
     info_page: row.info_page ? { title: row.info_page.title } : null,
     field_settings: parseFieldSettings(row.field_settings),
+    form_rules: parseFormRules(row.form_rules ?? EMPTY_FORM_RULES),
     tripleseat: row.tripleseat ?? {},
     theme: row.theme ?? {},
     published: row.published,
@@ -160,6 +164,7 @@ export default function FormEditorPage() {
           ? { title: draft.info_page.title }
           : null,
         field_settings: draft.field_settings,
+        form_rules: draft.form_rules,
         tripleseat: draft.tripleseat,
         theme: draft.theme,
         published: draft.published,

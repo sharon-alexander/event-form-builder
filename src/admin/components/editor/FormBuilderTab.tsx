@@ -31,6 +31,7 @@ import EventOptionsEditor from "./EventOptionsEditor";
 import InfoPageEditor from "./InfoPageEditor";
 import OptionalCheckboxesEditor from "./OptionalCheckboxesEditor";
 import RequiredFieldsEditor from "./RequiredFieldsEditor";
+import HeadcountLimitsEditor from "./HeadcountLimitsEditor";
 import { fieldIsShown } from "./RequiredCheckbox";
 import RichTextEditor from "./RichTextEditor";
 import TimingStyleEditor from "./TimingStyleEditor";
@@ -402,6 +403,9 @@ function StepConfig({
         </p>
       )}
 
+      {stepId === "headcount" && (
+        <HeadcountLimitsEditor draft={draft} update={update} />
+      )}
       {stepId === "venue_space" && (
         <VenueSpacesEditor
           draft={draft}
@@ -458,7 +462,7 @@ function StepNoteEditor({
         <h3 className="text-sm font-semibold text-zinc-900">Extra Info</h3>
         <p className="mt-0.5 text-xs text-zinc-400">
           {hint ??
-            "Optional. Shown on the form as extra details for this step. Supports headings, alignment, bold, bullets, and numbered lists."}
+            "Optional. Shown on the form as extra details for this step. Supports headings, alignment, bold, links, bullets, and numbered lists."}
         </p>
       </div>
 

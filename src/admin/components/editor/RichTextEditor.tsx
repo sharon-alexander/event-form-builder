@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
+  escapeHtml,
   isEmptyRichText,
+  normalizeLinkUrl,
   sanitizeRichText,
   toDisplayHtml,
 } from "../../../utils/richText";
@@ -105,6 +107,29 @@ export default function RichTextEditor({
     exec("formatBlock", `<${tag}>`);
   }
 
+  function insertLink() {
+    ref.current?.focus();
+    restoreSelection();
+    const raw = window.prompt("Link URL");
+    if (raw == null) return;
+    const url = normalizeLinkUrl(raw);
+    if (!url) return;
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed) {
+      const label = escapeHtml(url.replace(/^https?:\/\//, ""));
+      document.execCommand(
+        "insertHTML",
+        false,
+        `<a href="${escapeHtml(url)}">${label}</a>`,
+      );
+    } else {
+      document.execCommand("createLink", false, url);
+    }
+    emit(ref.current?.innerHTML ?? "");
+    rememberSelection();
+    refreshMarks();
+  }
+
   const empty = isEmptyRichText(value);
 
   return (
@@ -137,6 +162,9 @@ export default function RichTextEditor({
           onClick={() => exec("bold")}
         >
           <span className="font-serif font-bold">B</span>
+        </ToolbarButton>
+        <ToolbarButton label="Link" active={false} onClick={insertLink}>
+          <LinkIcon />
         </ToolbarButton>
         <ToolbarButton
           label="Bulleted list"
@@ -257,6 +285,19 @@ function ToolbarButton({
     >
       {children}
     </button>
+  );
+}
+
+function LinkIcon() {
+  return (
+    <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" aria-hidden>
+      <path
+        d="M6.5 9.5 9.5 6.5M7 4.5l.8-.8a2.5 2.5 0 0 1 3.5 3.5L10.5 8M9 11.5l-.8.8a2.5 2.5 0 0 1-3.5-3.5L5.5 8"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }
 

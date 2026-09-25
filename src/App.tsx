@@ -1,7 +1,8 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import type { FormData } from "./types";
 import { INITIAL_FORM_DATA } from "./types";
 import { useLocationConfig } from "./context/LocationContext";
+import { pruneUnavailableSelections } from "./form/conditions";
 import { buildPayload } from "./utils/buildPayload";
 import { submitLead } from "./api/tripleseat";
 import { resolveReferralSources } from "./api/resolveReferralSources";
@@ -25,8 +26,14 @@ export default function App() {
   const [honeypot, setHoneypot] = useState("");
 
   const update = useCallback((patch: Partial<FormData>) => {
-    setData((prev) => ({ ...prev, ...patch }));
-  }, []);
+    setData((prev) =>
+      pruneUnavailableSelections(location, { ...prev, ...patch }),
+    );
+  }, [location]);
+
+  useEffect(() => {
+    setData((prev) => pruneUnavailableSelections(location, prev));
+  }, [location]);
 
   const next = useCallback(() => setStep((s) => Math.min(s + 1, totalSteps - 1)), [totalSteps]);
   const back = useCallback(() => setStep((s) => Math.max(s - 1, 0)), []);

@@ -3,8 +3,14 @@ import type {
   FieldId,
   FieldSettings,
   LocationConfig,
+  RuleFieldRef,
   StepId,
 } from "../locations/types";
+import {
+  evaluateRules,
+  fieldIsBlocked,
+  isOptionHidden,
+} from "./conditions";
 
 export type { FieldId };
 
@@ -134,10 +140,16 @@ export function isFieldRequired(
   return location?.fieldSettings?.[fieldId]?.required ?? field.defaultRequired;
 }
 
+type StepCheckLocation = Pick<
+  LocationConfig,
+  "fieldSettings" | "timingStyle" | "budgetOptions" | "venueSpaces" | "formRules"
+>;
+
 function isFilled(
   fieldId: FieldId,
   data: FormData,
-  location: Pick<LocationConfig, "timingStyle">,
+  location: StepCheckLocation,
+  evaluation = evaluateRules(location.formRules, data),
 ): boolean {
   switch (fieldId) {
     case "bookingType":
@@ -159,13 +171,21 @@ function isFilled(
       return data.datesFlexible || data.backupDate !== "";
     case "preferredDays":
       return !data.datesFlexible || data.flexibleDatePreferences.preferredDays.length > 0;
-    case "budget":
-      return data.budget !== null;
-    case "venueSpace":
-      return data.venueSpace.length > 0;
+    case "budget": {
+      if (data.budget == null) return false;
+      const selected = location.budgetOptions.find((option) => option.value === data.budget);
+      return !!selected && !isOptionHidden(evaluation, "budget", data.budget);
+    }
+    case "venueSpace": {
+      if (data.venueSpace.length === 0) return false;
+      return data.venueSpace.every(
+        (value) => !isOptionHidden(evaluation, "venueSpace", value),
+      );
+    }
     case "timing":
       if (location.timingStyle === "meal_service") {
-        return data.mealService !== null && data.startTime !== "";
+        if (data.mealService == null || data.startTime === "") return false;
+        return !isOptionHidden(evaluation, "mealService", data.mealService);
       }
       return (
         data.timingFlexible || (data.startTime !== "" && data.endTime !== "")
@@ -205,14 +225,30 @@ function isFilled(
   }
 }
 
+const STEP_BLOCK_FIELDS: Partial<Record<StepId, RuleFieldRef[]>> = {
+  headcount: ["guestCount"],
+  event_type: ["bookingType"],
+  event_date: ["eventDate"],
+  event_format: ["eventCategory", "eventFormat"],
+  budget: ["budget"],
+  venue_space: ["venueSpace"],
+  timing: ["mealService"],
+  services: ["services"],
+};
+
 export function isStepValid(
   stepId: StepId,
   data: FormData,
-  location: Pick<LocationConfig, "fieldSettings" | "timingStyle">,
+  location: StepCheckLocation,
 ): boolean {
+  const evaluation = evaluateRules(location.formRules, data);
+  const blockFields = STEP_BLOCK_FIELDS[stepId] ?? [];
+  if (blockFields.some((field) => fieldIsBlocked(evaluation, field))) {
+    return false;
+  }
   return fieldsForStep(stepId).every((field) => {
     if (!isFieldShown(location, field.id)) return true;
     if (!isFieldRequired(location, field.id)) return true;
-    return isFilled(field.id, data, location);
+    return isFilled(field.id, data, location, evaluation);
   });
 }
