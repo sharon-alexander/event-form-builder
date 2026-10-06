@@ -27,7 +27,7 @@ export default function HeadcountLimitsEditor({ draft, update }: Props) {
   return (
     <details className="rounded-xl border border-zinc-200 bg-white">
       <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-zinc-900">
-        Advanced options
+        Set guest-count limits
         <LimitSummary limits={limits} />
       </summary>
       <div className="space-y-5 border-t border-zinc-200 px-4 py-4">

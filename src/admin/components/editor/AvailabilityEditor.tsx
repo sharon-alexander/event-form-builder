@@ -88,7 +88,7 @@ export default function AvailabilityEditor({
   return (
     <details className="rounded-lg border border-zinc-200 bg-zinc-50">
       <summary className="cursor-pointer list-none px-3 py-2 text-xs font-medium text-zinc-700">
-        <span>{label ? `${label} — advanced options` : "Advanced options"}</span>
+        <span>{label ? `${label} — set availability` : "Set availability"}</span>
         {summary && (
           <span className="ml-2 font-normal text-zinc-500">{summary}</span>
         )}

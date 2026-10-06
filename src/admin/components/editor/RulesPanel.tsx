@@ -25,14 +25,19 @@ export default function RulesPanel({ draft, update, orgId, onError }: Props) {
       </div>
 
       <div className="rounded-xl border border-indigo-100 bg-indigo-50/60 p-4">
-        <p className="text-xs font-semibold text-indigo-950">How to think about rules</p>
-        <p className="mt-1 text-xs leading-relaxed text-indigo-900/70">
-          Start with a limit or an option below. You only need to open a section when that rule applies; blank fields mean the option is always available.
-        </p>
-        <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-medium text-indigo-900">
-          <span className="rounded-full bg-white px-2.5 py-1 ring-1 ring-indigo-100">Guest count → message</span>
-          <span className="rounded-full bg-white px-2.5 py-1 ring-1 ring-indigo-100">Guest count → hide option</span>
-          <span className="rounded-full bg-white px-2.5 py-1 ring-1 ring-indigo-100">Date / type → availability</span>
+        <div className="flex items-start gap-3">
+          <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white">1</div>
+          <div>
+            <p className="text-xs font-semibold text-indigo-950">Start with the answer that controls the rule</p>
+            <p className="mt-1 text-xs leading-relaxed text-indigo-900/70">
+              Open a section only when you need it. Set the guest count once, then use availability on each option to say when guests can choose it.
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 grid gap-2 sm:grid-cols-3">
+          <RuleType label="Message" detail="Tell guests what to do" />
+          <RuleType label="Limit" detail="Stop outside capacity" />
+          <RuleType label="Availability" detail="Show only valid options" />
         </div>
       </div>
 
@@ -63,6 +68,15 @@ export default function RulesPanel({ draft, update, orgId, onError }: Props) {
       </section>
 
       <p className="text-xs text-zinc-400">{ruleCount === 0 ? "No rules configured yet." : `${ruleCount} rule${ruleCount === 1 ? "" : "s"} active across this form.`}</p>
+    </div>
+  );
+}
+
+function RuleType({ label, detail }: { label: string; detail: string }) {
+  return (
+    <div className="rounded-lg border border-indigo-100 bg-white/80 px-3 py-2">
+      <p className="text-xs font-semibold text-indigo-950">{label}</p>
+      <p className="mt-0.5 text-[11px] text-indigo-900/60">{detail}</p>
     </div>
   );
 }
