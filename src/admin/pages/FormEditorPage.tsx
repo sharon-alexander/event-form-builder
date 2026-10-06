@@ -28,6 +28,7 @@ import FormBuilderTab from "../components/editor/FormBuilderTab";
 import ThemeTab from "../components/editor/ThemeTab";
 import AdvancedTab from "../components/editor/AdvancedTab";
 import EmbedTab from "../components/editor/EmbedTab";
+import RulesPanel from "../components/editor/RulesPanel";
 import PublishToggle from "../components/PublishToggle";
 import { buildPreviewUrl } from "../embedCode";
 
@@ -58,6 +59,7 @@ export interface EditableLocation {
 
 const TABS = [
   { id: "builder", label: "Form Builder" },
+  { id: "rules", label: "Rules & availability" },
   { id: "theme", label: "Theme" },
   { id: "embed", label: "Embed" },
   { id: "advanced", label: "Advanced" },
@@ -263,6 +265,9 @@ export default function FormEditorPage() {
       <div className={`rounded-2xl border border-zinc-200 bg-white shadow-sm ${tab === "builder" ? "p-4 lg:p-6" : "p-6"}`}>
         {tab === "builder" && (
           <FormBuilderTab draft={draft} update={update} orgId={orgId} onError={setError} />
+        )}
+        {tab === "rules" && (
+          <RulesPanel draft={draft} update={update} orgId={orgId} onError={setError} />
         )}
         {tab === "theme" && (
           <ThemeTab draft={draft} update={update} orgId={orgId} onError={setError} />
