@@ -102,6 +102,7 @@ async function mount() {
     const style = document.createElement("style");
     style.textContent = widgetCss;
     const appRoot = document.createElement("div");
+    appRoot.style.height = "100%";
     shadow.replaceChildren(style, appRoot);
     mountPoint = appRoot;
   }

@@ -22,6 +22,12 @@
   --font-display: "Playfair Display", Georgia, serif;
 }
 
+/* Embed host fills the box the page gives it. */
+:host {
+  display: block;
+  height: 100%;
+}
+
 @layer base {
   *,
   *::before,

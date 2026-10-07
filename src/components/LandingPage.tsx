@@ -122,7 +122,7 @@ function Gallery({
       {multiple && (
         <div
           ref={stripRef}
-          className="mt-2 flex shrink-0 gap-2 overflow-x-auto p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="mt-3 flex shrink-0 gap-2 overflow-x-auto p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {items.map((item, i) => {
             const kind = mediaKindLabel(item);
@@ -202,27 +202,35 @@ export default function LandingPage({ onStart }: LandingPageProps) {
     "efb-rich-text efb-landing-copy min-h-0 overflow-y-auto text-left text-sm leading-relaxed text-gray-600";
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden px-4 py-3 sm:px-6 sm:py-4">
-      <div className="shrink-0 text-center">
+    <div className="flex h-full min-h-0 flex-col gap-8 overflow-hidden px-4 py-6 sm:gap-10 sm:px-6 sm:py-8">
+      <div
+        className={`flex shrink-0 items-center justify-center gap-3 sm:gap-4 ${
+          location.logoUrl ? "" : "text-center"
+        }`}
+      >
         {location.logoUrl && (
-          <img
-            src={location.logoUrl}
-            alt=""
-            className="mx-auto mb-2 h-10 w-auto max-w-[10rem] object-contain sm:h-12"
-          />
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 border-brand-200 bg-white p-1.5 sm:h-16 sm:w-16">
+            <img
+              src={location.logoUrl}
+              alt=""
+              className="h-full w-full object-contain"
+            />
+          </div>
         )}
-        <p className="mb-1 font-sans text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">
-          {location.formTitle}
-        </p>
-        <h1 className="font-display text-3xl font-semibold leading-tight text-gray-900 sm:text-4xl">
-          {location.name}
-        </h1>
+        <div className={location.logoUrl ? "min-w-0 text-left" : ""}>
+          <p className="mb-0.5 font-sans text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">
+            {location.formTitle}
+          </p>
+          <h1 className="font-display text-3xl font-semibold leading-tight text-gray-900 sm:text-4xl">
+            {location.name}
+          </h1>
+        </div>
       </div>
 
       {/* Outside text-center so inline text-align from the editor wins. */}
-      <div className="mt-3 flex min-h-0 flex-1 flex-col justify-center">
+      <div className="flex min-h-0 flex-1 flex-col">
         {splitLayout && active ? (
-          <div className="grid h-full max-h-[34rem] min-h-0 w-full grid-rows-2 gap-3 md:grid-cols-2 md:grid-rows-1 md:gap-8">
+          <div className="grid h-full min-h-0 grid-rows-2 gap-8 md:grid-cols-2 md:grid-rows-1 md:gap-10">
             <Gallery
               active={active}
               items={location.galleryMedia}
@@ -238,7 +246,7 @@ export default function LandingPage({ onStart }: LandingPageProps) {
           <>
             {aboutHtml ? (
               <div
-                className={`${copyClass} ${active ? "mb-3 max-h-[30%] shrink-0" : "flex-1"}`}
+                className={`${copyClass} ${active ? "mb-8 max-h-[30%] shrink-0" : "min-h-0 flex-1"}`}
                 dangerouslySetInnerHTML={{ __html: aboutHtml }}
               />
             ) : null}
@@ -256,7 +264,7 @@ export default function LandingPage({ onStart }: LandingPageProps) {
         )}
       </div>
 
-      <div className="mt-3 shrink-0 text-center">
+      <div className="shrink-0 text-center">
         <button
           type="button"
           onClick={onStart}
