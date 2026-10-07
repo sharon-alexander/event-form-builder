@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useLayoutEffect, useMemo } from "react";
 import { MONTHS, DAYS_OF_WEEK } from "../../types";
 import { useLocationConfig } from "../../context/LocationContext";
 import { evaluateRules, isFieldHidden } from "../../form/conditions";
@@ -28,9 +28,29 @@ export default function EventDateStep({
   const showEventDate = !isFieldHidden(evaluation, "eventDate");
   const showBackupDate = !isFieldHidden(evaluation, "backupDate");
   const showPreferredDays = !isFieldHidden(evaluation, "preferredDays");
+  const exactAvailable = showEventDate || showBackupDate;
+  const flexibleAvailable = showEventDate || showPreferredDays;
+  const modeChoice = exactAvailable && flexibleAvailable;
+  // One mode left: show it even when datesFlexible still has the other default.
+  const datesFlexible = modeChoice ? data.datesFlexible : flexibleAvailable;
+  const validityData =
+    datesFlexible === data.datesFlexible ? data : { ...data, datesFlexible };
   const dateRequired = isFieldRequired(location, "eventDate");
   const backupRequired = isFieldRequired(location, "backupDate");
   const daysRequired = isFieldRequired(location, "preferredDays");
+
+  useLayoutEffect(() => {
+    if (modeChoice || (!exactAvailable && !flexibleAvailable)) return;
+    if (data.datesFlexible === datesFlexible) return;
+    onChange({ datesFlexible });
+  }, [
+    modeChoice,
+    exactAvailable,
+    flexibleAvailable,
+    datesFlexible,
+    data.datesFlexible,
+    onChange,
+  ]);
 
   const toggleMonth = (m: string) => {
     const current = data.flexibleDatePreferences.preferredMonths;
@@ -56,10 +76,10 @@ export default function EventDateStep({
       onNext={onNext}
       onBack={onBack}
       nextLabel={nextLabel}
-      nextDisabled={!isStepValid("event_date", data, location)}
+      nextDisabled={!isStepValid("event_date", validityData, location)}
     >
       <div className="space-y-5">
-        {!data.datesFlexible && (showEventDate || showBackupDate) && (
+        {!datesFlexible && exactAvailable && (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {showEventDate && (
               <div>
@@ -93,7 +113,7 @@ export default function EventDateStep({
             )}
           </div>
         )}
-        {data.datesFlexible && (showEventDate || showPreferredDays) && (
+        {datesFlexible && flexibleAvailable && (
           <div className="space-y-4">
             {showEventDate && (
               <div>
@@ -147,11 +167,11 @@ export default function EventDateStep({
         )}
 
         <div className="space-y-3">
-          {(showEventDate || showBackupDate || showPreferredDays) && (
+          {modeChoice && (
           <label className="flex cursor-pointer items-center gap-3">
             <input
               type="checkbox"
-              checked={data.datesFlexible}
+              checked={datesFlexible}
               onChange={(e) => onChange({ datesFlexible: e.target.checked })}
               className="h-4 w-4 rounded border-brand-300 text-brand-600 focus:ring-brand-500"
             />
