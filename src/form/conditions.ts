@@ -2,6 +2,7 @@ import { DAYS_OF_WEEK } from "../types";
 import type { EventBookingType, FormData, MealService } from "../types";
 import type {
   BudgetOption,
+  FieldId,
   FormRule,
   FormRulesDocument,
   LocationConfig,
@@ -12,6 +13,45 @@ import type {
   StepId,
   VenueSpaceOption,
 } from "../locations/types";
+
+const FIELD_IDS = new Set<FieldId>([
+  "bookingType",
+  "guestCount",
+  "eventCategory",
+  "eventFormat",
+  "eventDate",
+  "backupDate",
+  "preferredDays",
+  "budget",
+  "venueSpace",
+  "timing",
+  "services",
+  "infoAcknowledged",
+  "consideringOtherVenues",
+  "otherVenuesDetails",
+  "referralSource",
+  "firstName",
+  "lastName",
+  "email",
+  "phone",
+  "company",
+  "preferredSiteVisitDates",
+  "additionalNotes",
+]);
+
+const STEP_IDS = new Set<StepId>([
+  "event_type",
+  "headcount",
+  "event_format",
+  "event_date",
+  "budget",
+  "venue_space",
+  "timing",
+  "services",
+  "info_acknowledge",
+  "other_venues_referral",
+  "contact",
+]);
 
 const FIELD_REFS = new Set<RuleFieldRef>([
   "guestCount",
@@ -63,26 +103,28 @@ export interface RuleMessage {
 
 export interface RuleEvaluation {
   hiddenOptions: Map<RuleFieldRef, Set<string>>;
+  hiddenFields: Set<FieldId>;
+  hiddenSteps: Set<StepId>;
   messages: RuleMessage[];
   blockedFields: Set<RuleFieldRef>;
 }
 
-/** Shape the Advanced options panel edits. Compiles into form rules. */
+function emptyEvaluation(): RuleEvaluation {
+  return {
+    hiddenOptions: new Map(),
+    hiddenFields: new Set(),
+    hiddenSteps: new Set(),
+    messages: [],
+    blockedFields: new Set(),
+  };
+}
+
+/** Shape the "show this choice when" panel edits. Compiles into a hide rule. */
 export interface OptionAvailabilityDraft {
   minGuests?: number;
   maxGuests?: number;
   bookingTypes?: EventBookingType[];
   daysOfWeek?: string[];
-}
-
-export interface HeadcountLimitDraft {
-  value: number;
-  messageHtml: string;
-}
-
-export interface HeadcountLimitsDraft {
-  min?: HeadcountLimitDraft;
-  max?: HeadcountLimitDraft;
 }
 
 function positiveInt(value: unknown): number | undefined {
@@ -136,6 +178,14 @@ function parseEffect(raw: unknown): RuleEffect | null {
     }
     return { kind: "hideOption", field: rec.field, optionValue: rec.optionValue };
   }
+  if (rec.kind === "hideField") {
+    if (typeof rec.field !== "string" || !FIELD_IDS.has(rec.field as FieldId)) return null;
+    return { kind: "hideField", field: rec.field as FieldId };
+  }
+  if (rec.kind === "hideStep") {
+    if (typeof rec.stepId !== "string" || !STEP_IDS.has(rec.stepId as StepId)) return null;
+    return { kind: "hideStep", stepId: rec.stepId as StepId };
+  }
   if (rec.kind === "message") {
     if (!isFieldRef(rec.field) || typeof rec.html !== "string") return null;
     const severity =
@@ -157,25 +207,12 @@ function parseRule(raw: unknown): FormRule | null {
   const then = rec.then.map(parseEffect).filter((e): e is RuleEffect => !!e);
   if (then.length === 0) return null;
 
-  const rule: FormRule = {
+  return {
     id: rec.id,
     enabled: rec.enabled !== false,
     when,
     then,
   };
-  if (rec.editor === "availability" || rec.editor === "message") {
-    rule.editor = rec.editor;
-  }
-  if (rec.target && typeof rec.target === "object" && !Array.isArray(rec.target)) {
-    const target = rec.target as Record<string, unknown>;
-    if (isFieldRef(target.field)) {
-      rule.target = { field: target.field };
-      if (typeof target.optionValue === "string" && target.optionValue) {
-        rule.target.optionValue = target.optionValue;
-      }
-    }
-  }
-  return rule;
 }
 
 export function parseFormRules(raw: unknown): FormRulesDocument {
@@ -244,6 +281,7 @@ function isEmptyValue(field: RuleFieldRef, value: unknown, data: FormData): bool
 }
 
 function compareNumber(left: unknown, op: RuleConditionOp, right: unknown): boolean {
+  if (left == null || left === "" || right == null || right === "") return false;
   const a = typeof left === "number" ? left : Number(left);
   const b = typeof right === "number" ? right : Number(right);
   if (!Number.isFinite(a) || !Number.isFinite(b)) return false;
@@ -316,15 +354,11 @@ export function evaluateRules(
   data: FormData,
 ): RuleEvaluation {
   const doc = rules ?? EMPTY_FORM_RULES;
-  if (doc.rules.length === 0) {
-    return {
-      hiddenOptions: new Map(),
-      messages: [],
-      blockedFields: new Set(),
-    };
-  }
+  if (doc.rules.length === 0) return emptyEvaluation();
 
   const hiddenOptions = new Map<RuleFieldRef, Set<string>>();
+  const hiddenFields = new Set<FieldId>();
+  const hiddenSteps = new Set<StepId>();
   const messages: RuleMessage[] = [];
   const blockedFields = new Set<RuleFieldRef>();
 
@@ -340,6 +374,10 @@ export function evaluateRules(
           hiddenOptions.set(effect.field, set);
         }
         set.add(effect.optionValue);
+      } else if (effect.kind === "hideField") {
+        hiddenFields.add(effect.field);
+      } else if (effect.kind === "hideStep") {
+        hiddenSteps.add(effect.stepId);
       } else {
         messages.push({
           field: effect.field,
@@ -354,7 +392,7 @@ export function evaluateRules(
     }
   }
 
-  return { hiddenOptions, messages, blockedFields };
+  return { hiddenOptions, hiddenFields, hiddenSteps, messages, blockedFields };
 }
 
 export function isOptionHidden(
@@ -377,6 +415,14 @@ export function fieldIsBlocked(
   field: RuleFieldRef,
 ): boolean {
   return evaluation.blockedFields.has(field);
+}
+
+export function isFieldHidden(evaluation: RuleEvaluation, field: FieldId): boolean {
+  return evaluation.hiddenFields.has(field);
+}
+
+export function isStepHidden(evaluation: RuleEvaluation, stepId: StepId): boolean {
+  return evaluation.hiddenSteps.has(stepId);
 }
 
 export function formatDayList(days: string[]): string {
@@ -455,7 +501,7 @@ function newRuleId(prefix: string): string {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 }
 
-/** Drop Advanced-options hide rules for an option that was removed. */
+/** Drop the show-when hide rule for an option that was removed. */
 export function removeAvailabilityRules(
   rules: FormRulesDocument | null | undefined,
   field: RuleFieldRef,
@@ -475,18 +521,15 @@ function isOwnedAvailabilityRule(
   field: RuleFieldRef,
   optionValue: string,
 ): boolean {
-  return (
-    rule.editor === "availability" &&
-    rule.target?.field === field &&
-    rule.target.optionValue === optionValue
+  return rule.then.some(
+    (effect) =>
+      effect.kind === "hideOption" &&
+      effect.field === field &&
+      effect.optionValue === optionValue,
   );
 }
 
-function isOwnedMessageRule(rule: FormRule, field: RuleFieldRef): boolean {
-  return rule.editor === "message" && rule.target?.field === field;
-}
-
-/** Read the Advanced-options draft for one option from owned availability rules. */
+/** Read the show-when draft for one option from its hide rule. */
 export function draftFromAvailabilityRules(
   rules: FormRulesDocument,
   field: RuleFieldRef,
@@ -550,7 +593,7 @@ function collectLeaves(
   out.push(condition);
 }
 
-/** Compile Advanced-options availability into a single hide rule for that option. */
+/** Compile show-when settings into a single hide rule for that option. */
 export function setAvailabilityRules(
   rules: FormRulesDocument,
   field: RuleFieldRef,
@@ -610,79 +653,10 @@ export function setAvailabilityRules(
   const rule: FormRule = {
     id: newRuleId("avail"),
     enabled: true,
-    editor: "availability",
-    target: { field, optionValue },
     when,
     then: [{ kind: "hideOption", field, optionValue }],
   };
   return { version: 1, rules: [...kept, rule] };
-}
-
-export function draftFromHeadcountMessageRules(
-  rules: FormRulesDocument,
-): HeadcountLimitsDraft {
-  const draft: HeadcountLimitsDraft = {};
-  for (const rule of rules.rules) {
-    if (!isOwnedMessageRule(rule, "guestCount")) continue;
-    const when = rule.when;
-    if (!("field" in when) || when.field !== "guestCount") continue;
-    const effect = rule.then.find((item) => item.kind === "message");
-    if (!effect || effect.kind !== "message") continue;
-    const value = typeof when.value === "number" ? when.value : positiveInt(when.value);
-    if (value == null) continue;
-    if (when.op === "lt") {
-      draft.min = { value, messageHtml: effect.html };
-    } else if (when.op === "gt") {
-      draft.max = { value, messageHtml: effect.html };
-    }
-  }
-  return draft;
-}
-
-export function setHeadcountMessageRules(
-  rules: FormRulesDocument,
-  draft: HeadcountLimitsDraft,
-): FormRulesDocument {
-  const kept = rules.rules.filter((rule) => !isOwnedMessageRule(rule, "guestCount"));
-  const next = [...kept];
-
-  if (draft.min && draft.min.value > 0) {
-    next.push({
-      id: newRuleId("hcmin"),
-      enabled: true,
-      editor: "message",
-      target: { field: "guestCount" },
-      when: { field: "guestCount", op: "lt", value: draft.min.value },
-      then: [
-        {
-          kind: "message",
-          field: "guestCount",
-          html: draft.min.messageHtml,
-          severity: "warn",
-        },
-      ],
-    });
-  }
-
-  if (draft.max && draft.max.value > 0) {
-    next.push({
-      id: newRuleId("hcmax"),
-      enabled: true,
-      editor: "message",
-      target: { field: "guestCount" },
-      when: { field: "guestCount", op: "gt", value: draft.max.value },
-      then: [
-        {
-          kind: "message",
-          field: "guestCount",
-          html: draft.max.messageHtml,
-          severity: "block",
-        },
-      ],
-    });
-  }
-
-  return { version: 1, rules: next };
 }
 
 type PruneLocation = Pick<
@@ -768,9 +742,15 @@ export function availabilityUsesWeekdays(
   optionValue?: string,
 ): boolean {
   return rules.rules.some((rule) => {
-    if (rule.editor !== "availability") return false;
-    if (rule.target?.field !== field) return false;
-    if (optionValue != null && rule.target.optionValue !== optionValue) return false;
+    if (optionValue != null) {
+      if (!isOwnedAvailabilityRule(rule, field, optionValue)) return false;
+    } else if (
+      !rule.then.some(
+        (effect) => effect.kind === "hideOption" && effect.field === field,
+      )
+    ) {
+      return false;
+    }
     const leaves: Extract<RuleCondition, { field: RuleFieldRef }>[] = [];
     collectLeaves(rule.when, leaves);
     return leaves.some((leaf) => leaf.op === "weekdayIn");

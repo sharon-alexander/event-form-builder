@@ -88,10 +88,10 @@ export default function AvailabilityEditor({
   return (
     <details className="rounded-lg border border-zinc-200 bg-zinc-50">
       <summary className="cursor-pointer list-none px-3 py-2 text-xs font-medium text-zinc-700">
-        <span>{label ? `${label} — advanced options` : "Advanced options"}</span>
-        {summary && (
-          <span className="ml-2 font-normal text-zinc-500">{summary}</span>
-        )}
+        <span>{label ? `${label} — show when` : "Show when"}</span>
+        <span className="ml-2 font-normal text-zinc-500">
+          {summary || "Always shown"}
+        </span>
       </summary>
       <div className="space-y-3 border-t border-zinc-200 px-3 py-3">
         <p className="text-[11px] leading-snug text-zinc-500">

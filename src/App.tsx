@@ -1,8 +1,8 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import type { FormData } from "./types";
 import { INITIAL_FORM_DATA } from "./types";
 import { useLocationConfig } from "./context/LocationContext";
-import { pruneUnavailableSelections } from "./form/conditions";
+import { evaluateRules, isStepHidden, pruneUnavailableSelections } from "./form/conditions";
 import { buildPayload } from "./utils/buildPayload";
 import { submitLead } from "./api/tripleseat";
 import { resolveReferralSources } from "./api/resolveReferralSources";
@@ -15,7 +15,6 @@ import ReviewStep from "./components/steps/ReviewStep";
 export default function App() {
   const location = useLocationConfig();
   const formSteps = location.steps;
-  const totalSteps = formSteps.length + 1;
 
   const [started, setStarted] = useState(false);
   const [step, setStep] = useState(0);
@@ -35,8 +34,42 @@ export default function App() {
     setData((prev) => pruneUnavailableSelections(location, prev));
   }, [location]);
 
-  const next = useCallback(() => setStep((s) => Math.min(s + 1, totalSteps - 1)), [totalSteps]);
-  const back = useCallback(() => setStep((s) => Math.max(s - 1, 0)), []);
+  const evaluation = useMemo(
+    () => evaluateRules(location.formRules, data),
+    [location.formRules, data],
+  );
+
+  const stepHidden = useCallback(
+    (index: number) => {
+      const id = formSteps[index];
+      return !!id && isStepHidden(evaluation, id);
+    },
+    [evaluation, formSteps],
+  );
+
+  const next = useCallback(() => {
+    setStep((current) => {
+      for (let i = current + 1; i < formSteps.length; i++) {
+        if (!stepHidden(i)) return i;
+      }
+      return formSteps.length;
+    });
+  }, [formSteps, stepHidden]);
+
+  const back = useCallback(() => {
+    setStep((current) => {
+      for (let i = current - 1; i >= 0; i--) {
+        if (!stepHidden(i)) return i;
+      }
+      return 0;
+    });
+  }, [stepHidden]);
+
+  useEffect(() => {
+    if (step >= formSteps.length || !stepHidden(step)) return;
+    const following = formSteps.findIndex((id, index) => index > step && !isStepHidden(evaluation, id));
+    setStep(following === -1 ? formSteps.length : following);
+  }, [evaluation, formSteps, step, stepHidden]);
 
   const handleSubmit = useCallback(async () => {
     if (honeypot) return;
@@ -87,7 +120,12 @@ export default function App() {
 
   const isReviewStep = step === formSteps.length;
   const currentStepId = formSteps[step];
-  const isLastFormStep = step === formSteps.length - 1;
+  const visibleSteps = formSteps.filter((id) => !isStepHidden(evaluation, id));
+  const visibleIndex =
+    isReviewStep || !currentStepId
+      ? visibleSteps.length
+      : Math.max(0, visibleSteps.indexOf(currentStepId));
+  const isLastFormStep = visibleSteps[visibleSteps.length - 1] === currentStepId;
 
   const stepBase = {
     data,
@@ -113,7 +151,7 @@ export default function App() {
         className={`grid grid-cols-1 gap-8${isReviewStep ? "" : " lg:grid-cols-[minmax(0,1fr)_300px]"}`}
       >
         <div>
-          <ProgressBar currentStep={step} totalSteps={totalSteps} />
+          <ProgressBar currentStep={visibleIndex} totalSteps={visibleSteps.length + 1} />
 
           {!isReviewStep && (
             <details className="mb-6 rounded-xl border border-brand-100 bg-brand-50/60 lg:hidden">

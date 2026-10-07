@@ -12,6 +12,8 @@ interface Props {
   value: string;
   onChange: (html: string) => void;
   placeholder?: string;
+  /** Shorter writing area for a one- or two-line message. */
+  compact?: boolean;
 }
 
 type BlockTag = "p" | "h1" | "h2" | "h3";
@@ -28,6 +30,7 @@ export default function RichTextEditor({
   value,
   onChange,
   placeholder,
+  compact = false,
 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const focused = useRef(false);
@@ -220,7 +223,7 @@ export default function RichTextEditor({
         aria-multiline
         contentEditable
         data-placeholder={placeholder}
-        className={`adm-rich-editor efb-rich-text ${empty ? "adm-rich-editor--empty" : ""}`}
+        className={`adm-rich-editor efb-rich-text ${compact ? "adm-rich-editor--compact" : ""} ${empty ? "adm-rich-editor--empty" : ""}`}
         onFocus={() => {
           focused.current = true;
           refreshMarks();

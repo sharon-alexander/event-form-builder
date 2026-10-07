@@ -1,8 +1,11 @@
+-- Not applied yet. Leave this file unpushed until the CMS logic UI is accepted.
+--
 -- Seed form_rules for the three live forms. The app does not special-case these
 -- slugs; it only reads the rules written here.
 --
--- Tokyo Record Bar: headcount messages, the $1,500–$2,500 budget cap (hidden above
--- 15 guests), and per-space guest ranges. Large-table options use the smaller
+-- Tokyo Record Bar: headcount min/max live on field_settings (warn under 7, block
+-- over 40). The $1,500–$2,500 budget cap is hidden above 15 guests, and each
+-- space has a guest range. Large-table options use the smaller
 -- caps already published on the form (Cocktail Bar large table 7–15, Vinyl
 -- Jukebox large table 7–10). Buyouts use Cocktail Bar 7–40 and Vinyl Jukebox 7–20.
 -- Pearl Box: budget ranges by party size (and day, for the midweek <$6,000
@@ -46,8 +49,6 @@ as $$
   select jsonb_build_object(
     'id', rule_id,
     'enabled', true,
-    'editor', 'availability',
-    'target', jsonb_build_object('field', field, 'optionValue', option_value),
     'when', jsonb_build_object('not', show_when),
     'then', jsonb_build_array(
       jsonb_build_object(
@@ -96,45 +97,35 @@ revoke all on function public._efb_guest_range_when(int, int) from public, anon,
 
 -- Tokyo Record Bar -----------------------------------------------------------
 update public.locations
-set form_rules = jsonb_build_object(
+set
+  field_settings = jsonb_set(
+    coalesce(field_settings, '{}'::jsonb),
+    '{guestCount}',
+    coalesce(field_settings->'guestCount', '{}'::jsonb) || jsonb_build_object(
+      'min', jsonb_build_object(
+        'value', 7,
+        'behavior', 'warn',
+        'messageHtml', '<p>For groups smaller than 7, please <a href="https://www.sevenrooms.com">book on 7Rooms</a>.</p>'
+      ),
+      'max', jsonb_build_object(
+        'value', 40,
+        'behavior', 'block',
+        'messageHtml', '<p>This space holds up to 40 guests. Enter 40 or fewer to continue.</p>'
+      )
+    ),
+    true
+  ),
+  form_rules = jsonb_build_object(
   'version', 1,
   'rules', (
     select coalesce(jsonb_agg(rule), '[]'::jsonb)
     from (
-      select jsonb_build_object(
-        'id', 'tokyo_hc_min',
-        'enabled', true,
-        'editor', 'message',
-        'target', jsonb_build_object('field', 'guestCount'),
-        'when', jsonb_build_object('field', 'guestCount', 'op', 'lt', 'value', 7),
-        'then', jsonb_build_array(jsonb_build_object(
-          'kind', 'message',
-          'field', 'guestCount',
-          'html', '<p>For groups smaller than 7, please <a href="https://www.sevenrooms.com">book on 7Rooms</a>.</p>',
-          'severity', 'warn'
-        ))
-      ) as rule
-      union all
-      select jsonb_build_object(
-        'id', 'tokyo_hc_max',
-        'enabled', true,
-        'editor', 'message',
-        'target', jsonb_build_object('field', 'guestCount'),
-        'when', jsonb_build_object('field', 'guestCount', 'op', 'gt', 'value', 40),
-        'then', jsonb_build_array(jsonb_build_object(
-          'kind', 'message',
-          'field', 'guestCount',
-          'html', '<p>This space holds up to 40 guests. Enter 40 or fewer to continue.</p>',
-          'severity', 'block'
-        ))
-      )
-      union all
       select public._efb_hide_rule(
         'tokyo_budget_' || (elem->>'value'),
         'budget',
         elem->>'value',
         public._efb_guest_range_when(null, 15)
-      )
+      ) as rule
       from jsonb_array_elements(budget_options) as elem
       where coalesce(elem->>'label', '') ~* '1[,.]?500'
         and coalesce(elem->>'label', '') ~* '2[,.]?500'

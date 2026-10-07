@@ -106,6 +106,8 @@ export type RuleCondition =
 
 export type RuleEffect =
   | { kind: "hideOption"; field: RuleFieldRef; optionValue: string }
+  | { kind: "hideField"; field: FieldId }
+  | { kind: "hideStep"; stepId: StepId }
   | {
       kind: "message";
       field: RuleFieldRef;
@@ -116,9 +118,6 @@ export type RuleEffect =
 export interface FormRule {
   id: string;
   enabled: boolean;
-  /** Lets the simple panels find their own rules. Hand-written rules omit this. */
-  editor?: "availability" | "message";
-  target?: { field: RuleFieldRef; optionValue?: string };
   when: RuleCondition;
   then: RuleEffect[];
 }
@@ -128,10 +127,19 @@ export interface FormRulesDocument {
   rules: FormRule[];
 }
 
+/** A guest-count limit stored on the question, not as a show/hide rule. */
+export interface NumberLimit {
+  value: number;
+  messageHtml: string;
+  behavior: "warn" | "block";
+}
+
 /** Per-question overrides. Missing keys use catalog defaults. */
 export interface FieldSettings {
   shown?: boolean;
   required?: boolean;
+  min?: NumberLimit;
+  max?: NumberLimit;
 }
 
 export interface TripleseatConfig {

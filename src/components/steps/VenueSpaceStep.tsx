@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { VenueSpaceOption } from "../../locations/types";
 import { useLocationConfig } from "../../context/LocationContext";
-import { evaluateRules, visibleVenueSpaces } from "../../form/conditions";
+import { evaluateRules, isFieldHidden, visibleVenueSpaces } from "../../form/conditions";
 import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
 import { isFieldRequired, isStepValid } from "../../form/fieldCatalog";
 import RequiredMark from "../../form/RequiredMark";
@@ -54,6 +54,8 @@ export default function VenueSpaceStep({
         nextLabel={nextLabel}
         nextDisabled={!isStepValid("venue_space", data, location)}
       >
+        {!isFieldHidden(evaluation, "venueSpace") && (
+        <>
         <p className="efb-label">
           Venue space
           <RequiredMark required={isFieldRequired(location, "venueSpace")} />
@@ -135,6 +137,8 @@ export default function VenueSpaceStep({
             );
           })}
           </div>
+        )}
+        </>
         )}
       </FormStep>
 

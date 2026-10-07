@@ -1,12 +1,8 @@
-import {
-  draftFromHeadcountMessageRules,
-  EMPTY_FORM_RULES,
-  setHeadcountMessageRules,
-  type HeadcountLimitDraft,
-  type HeadcountLimitsDraft,
-} from "../../../form/conditions";
+import { useState } from "react";
+import type { FieldSettings, NumberLimit } from "../../../locations/types";
 import type { EditableLocation } from "../../pages/FormEditorPage";
 import RichTextEditor from "./RichTextEditor";
+import { fieldIsRequired, setFieldRequired } from "./RequiredCheckbox";
 
 interface Props {
   draft: EditableLocation;
@@ -14,76 +10,119 @@ interface Props {
 }
 
 export default function HeadcountLimitsEditor({ draft, update }: Props) {
-  const rules = draft.form_rules ?? EMPTY_FORM_RULES;
-  const limits = draftFromHeadcountMessageRules(rules);
+  const settings = draft.field_settings.guestCount;
+  const [minOpen, setMinOpen] = useState(!!settings?.min);
+  const [maxOpen, setMaxOpen] = useState(!!settings?.max);
 
-  function setLimits(next: HeadcountLimitsDraft) {
-    const cleaned: HeadcountLimitsDraft = {};
-    if (next.min && next.min.value > 0) cleaned.min = next.min;
-    if (next.max && next.max.value > 0) cleaned.max = next.max;
-    update({ form_rules: setHeadcountMessageRules(rules, cleaned) });
+  function writeLimit(key: "min" | "max", limit: NumberLimit | undefined) {
+    const current: FieldSettings = { ...draft.field_settings.guestCount };
+    if (limit) current[key] = limit;
+    else delete current[key];
+    update({
+      field_settings: {
+        ...draft.field_settings,
+        guestCount: current,
+      },
+    });
   }
 
   return (
-    <details className="rounded-xl border border-zinc-200 bg-white">
-      <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-zinc-900">
-        Advanced options
-        <LimitSummary limits={limits} />
-      </summary>
-      <div className="space-y-5 border-t border-zinc-200 px-4 py-4">
-        <p className="text-xs text-zinc-500">
-          Minimum shows a message and still lets the guest continue. Maximum
-          shows a message and stops them until the count is within the limit.
-          Add a reservation link with the link button in the message editor.
-        </p>
+    <div className="space-y-4 rounded-xl border border-zinc-200 bg-white px-4 py-4">
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+        <LimitToggle
+          label="Required"
+          checked={fieldIsRequired(draft, "guestCount")}
+          onChange={(required) =>
+            setFieldRequired(draft, update, "guestCount", required)
+          }
+        />
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-l border-zinc-200 pl-5">
+          <LimitToggle
+            label="Minimum"
+            checked={minOpen}
+            onChange={(on) => {
+              setMinOpen(on);
+              if (!on) writeLimit("min", undefined);
+            }}
+          />
+          <LimitToggle
+            label="Maximum"
+            checked={maxOpen}
+            onChange={(on) => {
+              setMaxOpen(on);
+              if (!on) writeLimit("max", undefined);
+            }}
+          />
+        </div>
+      </div>
+      {minOpen && (
         <LimitFields
           id="headcount-min"
           title="Minimum guests"
-          hint="Shown when the count is below this number. The guest can still continue."
-          limit={limits.min}
-          onChange={(min) => setLimits({ ...limits, min })}
+          emptyHint="Enter a number to add an optional message for counts below it."
+          messagePlaceholder="E.g. For fewer than 5 guests, consider making a reservation instead."
+          limit={settings?.min}
+          behavior="warn"
+          onChange={(min) => writeLimit("min", min)}
         />
+      )}
+      {maxOpen && (
         <LimitFields
           id="headcount-max"
           title="Maximum guests"
-          hint="Shown when the count is above this number. Next stays disabled until they enter this many or fewer."
-          limit={limits.max}
-          onChange={(max) => setLimits({ ...limits, max })}
+          emptyHint="Enter a number to add an optional message for counts above it."
+          messagePlaceholder="This space holds up to 40 guests."
+          limit={settings?.max}
+          behavior="block"
+          onChange={(max) => writeLimit("max", max)}
         />
-      </div>
-    </details>
+      )}
+    </div>
   );
 }
 
-function LimitSummary({ limits }: { limits: HeadcountLimitsDraft }) {
-  const parts: string[] = [];
-  if (limits.min) parts.push(`Min ${limits.min.value}`);
-  if (limits.max) parts.push(`Max ${limits.max.value}`);
-  if (parts.length === 0) return null;
+function LimitToggle({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (next: boolean) => void;
+}) {
   return (
-    <span className="ml-2 text-xs font-normal text-zinc-500">{parts.join(" · ")}</span>
+    <label className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium text-zinc-700">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="h-3.5 w-3.5 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
+      />
+      {label}
+    </label>
   );
 }
 
 function LimitFields({
   id,
   title,
-  hint,
+  emptyHint,
+  messagePlaceholder,
   limit,
+  behavior,
   onChange,
 }: {
   id: string;
   title: string;
-  hint: string;
-  limit: HeadcountLimitDraft | undefined;
-  onChange: (next: HeadcountLimitDraft | undefined) => void;
+  emptyHint: string;
+  messagePlaceholder: string;
+  limit: NumberLimit | undefined;
+  behavior: NumberLimit["behavior"];
+  onChange: (next: NumberLimit | undefined) => void;
 }) {
   return (
     <div className="space-y-2">
-      <div>
-        <h4 className="text-xs font-semibold text-zinc-900">{title}</h4>
-        <p className="mt-0.5 text-[11px] text-zinc-400">{hint}</p>
-      </div>
+      <h4 className="text-xs font-semibold text-zinc-900">{title}</h4>
       <label className="block max-w-[10rem]">
         <span className="sr-only">{title}</span>
         <input
@@ -91,7 +130,7 @@ function LimitFields({
           type="number"
           min={1}
           className="adm-input py-2"
-          placeholder="No limit"
+          placeholder="Number"
           value={limit?.value ?? ""}
           onChange={(e) => {
             const raw = e.target.value;
@@ -100,7 +139,11 @@ function LimitFields({
               onChange(undefined);
               return;
             }
-            onChange({ value: Math.floor(n), messageHtml: limit?.messageHtml ?? "" });
+            onChange({
+              value: Math.floor(n),
+              messageHtml: limit?.messageHtml ?? "",
+              behavior,
+            });
           }}
         />
       </label>
@@ -108,13 +151,14 @@ function LimitFields({
         <RichTextEditor
           id={`${id}-message`}
           value={limit.messageHtml}
-          onChange={(messageHtml) => onChange({ ...limit, messageHtml })}
-          placeholder="Message shown to the guest"
+          onChange={(messageHtml) =>
+            onChange({ ...limit, messageHtml, behavior })
+          }
+          placeholder={messagePlaceholder}
+          compact
         />
       ) : (
-        <p className="text-[11px] text-zinc-400">
-          Enter a guest count to write the message.
-        </p>
+        <p className="text-[11px] text-zinc-400">{emptyHint}</p>
       )}
     </div>
   );

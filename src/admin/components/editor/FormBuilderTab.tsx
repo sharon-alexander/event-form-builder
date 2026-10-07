@@ -32,6 +32,10 @@ import InfoPageEditor from "./InfoPageEditor";
 import OptionalCheckboxesEditor from "./OptionalCheckboxesEditor";
 import RequiredFieldsEditor from "./RequiredFieldsEditor";
 import HeadcountLimitsEditor from "./HeadcountLimitsEditor";
+import QuestionDisplayEditor, {
+  ruleCountLabel,
+  stepLogicCount,
+} from "./QuestionDisplayEditor";
 import { fieldIsShown } from "./RequiredCheckbox";
 import RichTextEditor from "./RichTextEditor";
 import TimingStyleEditor from "./TimingStyleEditor";
@@ -311,6 +315,7 @@ export default function FormBuilderTab({ draft, update, orgId, onError }: Props)
                       label={STEP_LABELS[stepId] ?? stepId}
                       subtitle={DEFAULT_STEP_COPY[stepId]?.subtitle}
                       status={stepStatus(stepId, draft)}
+                      logicCount={stepLogicCount(draft, stepId)}
                       selected={selectedId === stepId}
                       onSelect={() => openConfig(stepId)}
                       onRemove={() => removeStep(i)}
@@ -385,7 +390,12 @@ function StepConfig({
 
   return (
     <div className="space-y-6">
-      <div>
+      <QuestionDisplayEditor
+        stepId={stepId}
+        steps={steps}
+        draft={draft}
+        update={update}
+      >
         <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
           Step {steps.indexOf(stepId) + 1}
         </p>
@@ -395,7 +405,7 @@ function StepConfig({
         {selectedCopy?.subtitle && (
           <p className="mt-1 text-sm text-zinc-500">{selectedCopy.subtitle}</p>
         )}
-      </div>
+      </QuestionDisplayEditor>
 
       {banner && (
         <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
@@ -570,6 +580,7 @@ function SortableStepRow({
   label,
   subtitle,
   status,
+  logicCount,
   selected,
   onSelect,
   onRemove,
@@ -579,6 +590,7 @@ function SortableStepRow({
   label: string;
   subtitle?: string;
   status: StepStatus;
+  logicCount: number;
   selected: boolean;
   onSelect: () => void;
   onRemove: () => void;
@@ -634,11 +646,22 @@ function SortableStepRow({
           {index + 1}
         </span>
         <div className="min-w-0 flex-1">
-          <p
-            className={`text-sm font-medium ${selected ? "text-white" : "text-zinc-900"}`}
-          >
-            {label}
-          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p
+              className={`text-sm font-medium ${selected ? "text-white" : "text-zinc-900"}`}
+            >
+              {label}
+            </p>
+            {logicCount > 0 && (
+              <span
+                className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                  selected ? "bg-white/15 text-zinc-200" : "bg-zinc-100 text-zinc-600"
+                }`}
+              >
+                {ruleCountLabel(logicCount)}
+              </span>
+            )}
+          </div>
           {subtitle && (
             <p
               className={`mt-0.5 line-clamp-1 text-xs ${

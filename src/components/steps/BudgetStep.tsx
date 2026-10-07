@@ -3,6 +3,7 @@ import { useLocationConfig } from "../../context/LocationContext";
 import {
   evaluateRules,
   messagesForField,
+  isFieldHidden,
   visibleBudgetOptions,
 } from "../../form/conditions";
 import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
@@ -44,6 +45,8 @@ export default function BudgetStep({
       nextLabel={nextLabel}
       nextDisabled={!isStepValid("budget", data, location)}
     >
+      {!isFieldHidden(evaluation, "budget") && (
+      <>
       <p className="efb-label">
         Budget range
         <RequiredMark required={isFieldRequired(location, "budget")} />
@@ -78,6 +81,8 @@ export default function BudgetStep({
             </button>
           ))}
         </div>
+      )}
+      </>
       )}
     </FormStep>
   );

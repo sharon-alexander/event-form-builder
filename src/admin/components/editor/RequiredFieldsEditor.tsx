@@ -9,6 +9,7 @@ import {
 
 /** Shown on the step’s own editor heading instead of this list. */
 const INLINE_FIELDS: Partial<Record<StepId, FieldId[]>> = {
+  headcount: ["guestCount"],
   venue_space: ["venueSpace"],
   budget: ["budget"],
   event_format: ["eventCategory", "eventFormat"],
