@@ -179,7 +179,7 @@ export default function ThemeTab({ draft, update, orgId, onError }: Props) {
             )}
           </div>
           <p className="mt-1 text-xs text-zinc-400">
-            A full palette of shades is generated from this color.
+            Buttons, labels, and other main elements use this color. Lighter and darker shades are used for accents.
           </p>
         </div>
 

@@ -7,7 +7,9 @@
 // the defaults from index.css apply — so existing forms look unchanged.
 
 export interface ThemeTokens {
-  /** Base brand color as a hex string, e.g. "#b07038". Drives the full palette. */
+  /** Base brand color as a hex string, e.g. "#b07038". Used as-is on main form
+   *  elements (buttons, eyebrows, focus, selection). Lighter and darker shades
+   *  are derived for accents only. */
   brandColor?: string;
   /** CSS font-family value for body text, e.g. `"Inter"`. */
   fontSans?: string;
@@ -20,10 +22,24 @@ export interface ThemeTokens {
 export const BRAND_STOPS = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950] as const;
 export type BrandStop = (typeof BRAND_STOPS)[number];
 
-/** Target lightness (%) per stop. Hue + saturation come from the chosen color. */
-const STOP_LIGHTNESS: Record<BrandStop, number> = {
-  50: 96, 100: 90, 200: 80, 300: 68, 400: 57,
-  500: 46, 600: 40, 700: 33, 800: 27, 900: 22, 950: 12,
+/** Stops that paint the entered hex exactly. These are the stops used by buttons,
+ *  eyebrows, focus rings, and selected states. */
+const EXACT_STOPS = new Set<BrandStop>([500, 600, 700]);
+
+/** Mix toward white for accent tints (0 = exact color, 1 = white). */
+const TINT_MIX: Partial<Record<BrandStop, number>> = {
+  50: 0.92,
+  100: 0.82,
+  200: 0.64,
+  300: 0.42,
+  400: 0.2,
+};
+
+/** Mix toward black for accent shades (0 = exact color, 1 = black). */
+const SHADE_MIX: Partial<Record<BrandStop, number>> = {
+  800: 0.22,
+  900: 0.4,
+  950: 0.62,
 };
 
 /** The default brand color (matches the original brand-500). */
@@ -54,14 +70,27 @@ export function applyTheme(root: HTMLElement, theme: ThemeTokens | null | undefi
 }
 
 /** Derive an 11-stop palette from a base hex color. Values are "r g b" channel
- *  strings for use with `rgb(var(--brand-500) / <alpha>)`. */
+ *  strings for use with `rgb(var(--brand-500) / <alpha>)`.
+ *
+ *  Stops 500, 600, and 700 are the entered color with no shift. Other stops are
+ *  tints (toward white) and shades (toward black) for backgrounds, borders,
+ *  and hover states. */
 export function derivePalette(hex: string): Record<BrandStop, string> {
   const rgb = hexToRgb(hex);
-  const { h, s } = rgbToHsl(rgb);
+  const exact = `${rgb.r} ${rgb.g} ${rgb.b}`;
   const out = {} as Record<BrandStop, string>;
   for (const stop of BRAND_STOPS) {
-    const { r, g, b } = hslToRgb(h, s, STOP_LIGHTNESS[stop] / 100);
-    out[stop] = `${r} ${g} ${b}`;
+    if (EXACT_STOPS.has(stop)) {
+      out[stop] = exact;
+      continue;
+    }
+    const tint = TINT_MIX[stop];
+    const shade = SHADE_MIX[stop];
+    const mixed =
+      tint !== undefined
+        ? mixRgb(rgb, { r: 255, g: 255, b: 255 }, tint)
+        : mixRgb(rgb, { r: 0, g: 0, b: 0 }, shade ?? 0);
+    out[stop] = `${mixed.r} ${mixed.g} ${mixed.b}`;
   }
   return out;
 }
@@ -97,57 +126,15 @@ function rgbToHex({ r, g, b }: Rgb): string {
   return `#${to2(r)}${to2(g)}${to2(b)}`;
 }
 
-function rgbToHsl({ r, g, b }: Rgb): { h: number; s: number; l: number } {
-  const rn = r / 255;
-  const gn = g / 255;
-  const bn = b / 255;
-  const max = Math.max(rn, gn, bn);
-  const min = Math.min(rn, gn, bn);
-  const delta = max - min;
-  const l = (max + min) / 2;
-
-  let h = 0;
-  let s = 0;
-  if (delta !== 0) {
-    s = l > 0.5 ? delta / (2 - max - min) : delta / (max + min);
-    switch (max) {
-      case rn:
-        h = ((gn - bn) / delta + (gn < bn ? 6 : 0)) / 6;
-        break;
-      case gn:
-        h = ((bn - rn) / delta + 2) / 6;
-        break;
-      default:
-        h = ((rn - gn) / delta + 4) / 6;
-    }
-  }
-  return { h, s, l };
-}
-
-function hslToRgb(h: number, s: number, l: number): Rgb {
-  if (s === 0) {
-    const v = Math.round(l * 255);
-    return { r: v, g: v, b: v };
-  }
-  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-  const p = 2 * l - q;
-  return {
-    r: Math.round(hueToRgb(p, q, h + 1 / 3) * 255),
-    g: Math.round(hueToRgb(p, q, h) * 255),
-    b: Math.round(hueToRgb(p, q, h - 1 / 3) * 255),
-  };
-}
-
-function hueToRgb(p: number, q: number, t: number): number {
-  let tt = t;
-  if (tt < 0) tt += 1;
-  if (tt > 1) tt -= 1;
-  if (tt < 1 / 6) return p + (q - p) * 6 * tt;
-  if (tt < 1 / 2) return q;
-  if (tt < 2 / 3) return p + (q - p) * (2 / 3 - tt) * 6;
-  return p;
-}
-
 function clamp(n: number, min: number, max: number): number {
   return Math.min(Math.max(n, min), max);
+}
+
+function mixRgb(base: Rgb, target: Rgb, amount: number): Rgb {
+  const t = clamp(amount, 0, 1);
+  return {
+    r: Math.round(base.r + (target.r - base.r) * t),
+    g: Math.round(base.g + (target.g - base.g) * t),
+    b: Math.round(base.b + (target.b - base.b) * t),
+  };
 }
