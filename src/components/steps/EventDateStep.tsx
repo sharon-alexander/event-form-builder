@@ -1,5 +1,7 @@
+import { useLayoutEffect, useMemo } from "react";
 import { MONTHS, DAYS_OF_WEEK } from "../../types";
 import { useLocationConfig } from "../../context/LocationContext";
+import { evaluateRules, isFieldHidden } from "../../form/conditions";
 import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
 import { isFieldRequired, isStepValid } from "../../form/fieldCatalog";
 import RequiredMark from "../../form/RequiredMark";
@@ -19,9 +21,36 @@ export default function EventDateStep({
   subtitle = copy.subtitle,
 }: StepProps) {
   const location = useLocationConfig();
+  const evaluation = useMemo(
+    () => evaluateRules(location.formRules, data),
+    [location.formRules, data],
+  );
+  const showEventDate = !isFieldHidden(evaluation, "eventDate");
+  const showBackupDate = !isFieldHidden(evaluation, "backupDate");
+  const showPreferredDays = !isFieldHidden(evaluation, "preferredDays");
+  const exactAvailable = showEventDate || showBackupDate;
+  const flexibleAvailable = showEventDate || showPreferredDays;
+  const modeChoice = exactAvailable && flexibleAvailable;
+  // One mode left: show it even when datesFlexible still has the other default.
+  const datesFlexible = modeChoice ? data.datesFlexible : flexibleAvailable;
+  const validityData =
+    datesFlexible === data.datesFlexible ? data : { ...data, datesFlexible };
   const dateRequired = isFieldRequired(location, "eventDate");
   const backupRequired = isFieldRequired(location, "backupDate");
   const daysRequired = isFieldRequired(location, "preferredDays");
+
+  useLayoutEffect(() => {
+    if (modeChoice || (!exactAvailable && !flexibleAvailable)) return;
+    if (data.datesFlexible === datesFlexible) return;
+    onChange({ datesFlexible });
+  }, [
+    modeChoice,
+    exactAvailable,
+    flexibleAvailable,
+    datesFlexible,
+    data.datesFlexible,
+    onChange,
+  ]);
 
   const toggleMonth = (m: string) => {
     const current = data.flexibleDatePreferences.preferredMonths;
@@ -47,97 +76,108 @@ export default function EventDateStep({
       onNext={onNext}
       onBack={onBack}
       nextLabel={nextLabel}
-      nextDisabled={!isStepValid("event_date", data, location)}
+      nextDisabled={!isStepValid("event_date", validityData, location)}
     >
       <div className="space-y-5">
-        {!data.datesFlexible ? (
+        {!datesFlexible && exactAvailable && (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label htmlFor="event-date" className="efb-label">
-                Event Date
-                <RequiredMark required={dateRequired} />
-              </label>
-              <input
-                id="event-date"
-                type="date"
-                value={data.eventDate}
-                onChange={(e) => onChange({ eventDate: e.target.value })}
-                className="efb-input"
-              />
-            </div>
-            <div>
-              <label htmlFor="backup-date" className="efb-label">
-                Backup Date
-                <RequiredMark required={backupRequired} />
-              </label>
-              <input
-                id="backup-date"
-                type="date"
-                value={data.backupDate}
-                onChange={(e) => onChange({ backupDate: e.target.value })}
-                className="efb-input"
-              />
-            </div>
+            {showEventDate && (
+              <div>
+                <label htmlFor="event-date" className="efb-label">
+                  Event Date
+                  <RequiredMark required={dateRequired} />
+                </label>
+                <input
+                  id="event-date"
+                  type="date"
+                  value={data.eventDate}
+                  onChange={(e) => onChange({ eventDate: e.target.value })}
+                  className="efb-input"
+                />
+              </div>
+            )}
+            {showBackupDate && (
+              <div>
+                <label htmlFor="backup-date" className="efb-label">
+                  Backup Date
+                  <RequiredMark required={backupRequired} />
+                </label>
+                <input
+                  id="backup-date"
+                  type="date"
+                  value={data.backupDate}
+                  onChange={(e) => onChange({ backupDate: e.target.value })}
+                  className="efb-input"
+                />
+              </div>
+            )}
           </div>
-        ) : (
+        )}
+        {datesFlexible && flexibleAvailable && (
           <div className="space-y-4">
-            <div>
-              <p className="efb-label">
-                Preferred Months
-                <RequiredMark required={dateRequired} />
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {MONTHS.map((m) => (
-                  <button
-                    key={m}
-                    type="button"
-                    onClick={() => toggleMonth(m)}
-                    className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-                      data.flexibleDatePreferences.preferredMonths.includes(m)
-                        ? "border-brand-500 bg-brand-50 text-brand-700"
-                        : "border-gray-200 text-gray-600 hover:border-brand-300"
-                    }`}
-                  >
-                    {m}
-                  </button>
-                ))}
+            {showEventDate && (
+              <div>
+                <p className="efb-label">
+                  Preferred Months
+                  <RequiredMark required={dateRequired} />
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {MONTHS.map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => toggleMonth(m)}
+                      className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                        data.flexibleDatePreferences.preferredMonths.includes(m)
+                          ? "border-brand-500 bg-brand-50 text-brand-700"
+                          : "border-gray-200 text-gray-600 hover:border-brand-300"
+                      }`}
+                    >
+                      {m}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-            <div>
-              <p className="efb-label">
-                Preferred Days
-                <RequiredMark required={daysRequired} />
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {DAYS_OF_WEEK.map((d) => (
-                  <button
-                    key={d}
-                    type="button"
-                    onClick={() => toggleDay(d)}
-                    className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-                      data.flexibleDatePreferences.preferredDays.includes(d)
-                        ? "border-brand-500 bg-brand-50 text-brand-700"
-                        : "border-gray-200 text-gray-600 hover:border-brand-300"
-                    }`}
-                  >
-                    {d}
-                  </button>
-                ))}
+            )}
+            {showPreferredDays && (
+              <div>
+                <p className="efb-label">
+                  Preferred Days
+                  <RequiredMark required={daysRequired} />
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {DAYS_OF_WEEK.map((d) => (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => toggleDay(d)}
+                      className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                        data.flexibleDatePreferences.preferredDays.includes(d)
+                          ? "border-brand-500 bg-brand-50 text-brand-700"
+                          : "border-gray-200 text-gray-600 hover:border-brand-300"
+                      }`}
+                    >
+                      {d}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 
         <div className="space-y-3">
+          {modeChoice && (
           <label className="flex cursor-pointer items-center gap-3">
             <input
               type="checkbox"
-              checked={data.datesFlexible}
+              checked={datesFlexible}
               onChange={(e) => onChange({ datesFlexible: e.target.checked })}
               className="h-4 w-4 rounded border-brand-300 text-brand-600 focus:ring-brand-500"
             />
             <span className="text-sm font-medium text-gray-700">My dates are flexible</span>
           </label>
+          )}
           {location.showMultiDayRental && (
             <label className="flex cursor-pointer items-center gap-3">
               <input

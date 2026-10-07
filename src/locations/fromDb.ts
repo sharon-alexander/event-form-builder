@@ -3,12 +3,14 @@ import { DEFAULT_EVENT_CATEGORIES, EVENT_FORMATS } from "../types";
 import type { ThemeTokens } from "../theme/theme";
 import { mergeInfoPageIntoMoreDetails } from "../utils/richText";
 import { parseFieldSettings } from "../form/fieldCatalog";
+import { parseFormRules } from "../form/conditions";
 import { hasOptionLabel } from "./presentableOptions";
 import type {
   BudgetOption,
   EventChoiceOption,
   FieldId,
   FieldSettings,
+  FormRulesDocument,
   InfoPageConfig,
   LocationConfig,
   MediaItem,
@@ -41,6 +43,7 @@ export interface LocationRow {
   show_full_day_rental: boolean | null;
   info_page: InfoPageConfig | null;
   field_settings: Partial<Record<FieldId, FieldSettings>> | null;
+  form_rules: FormRulesDocument | null;
   theme: ThemeTokens | null;
   published: boolean;
   created_at?: string;
@@ -72,6 +75,7 @@ export function locationConfigFromRow(row: LocationRow): LocationConfig {
       (row.timing_style as LocationConfig["timingStyle"]) || "standard",
     infoPage: row.info_page ? { title: row.info_page.title } : undefined,
     fieldSettings: parseFieldSettings(row.field_settings),
+    formRules: parseFormRules(row.form_rules),
     tripleseat: {
       publicKey: row.tripleseat?.publicKey ?? "",
       leadFormId: row.tripleseat?.leadFormId,

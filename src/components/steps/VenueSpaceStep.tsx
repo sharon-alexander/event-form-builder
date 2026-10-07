@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { VenueSpaceOption } from "../../locations/types";
 import { useLocationConfig } from "../../context/LocationContext";
+import { evaluateRules, isFieldHidden, visibleVenueSpaces } from "../../form/conditions";
 import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
 import { isFieldRequired, isStepValid } from "../../form/fieldCatalog";
 import RequiredMark from "../../form/RequiredMark";
@@ -22,8 +23,12 @@ export default function VenueSpaceStep({
   subtitle = copy.subtitle,
 }: StepProps) {
   const location = useLocationConfig();
-  const { venueSpaces, allowMultipleVenueSpaces } = location;
-  const allowMultiple = !!allowMultipleVenueSpaces;
+  const evaluation = useMemo(
+    () => evaluateRules(location.formRules, data),
+    [location.formRules, data],
+  );
+  const venueSpaces = visibleVenueSpaces(location.venueSpaces, evaluation);
+  const allowMultiple = !!location.allowMultipleVenueSpaces;
   const selected = data.venueSpace;
   const [galleryVenue, setGalleryVenue] = useState<VenueSpaceOption | null>(null);
 
@@ -49,6 +54,8 @@ export default function VenueSpaceStep({
         nextLabel={nextLabel}
         nextDisabled={!isStepValid("venue_space", data, location)}
       >
+        {!isFieldHidden(evaluation, "venueSpace") && (
+        <>
         <p className="efb-label">
           Venue space
           <RequiredMark required={isFieldRequired(location, "venueSpace")} />
@@ -56,7 +63,12 @@ export default function VenueSpaceStep({
         {allowMultiple && (
           <p className="-mt-1 mb-3 text-sm text-gray-500">Select all that apply.</p>
         )}
-        <div className="gap-4 sm:columns-2 [&>*]:mb-4">
+        {venueSpaces.length === 0 ? (
+          <p className="text-sm text-gray-500">
+            No spaces match these event details. Go back and adjust your answers.
+          </p>
+        ) : (
+          <div className="gap-4 sm:columns-2 [&>*]:mb-4">
           {venueSpaces.map((v) => {
             const media = v.galleryMedia ?? [];
             const hasGallery = media.length > 0;
@@ -124,7 +136,10 @@ export default function VenueSpaceStep({
               </div>
             );
           })}
-        </div>
+          </div>
+        )}
+        </>
+        )}
       </FormStep>
 
       <MediaGalleryModal

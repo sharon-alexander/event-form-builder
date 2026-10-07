@@ -68,6 +68,9 @@
   .adm-rich-editor {
     @apply min-h-[8rem] px-3.5 py-2.5 text-sm text-zinc-900 outline-none;
   }
+  .adm-rich-editor--compact {
+    min-height: 4.5rem;
+  }
   .adm-rich-editor--empty:before {
     content: attr(data-placeholder);
     @apply pointer-events-none text-zinc-400;
@@ -121,4 +124,10 @@
 .efb-rich-text b {
   font-weight: 600;
   color: rgb(17 24 39);
+}
+.efb-rich-text a {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }

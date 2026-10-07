@@ -1,3 +1,4 @@
+import { EMPTY_FORM_RULES, parseFormRules } from "../../form/conditions";
 import { hasOptionLabel } from "../../locations/presentableOptions";
 import type { LocationConfig } from "../../locations/types";
 import { DEFAULT_EVENT_CATEGORIES, EVENT_FORMATS } from "../../types";
@@ -35,6 +36,7 @@ export function draftToLocationConfig(draft: EditableLocation): LocationConfig {
       (draft.timing_style as LocationConfig["timingStyle"]) || "standard",
     infoPage: draft.info_page ? { title: draft.info_page.title } : undefined,
     fieldSettings: draft.field_settings,
+    formRules: parseFormRules(draft.form_rules ?? EMPTY_FORM_RULES),
     tripleseat: {
       publicKey: draft.tripleseat?.publicKey ?? "",
       leadFormId: draft.tripleseat?.leadFormId,

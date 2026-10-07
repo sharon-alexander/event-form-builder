@@ -71,10 +71,75 @@ export type FieldId =
   | "preferredSiteVisitDates"
   | "additionalNotes";
 
+/** Fields that form rules can read or target. */
+export type RuleFieldRef =
+  | "guestCount"
+  | "bookingType"
+  | "eventDate"
+  | "eventCategory"
+  | "eventFormat"
+  | "budget"
+  | "venueSpace"
+  | "mealService"
+  | "services";
+
+export type RuleConditionOp =
+  | "eq"
+  | "in"
+  | "gt"
+  | "gte"
+  | "lt"
+  | "lte"
+  | "weekdayIn";
+
+export type RuleCondition =
+  | { all: RuleCondition[] }
+  | { any: RuleCondition[] }
+  | { not: RuleCondition }
+  | {
+      field: RuleFieldRef;
+      op: RuleConditionOp;
+      value?: unknown;
+      /** Unanswered still counts as a match. Availability uses this. Messages do not. */
+      passIfEmpty?: boolean;
+    };
+
+export type RuleEffect =
+  | { kind: "hideOption"; field: RuleFieldRef; optionValue: string }
+  | { kind: "hideField"; field: FieldId }
+  | { kind: "hideStep"; stepId: StepId }
+  | {
+      kind: "message";
+      field: RuleFieldRef;
+      html: string;
+      severity: "info" | "warn" | "block";
+    };
+
+export interface FormRule {
+  id: string;
+  enabled: boolean;
+  when: RuleCondition;
+  then: RuleEffect[];
+}
+
+export interface FormRulesDocument {
+  version: 1;
+  rules: FormRule[];
+}
+
+/** A guest-count limit stored on the question, not as a show/hide rule. */
+export interface NumberLimit {
+  value: number;
+  messageHtml: string;
+  behavior: "warn" | "block";
+}
+
 /** Per-question overrides. Missing keys use catalog defaults. */
 export interface FieldSettings {
   shown?: boolean;
   required?: boolean;
+  min?: NumberLimit;
+  max?: NumberLimit;
 }
 
 export interface TripleseatConfig {
@@ -119,6 +184,9 @@ export interface LocationConfig {
 
   /** Per-question shown/required overrides. Missing keys use catalog defaults. */
   fieldSettings?: Partial<Record<FieldId, FieldSettings>>;
+
+  /** Versioned conditional rules. Empty means no logic. */
+  formRules?: FormRulesDocument;
 
   tripleseat: TripleseatConfig;
   referralSourceIds: Record<string, number>;

@@ -10,6 +10,7 @@ const ALLOWED_TAGS = new Set([
   "B",
   "EM",
   "I",
+  "A",
   "H1",
   "H2",
   "H3",
@@ -62,6 +63,34 @@ export function escapeHtml(text: string): string {
     .replace(/"/g, "&quot;");
 }
 
+/** Keep http(s), mailto, and same-site paths. Drop javascript: and other schemes. */
+export function safeHref(href: string | null | undefined): string | null {
+  if (!href) return null;
+  const trimmed = href.trim();
+  if (!trimmed) return null;
+  if (trimmed.startsWith("/") && !trimmed.startsWith("//") && !trimmed.startsWith("/\\")) {
+    return trimmed;
+  }
+  try {
+    const url = new URL(trimmed);
+    if (url.protocol === "http:" || url.protocol === "https:" || url.protocol === "mailto:") {
+      return trimmed;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+export function normalizeLinkUrl(raw: string): string | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  if (/^(https?:|mailto:)/i.test(trimmed) || trimmed.startsWith("/")) {
+    return safeHref(trimmed);
+  }
+  return safeHref(`https://${trimmed}`);
+}
+
 export function looksLikeHtml(value: string): boolean {
   // Contenteditable often emits entities with no tags (`hello&nbsp;`). Treat
   // those as HTML so toDisplayHtml does not escape `&` a second time.
@@ -105,6 +134,26 @@ function scrub(root: Element) {
       while (el.firstChild) p.appendChild(el.firstChild);
       el.replaceWith(p);
       scrub(p);
+      continue;
+    }
+
+    if (tag === "A") {
+      const href = safeHref(el.getAttribute("href"));
+      const parent = el.parentNode;
+      if (!href || !parent) {
+        if (parent) {
+          while (el.firstChild) parent.insertBefore(el.firstChild, el);
+        }
+        el.remove();
+        continue;
+      }
+      for (const attr of Array.from(el.attributes)) {
+        el.removeAttribute(attr.name);
+      }
+      el.setAttribute("href", href);
+      el.setAttribute("target", "_blank");
+      el.setAttribute("rel", "noopener noreferrer");
+      scrub(el);
       continue;
     }
 

@@ -1,5 +1,7 @@
+import { useMemo } from "react";
 import { REFERRAL_SOURCES } from "../../types";
 import { useLocationConfig } from "../../context/LocationContext";
+import { evaluateRules, isFieldHidden } from "../../form/conditions";
 import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
 import { isFieldRequired, isStepValid } from "../../form/fieldCatalog";
 import RequiredMark from "../../form/RequiredMark";
@@ -19,6 +21,13 @@ export default function OtherVenuesReferralStep({
   subtitle = copy.subtitle,
 }: StepProps) {
   const location = useLocationConfig();
+  const evaluation = useMemo(
+    () => evaluateRules(location.formRules, data),
+    [location.formRules, data],
+  );
+  const showOtherVenues = !isFieldHidden(evaluation, "consideringOtherVenues");
+  const showVenueDetails = !isFieldHidden(evaluation, "otherVenuesDetails");
+  const showReferral = !isFieldHidden(evaluation, "referralSource");
   const detailsRequired = isFieldRequired(location, "otherVenuesDetails");
 
   return (
@@ -32,6 +41,7 @@ export default function OtherVenuesReferralStep({
       nextDisabled={!isStepValid("other_venues_referral", data, location)}
     >
       <div className="space-y-8">
+        {showOtherVenues && (
         <div>
           <p className="efb-label">
             Considering any other venues?
@@ -53,7 +63,7 @@ export default function OtherVenuesReferralStep({
               No
             </button>
           </div>
-          {data.consideringOtherVenues && (
+          {data.consideringOtherVenues && showVenueDetails && (
             <>
               <label htmlFor="other-venues-details" className="efb-label mt-3">
                 Which venues are you considering?
@@ -70,7 +80,9 @@ export default function OtherVenuesReferralStep({
             </>
           )}
         </div>
+        )}
 
+        {showReferral && (
         <div>
           <p className="efb-label">
             How did you hear about us?
@@ -102,6 +114,7 @@ export default function OtherVenuesReferralStep({
             />
           )}
         </div>
+        )}
       </div>
     </FormStep>
   );

@@ -1,4 +1,6 @@
+import { useMemo } from "react";
 import { useLocationConfig } from "../../context/LocationContext";
+import { evaluateRules, isFieldHidden } from "../../form/conditions";
 import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
 import { isFieldRequired, isStepValid } from "../../form/fieldCatalog";
 import RequiredMark from "../../form/RequiredMark";
@@ -18,6 +20,12 @@ export default function ContactStep({
   subtitle = copy.subtitle,
 }: StepProps) {
   const location = useLocationConfig();
+  const evaluation = useMemo(
+    () => evaluateRules(location.formRules, data),
+    [location.formRules, data],
+  );
+  const show = (field: Parameters<typeof isFieldHidden>[1]) =>
+    !isFieldHidden(evaluation, field);
 
   return (
     <FormStep
@@ -30,7 +38,9 @@ export default function ContactStep({
       nextDisabled={!isStepValid("contact", data, location)}
     >
       <div className="space-y-4">
+        {(show("firstName") || show("lastName")) && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {show("firstName") && (
           <div>
             <label htmlFor="first-name" className="efb-label">
               First Name
@@ -45,6 +55,8 @@ export default function ContactStep({
               placeholder="First name"
             />
           </div>
+          )}
+          {show("lastName") && (
           <div>
             <label htmlFor="last-name" className="efb-label">
               Last Name
@@ -59,9 +71,13 @@ export default function ContactStep({
               placeholder="Last name"
             />
           </div>
+          )}
         </div>
+        )}
 
+        {(show("email") || show("phone")) && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {show("email") && (
           <div>
             <label htmlFor="email" className="efb-label">
               Email
@@ -76,6 +92,8 @@ export default function ContactStep({
               placeholder="you@email.com"
             />
           </div>
+          )}
+          {show("phone") && (
           <div>
             <label htmlFor="phone" className="efb-label">
               Phone
@@ -90,8 +108,11 @@ export default function ContactStep({
               placeholder="(555) 123-4567"
             />
           </div>
+          )}
         </div>
+        )}
 
+        {show("company") && (
         <div>
           <label htmlFor="company" className="efb-label">
             Company
@@ -106,7 +127,9 @@ export default function ContactStep({
             placeholder="Company name"
           />
         </div>
+        )}
 
+        {show("preferredSiteVisitDates") && (
         <div>
           <label htmlFor="site-visit" className="efb-label">
             Preferred Site Visit Dates
@@ -121,7 +144,9 @@ export default function ContactStep({
             placeholder="e.g. June 5–10, any weekday afternoon"
           />
         </div>
+        )}
 
+        {show("additionalNotes") && (
         <div>
           <label htmlFor="notes" className="efb-label">
             Additional Notes
@@ -136,6 +161,7 @@ export default function ContactStep({
             placeholder="Anything else we should know?"
           />
         </div>
+        )}
 
         <label className="flex cursor-pointer items-center gap-3">
           <input

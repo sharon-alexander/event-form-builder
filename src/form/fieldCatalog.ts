@@ -3,8 +3,15 @@ import type {
   FieldId,
   FieldSettings,
   LocationConfig,
+  NumberLimit,
+  RuleFieldRef,
   StepId,
 } from "../locations/types";
+import {
+  evaluateRules,
+  fieldIsBlocked,
+  isOptionHidden,
+} from "./conditions";
 
 export type { FieldId };
 
@@ -93,13 +100,63 @@ export function fieldsForStep(stepId: StepId): CatalogField[] {
   return FIELD_CATALOG.filter((field) => field.stepId === stepId);
 }
 
+function parseNumberLimit(value: unknown): NumberLimit | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const rec = value as Record<string, unknown>;
+  const n = typeof rec.value === "number" ? rec.value : Number(rec.value);
+  if (!Number.isFinite(n) || n <= 0) return undefined;
+  if (rec.behavior !== "warn" && rec.behavior !== "block") return undefined;
+  return {
+    value: Math.floor(n),
+    messageHtml: typeof rec.messageHtml === "string" ? rec.messageHtml : "",
+    behavior: rec.behavior,
+  };
+}
+
 function parseFieldSettingValue(value: unknown): FieldSettings | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const rec = value as Record<string, unknown>;
   const settings: FieldSettings = {};
   if (typeof rec.shown === "boolean") settings.shown = rec.shown;
   if (typeof rec.required === "boolean") settings.required = rec.required;
+  const min = parseNumberLimit(rec.min);
+  const max = parseNumberLimit(rec.max);
+  if (min) settings.min = min;
+  if (max) settings.max = max;
   return Object.keys(settings).length > 0 ? settings : null;
+}
+
+export interface GuestCountFeedback {
+  id: string;
+  html: string;
+  severity: "warn" | "block";
+}
+
+/** Min/max messages for the headcount question. An empty count matches neither. */
+export function guestCountFeedback(
+  settings: FieldSettings | undefined,
+  guestCount: number | null,
+): { messages: GuestCountFeedback[]; blocked: boolean } {
+  if (guestCount == null || guestCount <= 0) return { messages: [], blocked: false };
+  const messages: GuestCountFeedback[] = [];
+  let blocked = false;
+  if (settings?.min && guestCount < settings.min.value) {
+    messages.push({
+      id: "guest-count-min",
+      html: settings.min.messageHtml,
+      severity: settings.min.behavior,
+    });
+    if (settings.min.behavior === "block") blocked = true;
+  }
+  if (settings?.max && guestCount > settings.max.value) {
+    messages.push({
+      id: "guest-count-max",
+      html: settings.max.messageHtml,
+      severity: settings.max.behavior,
+    });
+    if (settings.max.behavior === "block") blocked = true;
+  }
+  return { messages, blocked };
 }
 
 export function parseFieldSettings(
@@ -134,10 +191,16 @@ export function isFieldRequired(
   return location?.fieldSettings?.[fieldId]?.required ?? field.defaultRequired;
 }
 
+type StepCheckLocation = Pick<
+  LocationConfig,
+  "fieldSettings" | "timingStyle" | "budgetOptions" | "venueSpaces" | "formRules"
+>;
+
 function isFilled(
   fieldId: FieldId,
   data: FormData,
-  location: Pick<LocationConfig, "timingStyle">,
+  location: StepCheckLocation,
+  evaluation = evaluateRules(location.formRules, data),
 ): boolean {
   switch (fieldId) {
     case "bookingType":
@@ -159,13 +222,21 @@ function isFilled(
       return data.datesFlexible || data.backupDate !== "";
     case "preferredDays":
       return !data.datesFlexible || data.flexibleDatePreferences.preferredDays.length > 0;
-    case "budget":
-      return data.budget !== null;
-    case "venueSpace":
-      return data.venueSpace.length > 0;
+    case "budget": {
+      if (data.budget == null) return false;
+      const selected = location.budgetOptions.find((option) => option.value === data.budget);
+      return !!selected && !isOptionHidden(evaluation, "budget", data.budget);
+    }
+    case "venueSpace": {
+      if (data.venueSpace.length === 0) return false;
+      return data.venueSpace.every(
+        (value) => !isOptionHidden(evaluation, "venueSpace", value),
+      );
+    }
     case "timing":
       if (location.timingStyle === "meal_service") {
-        return data.mealService !== null && data.startTime !== "";
+        if (data.mealService == null || data.startTime === "") return false;
+        return !isOptionHidden(evaluation, "mealService", data.mealService);
       }
       return (
         data.timingFlexible || (data.startTime !== "" && data.endTime !== "")
@@ -205,14 +276,38 @@ function isFilled(
   }
 }
 
+const STEP_BLOCK_FIELDS: Partial<Record<StepId, RuleFieldRef[]>> = {
+  headcount: ["guestCount"],
+  event_type: ["bookingType"],
+  event_date: ["eventDate"],
+  event_format: ["eventCategory", "eventFormat"],
+  budget: ["budget"],
+  venue_space: ["venueSpace"],
+  timing: ["mealService"],
+  services: ["services"],
+};
+
 export function isStepValid(
   stepId: StepId,
   data: FormData,
-  location: Pick<LocationConfig, "fieldSettings" | "timingStyle">,
+  location: StepCheckLocation,
 ): boolean {
+  const evaluation = evaluateRules(location.formRules, data);
+  if (evaluation.hiddenSteps.has(stepId)) return true;
+  if (
+    stepId === "headcount" &&
+    guestCountFeedback(location.fieldSettings?.guestCount, data.guestCount).blocked
+  ) {
+    return false;
+  }
+  const blockFields = STEP_BLOCK_FIELDS[stepId] ?? [];
+  if (blockFields.some((field) => fieldIsBlocked(evaluation, field))) {
+    return false;
+  }
   return fieldsForStep(stepId).every((field) => {
+    if (evaluation.hiddenFields.has(field.id)) return true;
     if (!isFieldShown(location, field.id)) return true;
     if (!isFieldRequired(location, field.id)) return true;
-    return isFilled(field.id, data, location);
+    return isFilled(field.id, data, location, evaluation);
   });
 }

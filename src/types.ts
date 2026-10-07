@@ -218,8 +218,8 @@ export const DAYS_OF_WEEK = [
   "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday",
 ];
 
-export const MEAL_SERVICE_OPTIONS: { value: MealService; label: string; note?: string }[] = [
-  { value: "lunch", label: "Lunch", note: "Friday – Sunday only" },
+export const MEAL_SERVICE_OPTIONS: { value: MealService; label: string }[] = [
+  { value: "lunch", label: "Lunch" },
   { value: "dinner", label: "Dinner" },
 ];
 

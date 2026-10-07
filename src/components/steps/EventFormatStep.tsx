@@ -1,5 +1,7 @@
 import { DEFAULT_EVENT_CATEGORIES, EVENT_FORMATS } from "../../types";
+import { useMemo } from "react";
 import { useLocationConfig } from "../../context/LocationContext";
+import { evaluateRules, isFieldHidden } from "../../form/conditions";
 import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
 import { isFieldRequired, isFieldShown, isStepValid } from "../../form/fieldCatalog";
 import RequiredMark from "../../form/RequiredMark";
@@ -20,6 +22,10 @@ export default function EventFormatStep({
   subtitle,
 }: StepProps) {
   const location = useLocationConfig();
+  const evaluation = useMemo(
+    () => evaluateRules(location.formRules, data),
+    [location.formRules, data],
+  );
   const categories = location.eventCategories ?? DEFAULT_EVENT_CATEGORIES;
   const formats = location.eventFormats ?? EVENT_FORMATS;
   const showFormats = isFieldShown(location, "eventFormat");
@@ -41,6 +47,7 @@ export default function EventFormatStep({
       nextDisabled={!isStepValid("event_format", data, location)}
     >
       <div className="space-y-6">
+        {!isFieldHidden(evaluation, "eventCategory") && (
         <div>
           <label htmlFor="event-category" className="efb-label">
             Event Type
@@ -67,7 +74,8 @@ export default function EventFormatStep({
             />
           )}
         </div>
-        {showFormats && (
+        )}
+        {showFormats && !isFieldHidden(evaluation, "eventFormat") && (
           <div>
             <p className="efb-label">
               Format
