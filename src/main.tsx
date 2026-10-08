@@ -103,6 +103,9 @@ async function mount() {
     style.textContent = widgetCss;
     const appRoot = document.createElement("div");
     appRoot.style.height = "100%";
+    appRoot.style.display = "flex";
+    appRoot.style.flexDirection = "column";
+    appRoot.style.minHeight = "0";
     shadow.replaceChildren(style, appRoot);
     mountPoint = appRoot;
   }
@@ -186,12 +189,14 @@ async function mount() {
 
     root.render(
       <React.StrictMode>
-        <>
+        <div className="flex h-full min-h-0 flex-1 flex-col">
           {showPreviewBanner && <PreviewBanner />}
-          <LocationProvider config={config}>
-            <App />
-          </LocationProvider>
-        </>
+          <div className="min-h-0 flex-1 overflow-auto">
+            <LocationProvider config={config}>
+              <App />
+            </LocationProvider>
+          </div>
+        </div>
       </React.StrictMode>,
     );
   } catch {

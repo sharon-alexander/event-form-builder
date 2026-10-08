@@ -53,7 +53,7 @@ export default function ServicesStep({
             >
               <span
                 className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border ${
-                  selected ? "border-brand-500 bg-brand-500 text-white" : "border-gray-300"
+                  selected ? "border-brand-500 bg-brand-500 efb-on-brand" : "border-gray-300"
                 }`}
               >
                 {selected && (

@@ -45,6 +45,8 @@ export default function ThemeTab({ draft, update, orgId, onError }: Props) {
     if (!el) return;
     // Clear previous overrides first so a reset falls back to the defaults.
     BRAND_STOPS.forEach((stop) => el.style.removeProperty(`--brand-${stop}`));
+    el.style.removeProperty("--brand-on");
+    el.style.removeProperty("--brand-btn-hover");
     el.style.removeProperty("--font-sans");
     el.style.removeProperty("--font-display");
     applyTheme(el, {

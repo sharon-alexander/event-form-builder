@@ -60,6 +60,10 @@ export function applyTheme(root: HTMLElement, theme: ThemeTokens | null | undefi
     for (const stop of BRAND_STOPS) {
       root.style.setProperty(`--brand-${stop}`, palette[stop]);
     }
+    const exact = hexToRgb(theme.brandColor);
+    const on = pickOnColor(exact);
+    root.style.setProperty("--brand-on", channels(on));
+    root.style.setProperty("--brand-btn-hover", channels(buttonHover(exact, on)));
   }
   if (theme.fontSans) {
     root.style.setProperty("--font-sans", theme.fontSans);
@@ -124,6 +128,44 @@ function hexToRgb(hex: string): Rgb {
 function rgbToHex({ r, g, b }: Rgb): string {
   const to2 = (n: number) => clamp(Math.round(n), 0, 255).toString(16).padStart(2, "0");
   return `#${to2(r)}${to2(g)}${to2(b)}`;
+}
+
+const WHITE: Rgb = { r: 255, g: 255, b: 255 };
+const INK: Rgb = { r: 17, g: 24, b: 39 };
+
+function channels({ r, g, b }: Rgb): string {
+  return `${r} ${g} ${b}`;
+}
+
+/** Foreground that reads on the exact brand fill (white or near-black). */
+function pickOnColor(bg: Rgb): Rgb {
+  return contrast(bg, WHITE) >= contrast(bg, INK) ? WHITE : INK;
+}
+
+/** Darker than the button fill, stopped before `--brand-on` drops below 4.5:1.
+ *  Mid colors that already miss 4.5 keep a small press state above 3.5:1. */
+function buttonHover(exact: Rgb, on: Rgb): Rgb {
+  const base = contrast(exact, on);
+  const limit = base >= 4.5 ? 4.5 : Math.max(3.5, base - 0.4);
+  for (let step = 22; step >= 4; step -= 2) {
+    const mixed = mixRgb(exact, { r: 0, g: 0, b: 0 }, step / 100);
+    if (contrast(mixed, on) >= limit) return mixed;
+  }
+  return exact;
+}
+
+function contrast(a: Rgb, b: Rgb): number {
+  const hi = Math.max(luminance(a), luminance(b));
+  const lo = Math.min(luminance(a), luminance(b));
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+function luminance({ r, g, b }: Rgb): number {
+  const lin = (c: number) => {
+    const s = c / 255;
+    return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
 }
 
 function clamp(n: number, min: number, max: number): number {

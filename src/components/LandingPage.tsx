@@ -34,17 +34,11 @@ function Gallery({
     if (!strip || !thumb) return;
     const stripRect = strip.getBoundingClientRect();
     const thumbRect = thumb.getBoundingClientRect();
-    const pad = 4;
+    const pad = 8;
     if (thumbRect.left < stripRect.left + pad) {
-      strip.scrollBy({
-        left: thumbRect.left - stripRect.left - pad,
-        behavior: "smooth",
-      });
+      strip.scrollLeft += thumbRect.left - stripRect.left - pad;
     } else if (thumbRect.right > stripRect.right - pad) {
-      strip.scrollBy({
-        left: thumbRect.right - stripRect.right + pad,
-        behavior: "smooth",
-      });
+      strip.scrollLeft += thumbRect.right - stripRect.right + pad;
     }
   }, [activeIndex, multiple]);
 
@@ -79,12 +73,14 @@ function Gallery({
       onKeyDown={onKeyDown}
       className="flex h-full min-h-0 flex-col rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2"
     >
-      <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl bg-brand-100 shadow-sm">
-        <MediaStage
-          key={active.src}
-          item={active}
-          className="h-full w-full object-cover"
-        />
+      <div className="relative min-h-40 flex-1 overflow-hidden rounded-2xl bg-brand-100 shadow-sm">
+        <div className="absolute inset-0">
+          <MediaStage
+            key={active.src}
+            item={active}
+            className="h-full w-full object-cover"
+          />
+        </div>
         {multiple && (
           <>
             <button
@@ -105,7 +101,7 @@ function Gallery({
             </button>
             <span
               aria-hidden="true"
-              className="pointer-events-none absolute right-3 top-3 rounded-full bg-black/55 px-2.5 py-1 text-xs font-medium tabular-nums text-white"
+              className="pointer-events-none absolute left-1/2 top-3 -translate-x-1/2 rounded-full bg-black/55 px-2.5 py-1 text-xs font-medium tabular-nums text-white"
             >
               {activeIndex + 1} / {items.length}
             </span>
@@ -122,7 +118,7 @@ function Gallery({
       {multiple && (
         <div
           ref={stripRef}
-          className="mt-3 flex shrink-0 gap-2 overflow-x-auto p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="mt-3 flex shrink-0 gap-2 overflow-x-auto p-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {items.map((item, i) => {
             const kind = mediaKindLabel(item);
@@ -228,9 +224,9 @@ export default function LandingPage({ onStart }: LandingPageProps) {
       </div>
 
       {/* Outside text-center so inline text-align from the editor wins. */}
-      <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
         {splitLayout && active ? (
-          <div className="grid h-full min-h-0 grid-rows-2 gap-8 md:grid-cols-2 md:grid-rows-1 md:gap-10">
+          <div className="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-8 md:grid-cols-2 md:grid-rows-1 md:gap-10">
             <Gallery
               active={active}
               items={location.galleryMedia}
