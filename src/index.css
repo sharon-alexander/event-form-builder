@@ -18,8 +18,16 @@
   --brand-800: 103 58 38;
   --brand-900: 87 50 34;
   --brand-950: 49 24 16;
+  --brand-on: 255 255 255;
+  --brand-btn-hover: 103 58 38;
   --font-sans: "Inter", system-ui, sans-serif;
   --font-display: "Playfair Display", Georgia, serif;
+}
+
+/* Embed host fills the box the page gives it. */
+:host {
+  display: block;
+  height: 100%;
 }
 
 @layer base {
@@ -38,7 +46,14 @@
     @apply border-brand-500 bg-brand-50 shadow-md ring-1 ring-brand-500;
   }
   .efb-btn-primary {
-    @apply inline-flex items-center justify-center rounded-lg bg-brand-700 px-8 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center rounded-lg bg-brand-700 px-8 py-3 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+    color: rgb(var(--brand-on));
+  }
+  .efb-btn-primary:hover:not(:disabled) {
+    background-color: rgb(var(--brand-btn-hover));
+  }
+  .efb-on-brand {
+    color: rgb(var(--brand-on));
   }
   .efb-btn-secondary {
     @apply inline-flex items-center justify-center rounded-lg border border-brand-200 bg-white px-8 py-3 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-50;
@@ -130,4 +145,29 @@
   font-weight: 600;
   text-decoration: underline;
   text-underline-offset: 2px;
+}
+
+/* Landing about copy: smaller type, scroll inside the gallery-height pane. */
+.efb-landing-copy {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(176 112 56 / 0.55) transparent;
+}
+.efb-landing-copy::-webkit-scrollbar {
+  width: 8px;
+}
+.efb-landing-copy::-webkit-scrollbar-thumb {
+  background-color: rgb(176 112 56 / 0.5);
+  border-radius: 999px;
+}
+.efb-landing-copy h1 {
+  font-size: 1.125rem;
+}
+.efb-landing-copy h2 {
+  font-size: 1rem;
+}
+.efb-landing-copy h3 {
+  font-size: 0.875rem;
+}
+.efb-landing-copy p + p {
+  margin-top: 0.375rem;
 }

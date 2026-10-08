@@ -97,7 +97,7 @@ export default function VenueSpaceStep({
                       <span
                         className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border ${
                           isSelected
-                            ? "border-brand-500 bg-brand-500 text-white"
+                            ? "border-brand-500 bg-brand-500 efb-on-brand"
                             : "border-gray-300"
                         }`}
                       >
