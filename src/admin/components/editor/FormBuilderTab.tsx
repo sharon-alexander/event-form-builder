@@ -138,6 +138,12 @@ export default function FormBuilderTab({ draft, update, orgId, onError }: Props)
   const [selectedId, setSelectedId] = useState<Selection>("landing");
   const [showConfig, setShowConfig] = useState(false);
   const [showPreview, setShowPreview] = useState(true);
+  const [editorCollapsed, setEditorCollapsed] = useState(false);
+
+  const selectedLabel =
+    selectedId === "landing"
+      ? "Landing Page"
+      : (STEP_LABELS[selectedId] ?? selectedId);
 
   useEffect(() => {
     if (selectedId === "landing") return;
@@ -210,20 +216,51 @@ export default function FormBuilderTab({ draft, update, orgId, onError }: Props)
   }
 
   return (
-    <div className="space-y-4 lg:flex lg:items-stretch lg:gap-6 lg:space-y-0">
+    <div className="space-y-4 lg:flex lg:items-stretch lg:gap-4 lg:space-y-0">
       {/* Left: Preview (desktop) */}
       <div
-        className={`hidden w-[55%] shrink-0 lg:flex lg:flex-col ${
-          showConfig
+        className={`hidden min-w-0 lg:flex lg:flex-col ${
+          editorCollapsed ? "lg:flex-1" : "w-[55%] shrink-0"
+        } ${
+          showConfig && !editorCollapsed
             ? "lg:sticky lg:top-6 lg:max-h-[calc(100dvh-5rem)] lg:self-start"
             : ""
         }`}
       >
-        <IframePreview draft={draft} selectedId={selectedId} />
+        {editorCollapsed && (
+          <p className="mb-3 text-center text-sm font-medium text-zinc-700">
+            {selectedLabel}
+          </p>
+        )}
+        <IframePreview
+          draft={draft}
+          selectedId={selectedId}
+          wide={editorCollapsed}
+        />
       </div>
 
       {/* Right: Navigation OR Config */}
-      <div className="min-w-0 flex-1 space-y-5">
+      <div
+        className={`min-w-0 ${
+          editorCollapsed
+            ? "lg:shrink-0"
+            : "flex-1 lg:border-l lg:border-zinc-200 lg:pl-5"
+        }`}
+      >
+        <button
+          type="button"
+          onClick={() => setEditorCollapsed((v) => !v)}
+          aria-label={editorCollapsed ? "Show editor" : "Hide editor"}
+          title={editorCollapsed ? "Show editor" : "Hide editor"}
+          className={`mb-3 hidden items-center justify-center transition-colors lg:flex ${
+            editorCollapsed
+              ? "rounded-md border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
+              : "h-7 w-7 rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900"
+          }`}
+        >
+          {editorCollapsed ? "Show editor" : <CloseIcon />}
+        </button>
+        <div className={`space-y-5 ${editorCollapsed ? "lg:hidden" : ""}`}>
         {/* Mobile preview toggle */}
         <div className="lg:hidden">
           <button
@@ -330,6 +367,7 @@ export default function FormBuilderTab({ draft, update, orgId, onError }: Props)
             )}
           </div>
         )}
+        </div>
       </div>
     </div>
   );
@@ -741,10 +779,29 @@ function LandingIcon() {
   );
 }
 
-function ChevronRightIcon() {
+function CloseIcon() {
   return (
     <svg
-      className="h-3.5 w-3.5"
+      className="h-4 w-4"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2}
+      aria-hidden
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M6 18L18 6M6 6l12 12"
+      />
+    </svg>
+  );
+}
+
+function ChevronRightIcon({ className = "h-3.5 w-3.5" }: { className?: string }) {
+  return (
+    <svg
+      className={className}
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
