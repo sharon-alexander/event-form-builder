@@ -4,12 +4,18 @@
 -- slugs; it only reads the rules written here.
 --
 -- Tokyo Record Bar: headcount min/max live on field_settings (warn under 7, block
--- over 40). The $1,500–$2,500 budget cap is hidden above 15 guests, and each
--- space has a guest range. Large-table options use the smaller
--- caps already published on the form (Cocktail Bar large table 7–15, Vinyl
--- Jukebox large table 7–10). Buyouts use Cocktail Bar 7–40 and Vinyl Jukebox 7–20.
+-- over 40). The $1,500–$2,500 budget cap is hidden above 15 guests. Space
+-- names are rewritten to the Tripleseat room names, and guest caps stay on
+-- the existing option keys: Cocktail Bar Banquette 7–15, Cocktail Bar 7–40,
+-- Vinyl Jukebox Large Party Table 7–10, Vinyl Jukebox Buyout 7–20.
+-- Pearl Box and Roscioli space names that correspond to a Tripleseat room
+-- are rewritten the same way. Options with no Tripleseat room are left as-is.
 -- Pearl Box: budget ranges by party size (and day, for the midweek <$6,000
 -- option), plus the multi-day and load-in questions and the services step.
+-- Private events of 14 or fewer use the same labels as the 15–35 band.
+-- Those are a second set of options so each rule stays a single show-when
+-- the editor can round-trip. Large-party events of 14 or fewer keep the
+-- lower ranges only.
 -- Roscioli: lunch is Friday–Sunday. Budget ranges below $4,500 are removed.
 -- An open-ended "less than" range at or above $4,500 is rewritten to start at $4,500
 -- (for example, "Less than $5,000" becomes "$4,500 – $5,000").
@@ -95,9 +101,34 @@ $$;
 
 revoke all on function public._efb_guest_range_when(int, int) from public, anon, authenticated;
 
+-- Rename a space label when its stored key is in the map. Other fields stay put.
+create or replace function public._efb_rename_spaces(spaces jsonb, names jsonb)
+returns jsonb
+language sql
+immutable
+as $$
+  select coalesce(jsonb_agg(
+    case
+      when names ? (elem->>'value')
+      then jsonb_set(elem, '{label}', names -> (elem->>'value'))
+      else elem
+    end
+    order by ord
+  ), '[]'::jsonb)
+  from jsonb_array_elements(coalesce(spaces, '[]'::jsonb)) with ordinality as t(elem, ord);
+$$;
+
+revoke all on function public._efb_rename_spaces(jsonb, jsonb) from public, anon, authenticated;
+
 -- Tokyo Record Bar -----------------------------------------------------------
 update public.locations
 set
+  venue_spaces = public._efb_rename_spaces(venue_spaces, '{
+    "listening_room": "Cocktail Bar Banquette",
+    "bar_lounge": "Cocktail Bar",
+    "full_buyout": "Vinyl Jukebox Large Party Table",
+    "not_sure": "Vinyl Jukebox Buyout"
+  }'::jsonb),
   field_settings = jsonb_set(
     coalesce(field_settings, '{}'::jsonb),
     '{guestCount}',
@@ -105,7 +136,7 @@ set
       'min', jsonb_build_object(
         'value', 7,
         'behavior', 'warn',
-        'messageHtml', '<p>For groups smaller than 7, please <a href="https://www.sevenrooms.com">book on 7Rooms</a>.</p>'
+        'messageHtml', '<p>For groups smaller than 7, please <a href="https://www.sevenrooms.com/explore/tokyorecordbar/reservations/create/search">book on 7Rooms</a>.</p>'
       ),
       'max', jsonb_build_object(
         'value', 40,
@@ -137,23 +168,22 @@ set
         elem->>'value',
         public._efb_guest_range_when(
           7,
-          case
-            when coalesce(elem->>'label', '') ~* 'cocktail'
-             and coalesce(elem->>'label', '') ~* 'large[[:space:]]*table' then 15
-            when coalesce(elem->>'label', '') ~* 'cocktail' then 40
-            when coalesce(elem->>'label', '') ~* 'vinyl|jukebox'
-             and coalesce(elem->>'label', '') ~* 'large[[:space:]]*table' then 10
-            when coalesce(elem->>'label', '') ~* 'vinyl|jukebox' then 20
+          case elem->>'value'
+            when 'listening_room' then 15
+            when 'bar_lounge' then 40
+            when 'full_buyout' then 10
+            when 'not_sure' then 20
             else null
           end
         )
       )
       from jsonb_array_elements(venue_spaces) as elem
-      where coalesce(elem->>'value', '') <> ''
-        and (
-          coalesce(elem->>'label', '') ~* 'cocktail'
-          or coalesce(elem->>'label', '') ~* 'vinyl|jukebox'
-        )
+      where elem->>'value' in (
+        'listening_room',
+        'bar_lounge',
+        'full_buyout',
+        'not_sure'
+      )
     ) rules
   )
 )
@@ -164,11 +194,21 @@ update public.locations
 set
   show_multi_day_rental = true,
   show_additional_load_in_out = true,
+  venue_spaces = public._efb_rename_spaces(venue_spaces, '{
+    "first_floor_salon": "Salon",
+    "second_floor_parlor": "Pearl Box Parlor",
+    "third_floor_attic": "Pearl Box Attic",
+    "full_buyout": "Pearl Box Townhouse"
+  }'::jsonb),
   budget_options = '[
     {"value":"lp_under_1000","label":"Less than $1,000"},
     {"value":"lp_1000_1300","label":"$1,000 – $1,300"},
     {"value":"lp_1300_1600","label":"$1,300 – $1,600"},
     {"value":"lp_1600_plus","label":"$1,600+"},
+    {"value":"p14_under_5000","label":"Less than $5,000"},
+    {"value":"p14_5000_7000","label":"$5,000 – $7,000"},
+    {"value":"p14_7000_9000","label":"$7,000 – $9,000"},
+    {"value":"p14_9000_plus","label":"$9,000+"},
     {"value":"g15_under_5000","label":"Less than $5,000"},
     {"value":"g15_5000_7000","label":"$5,000 – $7,000"},
     {"value":"g15_7000_9000","label":"$7,000 – $9,000"},
@@ -200,6 +240,22 @@ set
       public._efb_hide_rule('pb_lp_1600_plus', 'budget', 'lp_1600_plus', jsonb_build_object('all', jsonb_build_array(
         jsonb_build_object('field', 'guestCount', 'op', 'lte', 'value', 14, 'passIfEmpty', true),
         jsonb_build_object('field', 'bookingType', 'op', 'in', 'value', jsonb_build_array('large_party'), 'passIfEmpty', true)
+      ))),
+      public._efb_hide_rule('pb_p14_under_5000', 'budget', 'p14_under_5000', jsonb_build_object('all', jsonb_build_array(
+        jsonb_build_object('field', 'guestCount', 'op', 'lte', 'value', 14, 'passIfEmpty', true),
+        jsonb_build_object('field', 'bookingType', 'op', 'in', 'value', jsonb_build_array('private_event'), 'passIfEmpty', true)
+      ))),
+      public._efb_hide_rule('pb_p14_5000_7000', 'budget', 'p14_5000_7000', jsonb_build_object('all', jsonb_build_array(
+        jsonb_build_object('field', 'guestCount', 'op', 'lte', 'value', 14, 'passIfEmpty', true),
+        jsonb_build_object('field', 'bookingType', 'op', 'in', 'value', jsonb_build_array('private_event'), 'passIfEmpty', true)
+      ))),
+      public._efb_hide_rule('pb_p14_7000_9000', 'budget', 'p14_7000_9000', jsonb_build_object('all', jsonb_build_array(
+        jsonb_build_object('field', 'guestCount', 'op', 'lte', 'value', 14, 'passIfEmpty', true),
+        jsonb_build_object('field', 'bookingType', 'op', 'in', 'value', jsonb_build_array('private_event'), 'passIfEmpty', true)
+      ))),
+      public._efb_hide_rule('pb_p14_9000_plus', 'budget', 'p14_9000_plus', jsonb_build_object('all', jsonb_build_array(
+        jsonb_build_object('field', 'guestCount', 'op', 'lte', 'value', 14, 'passIfEmpty', true),
+        jsonb_build_object('field', 'bookingType', 'op', 'in', 'value', jsonb_build_array('private_event'), 'passIfEmpty', true)
       ))),
       public._efb_hide_rule('pb_g15_under_5000', 'budget', 'g15_under_5000', public._efb_guest_range_when(15, 35)),
       public._efb_hide_rule('pb_g15_5000_7000', 'budget', 'g15_5000_7000', public._efb_guest_range_when(15, 35)),
@@ -261,7 +317,12 @@ $$;
 
 -- Roscioli --------------------------------------------------------------------
 update public.locations
-set form_rules = jsonb_build_object(
+set
+  venue_spaces = public._efb_rename_spaces(venue_spaces, '{
+    "wine_room": "Wine Cellar - PDR",
+    "main_dining": "Dining Room"
+  }'::jsonb),
+  form_rules = jsonb_build_object(
   'version', 1,
   'rules', jsonb_build_array(
     public._efb_hide_rule(
@@ -305,3 +366,4 @@ where slug = 'roscioli';
 drop function public._efb_hide_rule(text, text, text, jsonb);
 drop function public._efb_guest_range_when(int, int);
 drop function public._efb_lowest_amount(text);
+drop function public._efb_rename_spaces(jsonb, jsonb);
