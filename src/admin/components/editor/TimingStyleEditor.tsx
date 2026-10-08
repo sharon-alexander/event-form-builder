@@ -1,8 +1,6 @@
 import type { TimingStyle } from "../../../locations/types";
 import type { EditableLocation } from "../../pages/FormEditorPage";
-import { DEFAULT_FORM_STEPS } from "../../constants/defaultFormSteps";
 import { fieldIsRequired, RequiredCheckbox, setFieldRequired } from "./RequiredCheckbox";
-import AvailabilityEditor from "./AvailabilityEditor";
 
 interface Props {
   draft: EditableLocation;
@@ -24,7 +22,6 @@ const OPTIONS: { value: TimingStyle; label: string; hint: string }[] = [
 
 export default function TimingStyleEditor({ draft, update }: Props) {
   const current = (draft.timing_style || "standard") as TimingStyle;
-  const steps = draft.form_steps.length > 0 ? draft.form_steps : DEFAULT_FORM_STEPS;
 
   return (
     <section className="space-y-2">
@@ -82,28 +79,9 @@ export default function TimingStyleEditor({ draft, update }: Props) {
       </div>
 
       {current === "meal_service" && (
-        <div className="space-y-2 pt-1">
-          <AvailabilityEditor
-            id="meal-lunch"
-            label="Lunch"
-            draft={draft}
-            update={update}
-            field="mealService"
-            optionValue="lunch"
-            steps={steps}
-            stepId="timing"
-          />
-          <AvailabilityEditor
-            id="meal-dinner"
-            label="Dinner"
-            draft={draft}
-            update={update}
-            field="mealService"
-            optionValue="dinner"
-            steps={steps}
-            stepId="timing"
-          />
-        </div>
+        <p className="text-[11px] leading-snug text-zinc-500">
+          Set when lunch and dinner are available with the eye icon on this step.
+        </p>
       )}
     </section>
   );

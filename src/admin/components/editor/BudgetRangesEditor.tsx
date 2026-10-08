@@ -17,11 +17,8 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { BudgetOption } from "../../../locations/types";
-import type { StepId } from "../../../locations/types";
 import type { EditableLocation } from "../../pages/FormEditorPage";
-import { DEFAULT_FORM_STEPS } from "../../constants/defaultFormSteps";
 import { fieldIsRequired, RequiredCheckbox, setFieldRequired } from "./RequiredCheckbox";
-import AvailabilityEditor from "./AvailabilityEditor";
 import { removeAvailabilityRules } from "../../../form/conditions";
 
 interface Props {
@@ -111,8 +108,6 @@ function newId(): string {
 
 export default function BudgetRangesEditor({ draft, update }: Props) {
   const budgets = draft.budget_options;
-  const steps: StepId[] =
-    draft.form_steps.length > 0 ? draft.form_steps : DEFAULT_FORM_STEPS;
 
   const [budgetIds, setBudgetIds] = useState(() => budgets.map(newId));
   const [focusId, setFocusId] = useState<string | null>(null);
@@ -213,15 +208,12 @@ export default function BudgetRangesEditor({ draft, update }: Props) {
                       id={id}
                       index={i}
                       budget={budget}
-                      draft={draft}
-                      update={update}
                       inputRef={focusId === id ? focusRef : undefined}
                       onChange={(label) =>
                         setBudgets(
                           budgets.map((row, idx) => (idx === i ? { ...row, label } : row)),
                         )
                       }
-                      steps={steps}
                       onRemove={() => {
                         const optionValue = budget.value || `budget_${i + 1}`;
                         const next = budgets.filter((_, idx) => idx !== i);
@@ -251,22 +243,16 @@ function SortableBudgetRow({
   id,
   index,
   budget,
-  draft,
-  update,
   inputRef,
   onChange,
   onRemove,
-  steps,
 }: {
   id: string;
   index: number;
   budget: BudgetOption;
-  draft: EditableLocation;
-  update: (patch: Partial<EditableLocation>) => void;
   inputRef?: Ref<HTMLInputElement>;
   onChange: (label: string) => void;
   onRemove: () => void;
-  steps: StepId[];
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id,
@@ -305,17 +291,6 @@ function SortableBudgetRow({
           onChange={(e) => onChange(e.target.value)}
           onBlur={(e) => onChange(formatBudgetLabel(e.target.value))}
         />
-        <div className="mt-2">
-          <AvailabilityEditor
-            id={`budget-${id}`}
-            draft={draft}
-            update={update}
-            field="budget"
-            optionValue={budget.value || `budget_${index + 1}`}
-            steps={steps}
-            stepId="budget"
-          />
-        </div>
       </div>
       <IconButton label="Remove" onClick={onRemove} destructive>
         <TrashIcon />
