@@ -686,7 +686,7 @@ export function pruneUnavailableSelections(
 
   if (
     data.mealService &&
-    isOptionHidden(evaluation, "mealService", data.mealService)
+    isMealServiceDisabled(evaluation, data.mealService)
   ) {
     next = { ...next, mealService: null, startTime: "" };
   }
@@ -712,13 +712,15 @@ export function visibleVenueSpaces(
   );
 }
 
-export function visibleMealServices(
-  options: { value: MealService; label: string }[],
+/** Meal choices stay on screen. Disable whenever a hide rule matches.
+ *  Weekday rules use passIfEmpty, so they stay enabled until an exact date is set.
+ *  Guest-count and booking-type rules still disable the choice without a date.
+ */
+export function isMealServiceDisabled(
   evaluation: RuleEvaluation,
-): { value: MealService; label: string }[] {
-  return options.filter(
-    (option) => !isOptionHidden(evaluation, "mealService", option.value),
-  );
+  meal: MealService,
+): boolean {
+  return isOptionHidden(evaluation, "mealService", meal);
 }
 
 /** Day chips shown under Lunch/Dinner when an owned availability rule lists them. */

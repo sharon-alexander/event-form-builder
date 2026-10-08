@@ -27,6 +27,8 @@ interface Props {
   steps: StepId[];
   stepId: StepId;
   label?: string;
+  /** Meal choices stay visible and are disabled outside these days. */
+  disableInsteadOfHide?: boolean;
 }
 
 export default function AvailabilityEditor({
@@ -38,6 +40,7 @@ export default function AvailabilityEditor({
   steps,
   stepId,
   label,
+  disableInsteadOfHide = false,
 }: Props) {
   const rules = draft.form_rules ?? EMPTY_FORM_RULES;
   const value = draftFromAvailabilityRules(rules, field, optionValue);
@@ -88,15 +91,22 @@ export default function AvailabilityEditor({
   return (
     <details className="rounded-lg border border-zinc-200 bg-zinc-50">
       <summary className="cursor-pointer list-none px-3 py-2 text-xs font-medium text-zinc-700">
-        <span>{label ? `${label} — show when` : "Show when"}</span>
+        <span>
+          {label
+            ? `${label} — ${disableInsteadOfHide ? "available when" : "show when"}`
+            : disableInsteadOfHide
+              ? "Available when"
+              : "Show when"}
+        </span>
         <span className="ml-2 font-normal text-zinc-500">
-          {summary || "Always shown"}
+          {summary || (disableInsteadOfHide ? "Always available" : "Always shown")}
         </span>
       </summary>
       <div className="space-y-3 border-t border-zinc-200 px-3 py-3">
         <p className="text-[11px] leading-snug text-zinc-500">
-          Leave blank to always show this option. Guests only see it when every
-          rule you set matches their answers.
+          {disableInsteadOfHide
+            ? "The choice stays on the form and is disabled when these rules do not match. Days apply only after an exact date."
+            : "Leave blank to always show this option. Guests only see it when every rule you set matches their answers."}
         </p>
         <div className="grid grid-cols-2 gap-2">
           <label className="block">

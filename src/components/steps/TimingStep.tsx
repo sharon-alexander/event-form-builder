@@ -6,8 +6,8 @@ import {
 import { useLocationConfig } from "../../context/LocationContext";
 import {
   evaluateRules,
+  isMealServiceDisabled,
   mealServiceDayNote,
-  visibleMealServices,
 } from "../../form/conditions";
 import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
 import { isFieldRequired, isStepValid } from "../../form/fieldCatalog";
@@ -82,11 +82,17 @@ function MealServiceTiming({
 }: Pick<StepProps, "data" | "onChange"> & { required: boolean }) {
   const location = useLocationConfig();
   const evaluation = evaluateRules(location.formRules, data);
-  const options = visibleMealServices(MEAL_SERVICE_OPTIONS, evaluation);
+  const options = MEAL_SERVICE_OPTIONS.map((option) => ({
+    ...option,
+    note: mealServiceDayNote(location.formRules, option.value),
+    disabled: isMealServiceDisabled(evaluation, option.value),
+  }));
+  const allDisabled = options.every((option) => option.disabled);
+  const selected = options.find((option) => option.value === data.mealService);
   const timeOptions =
-    data.mealService === "lunch"
+    selected?.value === "lunch"
       ? LUNCH_START_TIMES
-      : data.mealService === "dinner"
+      : selected?.value === "dinner"
         ? DINNER_START_TIMES
         : [];
 
@@ -97,39 +103,42 @@ function MealServiceTiming({
           Meal Service
           <RequiredMark required={required} />
         </p>
-        {options.length === 0 ? (
-          <p className="text-sm text-gray-500">
+        {allDisabled && (
+          <p className="mb-3 text-sm text-gray-500">
             No meal services match these event details. Go back and adjust your answers.
           </p>
-        ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {options.map((option) => {
-              const note = mealServiceDayNote(location.formRules, option.value);
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() =>
-                    onChange({
-                      mealService: option.value,
-                      startTime: "",
-                      endTime: "",
-                      timingFlexible: false,
-                    })
-                  }
-                  className={`efb-card ${data.mealService === option.value ? "efb-card-selected" : ""}`}
-                >
-                  <span className="block font-medium">{option.label}</span>
-                  {note && (
-                    <span className="mt-1 block text-xs text-gray-500">{note}</span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
         )}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {options.map((option) => {
+            const chosen = selected?.value === option.value && !option.disabled;
+            return (
+              <button
+                key={option.value}
+                type="button"
+                disabled={option.disabled}
+                aria-disabled={option.disabled}
+                onClick={() =>
+                  onChange({
+                    mealService: option.value,
+                    startTime: "",
+                    endTime: "",
+                    timingFlexible: false,
+                  })
+                }
+                className={`efb-card ${chosen ? "efb-card-selected" : ""} ${
+                  option.disabled ? "cursor-not-allowed opacity-50" : ""
+                }`}
+              >
+                <span className="block font-medium">{option.label}</span>
+                {option.note && (
+                  <span className="mt-1 block text-xs text-gray-500">{option.note}</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
-      {data.mealService && (
+      {selected && !selected.disabled && (
         <div>
           <label htmlFor="meal-start-time" className="efb-label">
             Start Time

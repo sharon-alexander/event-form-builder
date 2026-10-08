@@ -13,6 +13,7 @@ import { fieldsForStep } from "../../../form/fieldCatalog";
 import { EMPTY_FORM_RULES } from "../../../form/conditions";
 import { STEP_LABELS } from "../../constants/defaultFormSteps";
 import type { EditableLocation } from "../../pages/FormEditorPage";
+import AvailabilityEditor from "./AvailabilityEditor";
 
 const OPTION_STEP: Partial<Record<RuleFieldRef, StepId>> = {
   budget: "budget",
@@ -57,7 +58,7 @@ export function stepLogicCount(draft: EditableLocation, stepId: StepId): number 
   let count = rules.rules.filter(
     (rule) =>
       rule.enabled !== false &&
-      (ruleTargetsStep(rule, stepId, fieldIds) || choiceRuleForStep(rule, stepId)),
+      (ruleTargetsStep(rule, stepId, fieldIds) || choiceRuleForStep(rule, stepId, draft)),
   ).length;
   if (stepId === "headcount") {
     const limits = draft.field_settings.guestCount;
@@ -249,10 +250,8 @@ function QuestionDisplayPanel({
   const fieldIds = new Set(pageFields.map((field) => field.id));
   const sources = previousSources(steps, stepId);
   const displayRules = rules.rules.filter((rule) => ruleTargetsStep(rule, stepId, fieldIds));
-  const hasChoiceRules = rules.rules.some(
-    (rule) => rule.enabled !== false && choiceRuleForStep(rule, stepId),
-  );
   const limits = stepId === "headcount" ? draft.field_settings.guestCount : undefined;
+  const choiceEditors = choiceEditorsForStep(stepId, draft);
   const [pending, setPending] = useState<FormRule | null>(null);
   const visibleRules = pending ? [...displayRules, pending] : displayRules;
 
@@ -300,9 +299,6 @@ function QuestionDisplayPanel({
       <p className="text-xs text-zinc-500">
         All other cases: <span className="font-medium text-zinc-700">Show question</span>
       </p>
-      {displayRules.length === 0 && hasChoiceRules && (
-        <p className="text-xs text-zinc-500">Choice rules are edited on each choice.</p>
-      )}
       {displayRules.length === 0 && (limits?.min || limits?.max) && (
         <p className="text-xs text-zinc-500">Minimum and maximum are set on this question.</p>
       )}
@@ -331,8 +327,74 @@ function QuestionDisplayPanel({
           This page is first, so there is no earlier answer to hide it with.
         </p>
       )}
+      {choiceEditors.length > 0 && (
+        <div className="space-y-2 border-t border-zinc-200 pt-4">
+          <p className="text-sm font-medium text-zinc-900">Choices</p>
+          {choiceEditors.map((choice) => (
+            <AvailabilityEditor
+              key={choice.id}
+              id={choice.id}
+              label={choice.label}
+              draft={draft}
+              update={update}
+              field={choice.field}
+              optionValue={choice.optionValue}
+              steps={steps}
+              stepId={stepId}
+              disableInsteadOfHide={choice.disableInsteadOfHide}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
+}
+
+function choiceEditorsForStep(
+  stepId: StepId,
+  draft: EditableLocation,
+): {
+  id: string;
+  label: string;
+  field: RuleFieldRef;
+  optionValue: string;
+  disableInsteadOfHide?: boolean;
+}[] {
+  if (stepId === "timing" && (draft.timing_style || "standard") === "meal_service") {
+    return [
+      {
+        id: "meal-lunch",
+        label: "Lunch",
+        field: "mealService",
+        optionValue: "lunch",
+        disableInsteadOfHide: true,
+      },
+      {
+        id: "meal-dinner",
+        label: "Dinner",
+        field: "mealService",
+        optionValue: "dinner",
+        disableInsteadOfHide: true,
+      },
+    ];
+  }
+  if (stepId === "budget") {
+    return draft.budget_options.map((budget, index) => ({
+      id: `budget-logic-${budget.value || index}`,
+      label: budget.label || `Range ${index + 1}`,
+      field: "budget" as const,
+      optionValue: budget.value || `budget_${index + 1}`,
+    }));
+  }
+  if (stepId === "venue_space") {
+    return draft.venue_spaces.map((venue, index) => ({
+      id: `space-logic-${venue.value || index}`,
+      label: venue.label || `Space ${index + 1}`,
+      field: "venueSpace" as const,
+      optionValue: venue.value || `space_${index + 1}`,
+    }));
+  }
+  return [];
 }
 
 function EyeIcon() {
@@ -650,10 +712,14 @@ function ruleTargetsStep(rule: FormRule, stepId: StepId, fieldIds: Set<FieldId>)
   );
 }
 
-function choiceRuleForStep(rule: FormRule, stepId: StepId): boolean {
-  return rule.then.some(
-    (effect) => effect.kind === "hideOption" && OPTION_STEP[effect.field] === stepId,
-  );
+function choiceRuleForStep(rule: FormRule, stepId: StepId, draft: EditableLocation): boolean {
+  return rule.then.some((effect) => {
+    if (effect.kind !== "hideOption" || OPTION_STEP[effect.field] !== stepId) return false;
+    if (effect.field === "mealService" && (draft.timing_style || "standard") !== "meal_service") {
+      return false;
+    }
+    return true;
+  });
 }
 
 function isCompleteRule(rule: FormRule): boolean {

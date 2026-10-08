@@ -10,6 +10,7 @@ import type {
 import {
   evaluateRules,
   fieldIsBlocked,
+  isMealServiceDisabled,
   isOptionHidden,
 } from "./conditions";
 
@@ -236,7 +237,7 @@ function isFilled(
     case "timing":
       if (location.timingStyle === "meal_service") {
         if (data.mealService == null || data.startTime === "") return false;
-        return !isOptionHidden(evaluation, "mealService", data.mealService);
+        return !isMealServiceDisabled(evaluation, data.mealService);
       }
       return (
         data.timingFlexible || (data.startTime !== "" && data.endTime !== "")
