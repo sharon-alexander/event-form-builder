@@ -14,12 +14,13 @@ import { draftToLocationConfig } from "../../utils/draftToConfig";
 interface Props {
   draft: EditableLocation;
   selectedId: "landing" | StepId;
+  wide?: boolean;
 }
 
 const noop = () => {};
 const noopPatch = (_p: Partial<FormData>) => {};
 
-export default function IframePreview({ draft, selectedId }: Props) {
+export default function IframePreview({ draft, selectedId, wide = false }: Props) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [mountNode, setMountNode] = useState<HTMLElement | null>(null);
 
@@ -103,7 +104,11 @@ export default function IframePreview({ draft, selectedId }: Props) {
 
   return (
     <div className="flex h-full min-h-[600px] flex-1 justify-center">
-      <div className="relative h-full min-h-[600px] w-full max-w-xl overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-lg">
+      <div
+        className={`relative h-full min-h-[600px] w-full overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-lg ${
+          wide ? "max-w-4xl" : "max-w-xl"
+        }`}
+      >
         <iframe
           ref={iframeRef}
           title="Form preview"
