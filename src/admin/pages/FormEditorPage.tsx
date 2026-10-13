@@ -1,5 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Link,
+  useBeforeUnload,
+  useBlocker,
+  useParams,
+  type BlockerFunction,
+} from "react-router-dom";
 import type { ThemeTokens } from "../../theme/theme";
 import type {
   BudgetOption,
@@ -29,7 +35,9 @@ import ThemeTab from "../components/editor/ThemeTab";
 import AdvancedTab from "../components/editor/AdvancedTab";
 import EmbedTab from "../components/editor/EmbedTab";
 import PublishToggle from "../components/PublishToggle";
+import UnsavedChangesDialog from "../components/UnsavedChangesDialog";
 import { buildPreviewUrl } from "../embedCode";
+import { useRegisterLeaveGuard, type LeaveAction } from "../unsavedGuard";
 
 export interface EditableLocation {
   slug: string;
@@ -64,6 +72,15 @@ const TABS = [
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
+
+const AUTOSAVE_DELAY_MS = 800;
+
+function formatAutosaveTime(date: Date): string {
+  return date.toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
 
 function toEditable(row: LocationRow): EditableLocation {
   return {
@@ -105,13 +122,25 @@ export default function FormEditorPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [autosavedAt, setAutosavedAt] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [pendingLeave, setPendingLeave] = useState<LeaveAction | null>(null);
+  const dirtyRef = useRef(false);
+  const revisionRef = useRef(0);
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
+  const idRef = useRef(id);
+  idRef.current = id;
+  const saveQueueRef = useRef<Promise<unknown>>(Promise.resolve());
 
   useEffect(() => {
     if (!id) return;
     let active = true;
     setLoading(true);
+    dirtyRef.current = false;
+    revisionRef.current = 0;
+    setDirty(false);
+    setAutosavedAt(null);
     getLocationById(id)
       .then((row) => {
         if (!active) return;
@@ -130,65 +159,179 @@ export default function FormEditorPage() {
   }, [id]);
 
   const update = useCallback((patch: Partial<EditableLocation>) => {
+    revisionRef.current += 1;
     setDraft((prev) => (prev ? { ...prev, ...patch } : prev));
+    dirtyRef.current = true;
     setDirty(true);
-    setNotice(null);
   }, []);
 
-  async function handleSave() {
-    if (!id || !draft) return;
+  const performSave = useCallback(async (): Promise<boolean> => {
+    const locationId = idRef.current;
+    const current = draftRef.current;
+    if (!locationId || !current || !dirtyRef.current) return true;
+
+    const revision = revisionRef.current;
     setSaving(true);
     setError(null);
-    setNotice(null);
     try {
-      const venue_spaces = draft.venue_spaces.filter(hasOptionLabel);
-      const budget_options = draft.budget_options.filter(hasOptionLabel);
+      const venue_spaces = current.venue_spaces.filter(hasOptionLabel);
+      const budget_options = current.budget_options.filter(hasOptionLabel);
       const patch: LocationUpdate = {
-        slug: draft.slug,
-        name: draft.name,
-        form_title: draft.form_title,
-        about_blurb: draft.about_blurb,
-        gallery_media: draft.gallery_media,
+        slug: current.slug,
+        name: current.name,
+        form_title: current.form_title,
+        about_blurb: current.about_blurb,
+        gallery_media: current.gallery_media,
         venue_spaces,
-        allow_multiple_venue_spaces: draft.allow_multiple_venue_spaces,
-        show_multi_day_rental: draft.show_multi_day_rental,
-        show_additional_load_in_out: draft.show_additional_load_in_out,
-        show_full_day_rental: draft.show_full_day_rental,
+        allow_multiple_venue_spaces: current.allow_multiple_venue_spaces,
+        show_multi_day_rental: current.show_multi_day_rental,
+        show_additional_load_in_out: current.show_additional_load_in_out,
+        show_full_day_rental: current.show_full_day_rental,
         budget_options,
-        event_categories: draft.event_categories,
-        event_formats: draft.event_formats,
-        form_steps: draft.form_steps,
-        step_more_details: draft.step_more_details,
-        timing_style: draft.timing_style,
-        info_page: draft.info_page
-          ? { title: draft.info_page.title }
+        event_categories: current.event_categories,
+        event_formats: current.event_formats,
+        form_steps: current.form_steps,
+        step_more_details: current.step_more_details,
+        timing_style: current.timing_style,
+        info_page: current.info_page
+          ? { title: current.info_page.title }
           : null,
-        field_settings: draft.field_settings,
-        form_rules: draft.form_rules,
-        tripleseat: draft.tripleseat,
-        theme: draft.theme,
-        published: draft.published,
+        field_settings: current.field_settings,
+        form_rules: current.form_rules,
+        tripleseat: current.tripleseat,
+        theme: current.theme,
+        published: current.published,
       };
-      await updateLocation(id, patch);
-      setDraft((prev) => (prev ? { ...prev, venue_spaces, budget_options } : prev));
-      setDirty(false);
-      setNotice("Saved.");
+      await updateLocation(locationId, patch);
+      if (idRef.current !== locationId) return false;
+      if (revisionRef.current === revision) {
+        dirtyRef.current = false;
+        setDirty(false);
+      }
+      setAutosavedAt(new Date());
+      return true;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save.");
+      if (idRef.current === locationId) {
+        setError(err instanceof Error ? err.message : "Failed to save.");
+      }
+      return false;
     } finally {
-      setSaving(false);
+      if (idRef.current === locationId) setSaving(false);
     }
-  }
+  }, []);
+
+  const handleSave = useCallback((): Promise<boolean> => {
+    const run = saveQueueRef.current.then(() => performSave());
+    saveQueueRef.current = run.then(
+      () => undefined,
+      () => undefined,
+    );
+    return run;
+  }, [performSave]);
+
+  const registerLeaveGuard = useRegisterLeaveGuard();
+  const pendingLeaveRef = useRef(pendingLeave);
+  pendingLeaveRef.current = pendingLeave;
+
+  useEffect(() => {
+    registerLeaveGuard((action) => {
+      if (!dirtyRef.current) {
+        void action();
+        return;
+      }
+      setPendingLeave(() => action);
+    });
+    return () => registerLeaveGuard(null);
+  }, [registerLeaveGuard]);
+
+  const shouldBlock = useCallback<BlockerFunction>(
+    ({ currentLocation, nextLocation }) =>
+      dirtyRef.current && currentLocation.pathname !== nextLocation.pathname,
+    [],
+  );
+  const blocker = useBlocker(shouldBlock);
+  const blockerRef = useRef(blocker);
+  blockerRef.current = blocker;
+
+  useBeforeUnload(
+    useCallback(
+      (event) => {
+        if (!dirty) return;
+        event.preventDefault();
+        event.returnValue = "";
+      },
+      [dirty],
+    ),
+  );
+
+  const stay = useCallback(() => {
+    setPendingLeave(null);
+    if (blockerRef.current.state === "blocked") blockerRef.current.reset();
+  }, []);
+
+  const discard = useCallback(() => {
+    const action = pendingLeaveRef.current;
+    setPendingLeave(null);
+    dirtyRef.current = false;
+    setDirty(false);
+    if (blockerRef.current.state === "blocked") blockerRef.current.proceed();
+    if (action) void action();
+  }, []);
+
+  const saveAndLeave = useCallback(async () => {
+    const ok = await handleSave();
+    const action = pendingLeaveRef.current;
+    const current = blockerRef.current;
+    if (!ok) {
+      setPendingLeave(null);
+      if (current.state === "blocked") current.reset();
+      return;
+    }
+    dirtyRef.current = false;
+    setPendingLeave(null);
+    if (current.state === "blocked") current.proceed();
+    if (action) void action();
+  }, [handleSave]);
+
+  const promptOpen = blocker.state === "blocked" || pendingLeave !== null;
+
+  useEffect(() => {
+    if (!dirty || promptOpen) return;
+    const timer = window.setTimeout(() => {
+      void handleSave();
+    }, AUTOSAVE_DELAY_MS);
+    return () => window.clearTimeout(timer);
+  }, [dirty, draft, promptOpen, handleSave]);
 
   const previewUrl = useMemo(
     () => (draft ? buildPreviewUrl(draft.slug) : "/"),
     [draft],
   );
 
-  if (loading) return <p className="text-sm text-zinc-400">Loading…</p>;
+  const leaveDialog = (
+    <UnsavedChangesDialog
+      open={promptOpen}
+      saving={saving}
+      onStay={stay}
+      onDiscard={discard}
+      onSave={() => {
+        void saveAndLeave();
+      }}
+    />
+  );
+
+  if (loading) {
+    return (
+      <>
+        {leaveDialog}
+        <p className="text-sm text-zinc-400">Loading…</p>
+      </>
+    );
+  }
   if (!draft) {
     return (
       <div>
+        {leaveDialog}
         <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {error ?? "Form not found."}
         </p>
@@ -199,8 +342,15 @@ export default function FormEditorPage() {
     );
   }
 
+  const saveStatus = saving
+    ? "Saving…"
+    : autosavedAt
+      ? `Autosaved at ${formatAutosaveTime(autosavedAt)}`
+      : null;
+
   return (
     <div>
+      {leaveDialog}
       <div className="mb-6">
         <Link to="/" className="text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-900">
           ← All forms
@@ -209,38 +359,43 @@ export default function FormEditorPage() {
           <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
             {draft.name}
           </h1>
-          <div className="flex items-center gap-3">
-            <PublishToggle
-              published={draft.published}
-              onChange={(published) => update({ published })}
-            />
-            <a
-              href={previewUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="adm-btn-secondary px-4 py-2"
+          <div className="flex flex-col items-end gap-1">
+            <div className="flex items-center gap-3">
+              <PublishToggle
+                published={draft.published}
+                onChange={(published) => update({ published })}
+              />
+              <a
+                href={previewUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="adm-btn-secondary px-4 py-2"
+              >
+                Preview
+              </a>
+              <button
+                type="button"
+                onClick={() => {
+                  void handleSave();
+                }}
+                disabled={saving || !dirty}
+                className="adm-btn-primary min-w-[9.25rem] whitespace-nowrap px-5 py-2"
+              >
+                {saving ? "Saving…" : dirty ? "Save changes" : "Saved"}
+              </button>
+            </div>
+            <span
+              className="block min-h-5 text-right text-sm leading-5 text-zinc-500"
+              aria-live="polite"
             >
-              Preview
-            </a>
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={saving || !dirty}
-              className="adm-btn-primary px-5 py-2"
-            >
-              {saving ? "Saving…" : dirty ? "Save changes" : "Saved"}
-            </button>
+              {saveStatus ?? "\u00a0"}
+            </span>
           </div>
         </div>
       </div>
 
       {error && (
         <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
-      )}
-      {notice && (
-        <p className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-          {notice}
-        </p>
       )}
 
       <div className="mb-6 flex flex-wrap gap-1 border-b border-zinc-200">
