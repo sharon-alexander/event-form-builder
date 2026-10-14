@@ -1,4 +1,12 @@
-import { HashRouter, Navigate, Route, Routes } from "react-router-dom";
+import {
+  createHashRouter,
+  createRoutesFromElements,
+  Navigate,
+  Outlet,
+  Route,
+  RouterProvider,
+  type DataRouter,
+} from "react-router-dom";
 import { isSupabaseConfigured } from "../lib/supabase";
 import { AuthProvider } from "./auth";
 import AuthEmailRedirect from "./components/AuthEmailRedirect";
@@ -10,6 +18,50 @@ import SetPasswordPage from "./pages/SetPasswordPage";
 import FormsListPage from "./pages/FormsListPage";
 import FormEditorPage from "./pages/FormEditorPage";
 import UsersPage from "./pages/UsersPage";
+import { UnsavedGuardProvider } from "./unsavedGuard";
+
+let adminRouter: DataRouter | null = null;
+
+function getAdminRouter(): DataRouter {
+  adminRouter ??= createHashRouter(
+    createRoutesFromElements(
+      <Route element={<AuthShell />}>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SetPasswordPage />} />
+        <Route path="/set-password" element={<SetPasswordPage />} />
+        <Route
+          element={
+            <RequireAuth>
+              <AdminLayout />
+            </RequireAuth>
+          }
+        >
+          <Route path="/" element={<FormsListPage />} />
+          <Route path="/forms/:id" element={<FormEditorPage />} />
+          <Route
+            path="/users"
+            element={
+              <RequireSuperAdmin>
+                <UsersPage />
+              </RequireSuperAdmin>
+            }
+          />
+        </Route>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Route>,
+    ),
+  );
+  return adminRouter;
+}
+
+function AuthShell() {
+  return (
+    <UnsavedGuardProvider>
+      <AuthEmailRedirect />
+      <Outlet />
+    </UnsavedGuardProvider>
+  );
+}
 
 export default function AdminApp() {
   if (!isSupabaseConfigured) {
@@ -18,33 +70,7 @@ export default function AdminApp() {
 
   return (
     <AuthProvider>
-      <HashRouter>
-        <AuthEmailRedirect />
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SetPasswordPage />} />
-          <Route path="/set-password" element={<SetPasswordPage />} />
-          <Route
-            element={
-              <RequireAuth>
-                <AdminLayout />
-              </RequireAuth>
-            }
-          >
-            <Route path="/" element={<FormsListPage />} />
-            <Route path="/forms/:id" element={<FormEditorPage />} />
-            <Route
-              path="/users"
-              element={
-                <RequireSuperAdmin>
-                  <UsersPage />
-                </RequireSuperAdmin>
-              }
-            />
-          </Route>
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </HashRouter>
+      <RouterProvider router={getAdminRouter()} />
     </AuthProvider>
   );
 }

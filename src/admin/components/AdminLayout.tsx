@@ -1,9 +1,15 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { isSuperAdmin, useAuth } from "../auth";
+import { useConfirmLeave } from "../unsavedGuard";
 
 export default function AdminLayout() {
   const { org, profile, signOut } = useAuth();
   const location = useLocation();
+  const confirmLeave = useConfirmLeave();
+
+  function handleSignOut() {
+    confirmLeave(signOut);
+  }
 
   const nav = [
     {
@@ -64,7 +70,7 @@ export default function AdminLayout() {
           </div>
           <button
             type="button"
-            onClick={signOut}
+            onClick={handleSignOut}
             className="mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
           >
             <SignOutIcon className="h-4 w-4" />
@@ -95,7 +101,7 @@ export default function AdminLayout() {
           ))}
           <button
             type="button"
-            onClick={signOut}
+            onClick={handleSignOut}
             className="ml-1 rounded-md p-2 text-zinc-500 transition-colors hover:bg-zinc-100"
             aria-label="Sign out"
           >
