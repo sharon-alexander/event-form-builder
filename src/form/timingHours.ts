@@ -294,19 +294,7 @@ export function endTimeOptions(slots: string[], startTime: string): string[] {
   return slots.slice(index + 1);
 }
 
-function legacyMealSlots(
-  meal: MealService,
-  hours: TimingHours,
-  data: TimingDateInput,
-): string[] {
-  const catalog = meal === "lunch" ? LUNCH_START_TIMES : DINNER_START_TIMES;
-  const resolved = resolveTimingSlots(hours, data);
-  if (resolved.closed) return [];
-  const allowed = new Set(resolved.slots);
-  return catalog.filter((time) => allowed.has(time));
-}
-
-/** A saved meal range, or the old list clipped to the standard window. */
+/** A saved meal range, or the same default window the admin editor shows. */
 export function mealStartOptions(
   meal: MealService,
   hours: TimingHours | null | undefined,
@@ -314,8 +302,8 @@ export function mealStartOptions(
 ): string[] {
   const catalog = meal === "lunch" ? LUNCH_START_TIMES : DINNER_START_TIMES;
   if (!hours) return catalog;
-  const band = meal === "lunch" ? hours.lunch : hours.dinner;
-  if (!band) return legacyMealSlots(meal, hours, data);
+  const band =
+    (meal === "lunch" ? hours.lunch : hours.dinner) ?? defaultMealHours(meal);
   const resolved = resolveTimingSlots(band, data);
   return resolved.closed ? [] : resolved.slots;
 }
@@ -342,8 +330,15 @@ export function clearedTimingFields(
 
   const resolved = resolveTimingSlots(hours, data);
   if (resolved.closed) {
-    if (!data.startTime && !data.endTime && data.mealService == null) return null;
-    return { startTime: "", endTime: "", mealService: null };
+    if (
+      !data.startTime &&
+      !data.endTime &&
+      data.mealService == null &&
+      !data.timingFlexible
+    ) {
+      return null;
+    }
+    return { startTime: "", endTime: "", mealService: null, timingFlexible: false };
   }
 
   const patch: Partial<FormData> = {};

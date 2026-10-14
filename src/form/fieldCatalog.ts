@@ -262,7 +262,7 @@ function isFilled(
         );
       }
       const resolved = resolveTimingSlots(location.timingHours, data);
-      if (resolved.closed) return data.timingFlexible;
+      if (resolved.closed) return false;
       if (data.timingFlexible) return true;
       if (data.startTime === "" || data.endTime === "") return false;
       return (
@@ -331,6 +331,13 @@ export function isStepValid(
   }
   const blockFields = STEP_BLOCK_FIELDS[stepId] ?? [];
   if (blockFields.some((field) => fieldIsBlocked(evaluation, field))) {
+    return false;
+  }
+  if (
+    stepId === "timing" &&
+    location.timingStyle !== "meal_service" &&
+    resolveTimingSlots(location.timingHours, data).closed
+  ) {
     return false;
   }
   return fieldsForStep(stepId).every((field) => {

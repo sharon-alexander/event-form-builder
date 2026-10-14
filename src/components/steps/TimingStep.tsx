@@ -212,7 +212,7 @@ export default function TimingStep(props: StepProps) {
         )}
         {showCheckboxes && (
           <div className="space-y-3">
-            {!isMeal && (
+            {!isMeal && !resolved.closed && (
               <label className="flex cursor-pointer items-center gap-3">
                 <input
                   type="checkbox"
