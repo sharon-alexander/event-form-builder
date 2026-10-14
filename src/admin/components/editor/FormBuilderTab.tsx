@@ -16,7 +16,12 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { StepId } from "../../../locations/types";
+import type { RuleFieldRef, StepId } from "../../../locations/types";
+import {
+  reorderRuleConflict,
+  ruleOrderConflict,
+  type RuleOrderConflict,
+} from "../../../form/conditions";
 import { DEFAULT_STEP_COPY } from "../../../form/defaultStepCopy";
 import { DEFAULT_EVENT_CATEGORIES, EVENT_FORMATS } from "../../../types";
 import { isEmptyRichText } from "../../../utils/richText";
@@ -138,6 +143,7 @@ export default function FormBuilderTab({ draft, update, orgId, onError }: Props)
   const [selectedId, setSelectedId] = useState<Selection>("landing");
   const [showConfig, setShowConfig] = useState(false);
   const [showPreview, setShowPreview] = useState(true);
+  const [dragConflict, setDragConflict] = useState<RuleOrderConflict | null>(null);
   const [editorCollapsed, setEditorCollapsed] = useState(false);
 
   const selectedLabel =
@@ -152,6 +158,10 @@ export default function FormBuilderTab({ draft, update, orgId, onError }: Props)
       setShowConfig(false);
     }
   }, [steps, selectedId]);
+
+  useEffect(() => {
+    setDragConflict(null);
+  }, [draft.form_rules]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -184,7 +194,15 @@ export default function FormBuilderTab({ draft, update, orgId, onError }: Props)
     const oldIndex = steps.indexOf(active.id as StepId);
     const newIndex = steps.indexOf(over.id as StepId);
     if (oldIndex === -1 || newIndex === -1) return;
-    setSteps(arrayMove(steps, oldIndex, newIndex));
+    const next = arrayMove(steps, oldIndex, newIndex);
+    const dragged = active.id as StepId;
+    const conflict = reorderRuleConflict(steps, next, draft.form_rules, dragged);
+    if (conflict) {
+      setDragConflict(conflict);
+      return;
+    }
+    setDragConflict(null);
+    setSteps(next);
     setShowConfig(false);
   }
 
@@ -214,6 +232,11 @@ export default function FormBuilderTab({ draft, update, orgId, onError }: Props)
     setSelectedId(stepId);
     setShowConfig(true);
   }
+
+  const standingConflict = dragConflict
+    ? null
+    : ruleOrderConflict(steps, draft.form_rules);
+  const reorderConflict = dragConflict ?? standingConflict;
 
   return (
     <div className="space-y-4 lg:flex lg:items-stretch lg:gap-4 lg:space-y-0">
@@ -311,6 +334,9 @@ export default function FormBuilderTab({ draft, update, orgId, onError }: Props)
           </div>
         ) : (
           <div className="space-y-2">
+            {reorderConflict && (
+              <ReorderNotice conflict={reorderConflict} blocked={dragConflict != null} />
+            )}
             <div className="overflow-hidden rounded-xl border border-zinc-200">
               <button
                 type="button"
@@ -843,6 +869,84 @@ function TrashIcon() {
         strokeLinecap="round"
         strokeLinejoin="round"
         d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m-8 0v12a1 1 0 001 1h6a1 1 0 001-1V7"
+      />
+    </svg>
+  );
+}
+
+const WATCHED_ANSWER: Record<RuleFieldRef, string> = {
+  guestCount: "guest count",
+  bookingType: "booking type",
+  eventDate: "event date",
+  eventCategory: "event type",
+  eventFormat: "format",
+  budget: "budget",
+  venueSpace: "venue space",
+  mealService: "meal",
+  services: "services",
+};
+
+function stepName(stepId: StepId): string {
+  return (STEP_LABELS[stepId] ?? stepId).replace(/\?$/, "");
+}
+
+function StepName({ stepId }: { stepId: StepId }) {
+  return <span className="font-semibold">“{stepName(stepId)}”</span>;
+}
+
+function ReorderNotice({
+  conflict,
+  blocked,
+}: {
+  conflict: RuleOrderConflict;
+  blocked: boolean;
+}) {
+  const answer = WATCHED_ANSWER[conflict.watchedField];
+  const draggedIsAffected = conflict.draggedStep === conflict.affectedStep;
+
+  return (
+    <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-snug text-amber-900">
+      <WarningIcon />
+      <p>
+        {blocked ? (
+          draggedIsAffected ? (
+            <>
+              Can’t move <StepName stepId={conflict.affectedStep} /> before{" "}
+              <StepName stepId={conflict.watchedStep} />. Remove the {answer} rule on{" "}
+              <StepName stepId={conflict.affectedStep} /> first.
+            </>
+          ) : (
+            <>
+              Can’t move <StepName stepId={conflict.watchedStep} /> after{" "}
+              <StepName stepId={conflict.affectedStep} />. Remove the {answer} rule on{" "}
+              <StepName stepId={conflict.affectedStep} /> first.
+            </>
+          )
+        ) : (
+          <>
+            <StepName stepId={conflict.affectedStep} /> is hidden based on {answer}, but{" "}
+            <StepName stepId={conflict.watchedStep} /> comes after it. Remove that rule, or move{" "}
+            <StepName stepId={conflict.watchedStep} /> before{" "}
+            <StepName stepId={conflict.affectedStep} />.
+          </>
+        )}
+      </p>
+    </div>
+  );
+}
+
+function WarningIcon() {
+  return (
+    <svg
+      className="mt-0.5 h-4 w-4 shrink-0"
+      viewBox="0 0 20 20"
+      fill="currentColor"
+      aria-hidden
+    >
+      <path
+        fillRule="evenodd"
+        d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 6a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 6zm0 8a1 1 0 100-2 1 1 0 000 2z"
+        clipRule="evenodd"
       />
     </svg>
   );
