@@ -27,9 +27,16 @@ export async function getLocationById(id: string): Promise<LocationRow | null> {
 
 export type LocationUpdate = Partial<Omit<LocationRow, "id" | "org_id" | "created_at" | "updated_at">>;
 
-export async function updateLocation(id: string, patch: LocationUpdate): Promise<void> {
+export async function updateLocation(
+  id: string,
+  patch: LocationUpdate,
+  signal?: AbortSignal,
+): Promise<void> {
   const supabase = requireSupabase();
-  const { error } = await supabase.from("locations").update(patch).eq("id", id);
+  let request = supabase.from("locations").update(patch).eq("id", id);
+  if (signal) request = request.abortSignal(signal);
+  const { error } = await request;
+  if (signal?.aborted) return;
   if (error) throw error;
 }
 

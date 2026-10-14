@@ -132,6 +132,8 @@ export default function FormEditorPage() {
   const idRef = useRef(id);
   idRef.current = id;
   const saveQueueRef = useRef<Promise<unknown>>(Promise.resolve());
+  const saveAbortRef = useRef<AbortController | null>(null);
+  const saveEpochRef = useRef(0);
 
   useEffect(() => {
     if (!id) return;
@@ -171,6 +173,9 @@ export default function FormEditorPage() {
     if (!locationId || !current || !dirtyRef.current) return true;
 
     const revision = revisionRef.current;
+    const epoch = saveEpochRef.current;
+    const controller = new AbortController();
+    saveAbortRef.current = controller;
     setSaving(true);
     setError(null);
     try {
@@ -202,8 +207,14 @@ export default function FormEditorPage() {
         theme: current.theme,
         published: current.published,
       };
-      await updateLocation(locationId, patch);
-      if (idRef.current !== locationId) return false;
+      await updateLocation(locationId, patch, controller.signal);
+      if (
+        controller.signal.aborted ||
+        saveEpochRef.current !== epoch ||
+        idRef.current !== locationId
+      ) {
+        return false;
+      }
       if (revisionRef.current === revision) {
         dirtyRef.current = false;
         setDirty(false);
@@ -211,12 +222,16 @@ export default function FormEditorPage() {
       setAutosavedAt(new Date());
       return true;
     } catch (err) {
+      if (controller.signal.aborted || saveEpochRef.current !== epoch) return false;
       if (idRef.current === locationId) {
         setError(err instanceof Error ? err.message : "Failed to save.");
       }
       return false;
     } finally {
-      if (idRef.current === locationId) setSaving(false);
+      if (saveAbortRef.current === controller) {
+        saveAbortRef.current = null;
+        setSaving(false);
+      }
     }
   }, []);
 
@@ -272,6 +287,8 @@ export default function FormEditorPage() {
   const discard = useCallback(() => {
     const action = pendingLeaveRef.current;
     setPendingLeave(null);
+    saveEpochRef.current += 1;
+    saveAbortRef.current?.abort();
     dirtyRef.current = false;
     setDirty(false);
     if (blockerRef.current.state === "blocked") blockerRef.current.proceed();
