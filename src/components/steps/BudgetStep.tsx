@@ -2,8 +2,9 @@ import { useMemo } from "react";
 import { useLocationConfig } from "../../context/LocationContext";
 import {
   evaluateRules,
-  messagesForField,
   isFieldHidden,
+  isOptionDisabled,
+  messagesForField,
   visibleBudgetOptions,
 } from "../../form/conditions";
 import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
@@ -31,6 +32,9 @@ export default function BudgetStep({
     [location.formRules, data],
   );
   const budgetOptions = visibleBudgetOptions(location.budgetOptions, evaluation);
+  const allDisabled =
+    budgetOptions.length > 0 &&
+    budgetOptions.every((option) => isOptionDisabled(evaluation, "budget", option.value));
   const messages = messagesForField(evaluation, "budget").filter(
     (message) => !isEmptyRichText(message.html),
   );
@@ -69,18 +73,32 @@ export default function BudgetStep({
           No budget ranges match these event details. Go back and adjust your answers.
         </p>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {budgetOptions.map((b) => (
-            <button
-              key={b.value}
-              type="button"
-              onClick={() => onChange({ budget: b.value })}
-              className={`efb-card ${data.budget === b.value ? "efb-card-selected" : ""}`}
-            >
-              {b.label}
-            </button>
-          ))}
-        </div>
+        <>
+          {allDisabled && (
+            <p className="mb-3 text-sm text-gray-500">
+              No budget ranges match these event details. Go back and adjust your answers.
+            </p>
+          )}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {budgetOptions.map((b) => {
+              const disabled = isOptionDisabled(evaluation, "budget", b.value);
+              return (
+                <button
+                  key={b.value}
+                  type="button"
+                  disabled={disabled}
+                  aria-disabled={disabled}
+                  onClick={() => onChange({ budget: b.value })}
+                  className={`efb-card ${data.budget === b.value && !disabled ? "efb-card-selected" : ""} ${
+                    disabled ? "cursor-not-allowed opacity-50" : ""
+                  }`}
+                >
+                  {b.label}
+                </button>
+              );
+            })}
+          </div>
+        </>
       )}
       </>
       )}

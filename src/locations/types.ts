@@ -33,6 +33,25 @@ export interface InfoPageConfig {
 
 export type TimingStyle = "standard" | "meal_service";
 
+/** Inclusive bookable window. An earlier end crosses midnight (5:00 PM–1:00 AM). */
+export interface TimingWindow {
+  start: string;
+  end: string;
+}
+
+/** Mon–Thu, with Friday and the weekend able to follow or override it. */
+export interface TimingBandHours {
+  weekday: TimingWindow;
+  friday: { mode: "weekday" | "weekend" | "custom"; window?: TimingWindow };
+  weekend: { mode: "weekday" | "custom" | "closed"; window?: TimingWindow };
+}
+
+/** Standard bookable window, plus optional lunch and dinner ranges. */
+export interface TimingHours extends TimingBandHours {
+  lunch?: TimingBandHours;
+  dinner?: TimingBandHours;
+}
+
 export type StepId =
   | "event_type"
   | "headcount"
@@ -105,7 +124,13 @@ export type RuleCondition =
     };
 
 export type RuleEffect =
-  | { kind: "hideOption"; field: RuleFieldRef; optionValue: string }
+  | {
+      kind: "hideOption";
+      field: RuleFieldRef;
+      optionValue: string;
+      /** Missing on older meal rules means disable. Missing elsewhere means hide. */
+      behavior?: "hide" | "disable";
+    }
   | { kind: "hideField"; field: FieldId }
   | { kind: "hideStep"; stepId: StepId }
   | {
@@ -178,6 +203,9 @@ export interface LocationConfig {
   stepMoreDetails?: Partial<Record<StepId, string>>;
 
   timingStyle?: TimingStyle;
+
+  /** Null or omitted means the legacy 9:00 AM–11:30 PM window. */
+  timingHours?: TimingHours | null;
 
   /** Title for the info acknowledgement step. */
   infoPage?: InfoPageConfig;

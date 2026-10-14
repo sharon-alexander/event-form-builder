@@ -11,8 +11,14 @@ import {
   evaluateRules,
   fieldIsBlocked,
   isMealServiceDisabled,
+  isOptionDisabled,
   isOptionHidden,
 } from "./conditions";
+import {
+  endTimeOptions,
+  mealStartOptions,
+  resolveTimingSlots,
+} from "./timingHours";
 
 export type { FieldId };
 
@@ -194,7 +200,12 @@ export function isFieldRequired(
 
 type StepCheckLocation = Pick<
   LocationConfig,
-  "fieldSettings" | "timingStyle" | "budgetOptions" | "venueSpaces" | "formRules"
+  | "fieldSettings"
+  | "timingStyle"
+  | "timingHours"
+  | "budgetOptions"
+  | "venueSpaces"
+  | "formRules"
 >;
 
 function isFilled(
@@ -226,22 +237,39 @@ function isFilled(
     case "budget": {
       if (data.budget == null) return false;
       const selected = location.budgetOptions.find((option) => option.value === data.budget);
-      return !!selected && !isOptionHidden(evaluation, "budget", data.budget);
+      return (
+        !!selected &&
+        !isOptionHidden(evaluation, "budget", data.budget) &&
+        !isOptionDisabled(evaluation, "budget", data.budget)
+      );
     }
     case "venueSpace": {
       if (data.venueSpace.length === 0) return false;
       return data.venueSpace.every(
-        (value) => !isOptionHidden(evaluation, "venueSpace", value),
+        (value) =>
+          !isOptionHidden(evaluation, "venueSpace", value) &&
+          !isOptionDisabled(evaluation, "venueSpace", value),
       );
     }
-    case "timing":
+    case "timing": {
       if (location.timingStyle === "meal_service") {
         if (data.mealService == null || data.startTime === "") return false;
-        return !isMealServiceDisabled(evaluation, data.mealService);
+        const times = mealStartOptions(data.mealService, location.timingHours, data);
+        return (
+          times.includes(data.startTime) &&
+          !isOptionHidden(evaluation, "mealService", data.mealService) &&
+          !isMealServiceDisabled(evaluation, data.mealService)
+        );
       }
+      const resolved = resolveTimingSlots(location.timingHours, data);
+      if (resolved.closed) return false;
+      if (data.timingFlexible) return true;
+      if (data.startTime === "" || data.endTime === "") return false;
       return (
-        data.timingFlexible || (data.startTime !== "" && data.endTime !== "")
+        resolved.slots.includes(data.startTime) &&
+        endTimeOptions(resolved.slots, data.startTime).includes(data.endTime)
       );
+    }
     case "services":
       return data.services.length > 0;
     case "infoAcknowledged":
@@ -303,6 +331,13 @@ export function isStepValid(
   }
   const blockFields = STEP_BLOCK_FIELDS[stepId] ?? [];
   if (blockFields.some((field) => fieldIsBlocked(evaluation, field))) {
+    return false;
+  }
+  if (
+    stepId === "timing" &&
+    location.timingStyle !== "meal_service" &&
+    resolveTimingSlots(location.timingHours, data).closed
+  ) {
     return false;
   }
   return fieldsForStep(stepId).every((field) => {

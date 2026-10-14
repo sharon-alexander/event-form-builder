@@ -16,11 +16,13 @@ import type {
   InfoPageConfig,
   MediaItem,
   StepId,
+  TimingHours,
   TripleseatConfig,
   VenueSpaceOption,
 } from "../../locations/types";
 import { DEFAULT_EVENT_CATEGORIES, EVENT_FORMATS } from "../../types";
 import { EMPTY_FORM_RULES, parseFormRules } from "../../form/conditions";
+import { parseTimingHours } from "../../form/timingHours";
 import type { LocationRow } from "../../locations/fromDb";
 import { hasOptionLabel } from "../../locations/presentableOptions";
 import { parseFieldSettings } from "../../form/fieldCatalog";
@@ -56,6 +58,7 @@ export interface EditableLocation {
   form_steps: StepId[];
   step_more_details: Partial<Record<StepId, string>>;
   timing_style: string;
+  timing_hours: TimingHours | null;
   info_page: InfoPageConfig | null;
   field_settings: Partial<Record<FieldId, FieldSettings>>;
   form_rules: FormRulesDocument;
@@ -104,6 +107,7 @@ function toEditable(row: LocationRow): EditableLocation {
       row.info_page,
     ),
     timing_style: row.timing_style || "standard",
+    timing_hours: parseTimingHours(row.timing_hours),
     info_page: row.info_page ? { title: row.info_page.title } : null,
     field_settings: parseFieldSettings(row.field_settings),
     form_rules: parseFormRules(row.form_rules ?? EMPTY_FORM_RULES),
@@ -198,6 +202,7 @@ export default function FormEditorPage() {
         form_steps: current.form_steps,
         step_more_details: current.step_more_details,
         timing_style: current.timing_style,
+        timing_hours: current.timing_hours,
         info_page: current.info_page
           ? { title: current.info_page.title }
           : null,
