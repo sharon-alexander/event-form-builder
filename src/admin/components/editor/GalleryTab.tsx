@@ -21,16 +21,16 @@ import type { MediaItem } from "../../../locations/types";
 import { mediaKindLabel } from "../../../media/embeds";
 import { MediaThumb } from "../../../components/MediaThumb";
 import MediaStage from "../../../components/MediaStage";
-import { insertLocationMedia, savedFromUploadError, uploadToLibrary } from "../../mediaLibraryApi";
+import { insertLocationMedia, savedFromUploadError, uploadToLibrary, type LibraryMedia } from "../../mediaLibraryApi";
 import type { FormMediaLibrary } from "../../useFormMediaLibrary";
-import { libraryItemToMedia } from "../../utils/formMediaLibrary";
-import type { EditableLocation } from "../../pages/FormEditorPage";
+import { appendUnique, libraryItemToMedia } from "../../utils/formMediaLibrary";
+import type { EditableLocation, UpdateDraft } from "../../pages/FormEditorPage";
 import EmbedPasteField from "./EmbedPasteField";
 import MediaPicker from "./MediaPicker";
 
 interface Props {
   draft: EditableLocation;
-  update: (patch: Partial<EditableLocation>) => void;
+  update: UpdateDraft;
   orgId: string | null;
   locationId: string | null;
   library: FormMediaLibrary;
@@ -63,16 +63,18 @@ export default function GalleryTab({ draft, update, orgId, locationId, library, 
 
   const sortableIds = media.map((item, i) => stableId(item, i));
 
-  function setMedia(next: MediaItem[]) {
-    update({ gallery_media: next });
+  function setMedia(next: MediaItem[] | ((current: MediaItem[]) => MediaItem[])) {
+    update((current) => ({
+      gallery_media: typeof next === "function" ? next(current.gallery_media) : next,
+    }));
   }
 
   function patchItem(index: number, patch: Partial<MediaItem>) {
-    setMedia(media.map((m, i) => (i === index ? { ...m, ...patch } : m)));
+    setMedia((current) => current.map((m, i) => (i === index ? { ...m, ...patch } : m)));
   }
 
   function remove(index: number) {
-    setMedia(media.filter((_, i) => i !== index));
+    setMedia((current) => current.filter((_, i) => i !== index));
     if (selectedIndex === index) setSelectedIndex(null);
     else if (selectedIndex !== null && selectedIndex > index) {
       setSelectedIndex(selectedIndex - 1);
@@ -90,8 +92,7 @@ export default function GalleryTab({ draft, update, orgId, locationId, library, 
     const oldIndex = sortableIds.indexOf(active.id as string);
     const newIndex = sortableIds.indexOf(over.id as string);
     if (oldIndex === -1 || newIndex === -1) return;
-    const next = arrayMove(media, oldIndex, newIndex);
-    setMedia(next);
+    setMedia((current) => arrayMove(current, oldIndex, newIndex));
     if (selectedIndex === oldIndex) setSelectedIndex(newIndex);
     else if (selectedIndex !== null) {
       if (oldIndex < selectedIndex && newIndex >= selectedIndex) {
@@ -103,8 +104,13 @@ export default function GalleryTab({ draft, update, orgId, locationId, library, 
   }
 
   function addExisting(item: MediaItem) {
-    if (media.some((m) => m.src === item.src)) return;
-    setMedia([...media, item]);
+    setMedia((current) => appendUnique(current, [item]));
+  }
+
+  function addUploaded(saved: LibraryMedia[]) {
+    if (saved.length === 0) return;
+    library.remember(saved);
+    setMedia((current) => appendUnique(current, saved.map(libraryItemToMedia)));
   }
 
   async function handleFiles(files: FileList | null) {
@@ -115,15 +121,9 @@ export default function GalleryTab({ draft, update, orgId, locationId, library, 
     }
     setUploading(true);
     try {
-      const saved = await uploadToLibrary(orgId, draft.slug, locationId, Array.from(files));
-      library.remember(saved);
-      setMedia([...media, ...saved.map(libraryItemToMedia)]);
+      addUploaded(await uploadToLibrary(orgId, draft.slug, locationId, Array.from(files)));
     } catch (err) {
-      const saved = savedFromUploadError(err);
-      if (saved.length > 0) {
-        library.remember(saved);
-        setMedia([...media, ...saved.map(libraryItemToMedia)]);
-      }
+      addUploaded(savedFromUploadError(err));
       onError(err instanceof Error ? err.message : "Upload failed.");
     } finally {
       setUploading(false);
@@ -205,21 +205,12 @@ export default function GalleryTab({ draft, update, orgId, locationId, library, 
       {embedOpen && (
         <EmbedPasteField
           existingSrcs={media.map((m) => m.src)}
-          onAdd={(item) => {
-            void (async () => {
-              if (!locationId) {
-                onError("Cannot upload before the form has loaded.");
-                return;
-              }
-              try {
-                const saved = await insertLocationMedia(locationId, item);
-                library.remember([saved]);
-                addExisting(libraryItemToMedia(saved));
-                setEmbedOpen(false);
-              } catch (err) {
-                onError(err instanceof Error ? err.message : "Could not add embed.");
-              }
-            })();
+          onAdd={async (item) => {
+            if (!locationId) throw new Error("Cannot upload before the form has loaded.");
+            const saved = await insertLocationMedia(locationId, item);
+            library.remember([saved]);
+            addExisting(libraryItemToMedia(saved));
+            setEmbedOpen(false);
           }}
           onError={onError}
         />

@@ -26,3 +26,29 @@ export function mediaUsages(
   }
   return labels;
 }
+
+/** Usages across the dirty draft and the last saved form. Either one blocks delete. */
+export function placementUsages(
+  placements: Array<{ gallery_media: MediaItem[]; venue_spaces: VenueSpaceOption[] }>,
+  src: string,
+): string[] {
+  const labels: string[] = [];
+  for (const placement of placements) {
+    for (const label of mediaUsages(placement, src)) {
+      if (!labels.includes(label)) labels.push(label);
+    }
+  }
+  return labels;
+}
+
+/** Append items whose src is not already present. */
+export function appendUnique(current: MediaItem[], incoming: MediaItem[]): MediaItem[] {
+  const seen = new Set(current.map((item) => item.src));
+  const next = [...current];
+  for (const item of incoming) {
+    if (seen.has(item.src)) continue;
+    seen.add(item.src);
+    next.push(item);
+  }
+  return next;
+}

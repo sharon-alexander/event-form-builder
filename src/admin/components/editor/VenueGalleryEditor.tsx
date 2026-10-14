@@ -1,12 +1,14 @@
 import { type DragEvent, useEffect, useRef, useState } from "react";
 import type { MediaItem } from "../../../locations/types";
 import { mediaKindLabel } from "../../../media/embeds";
-import { insertLocationMedia, savedFromUploadError, uploadToLibrary } from "../../mediaLibraryApi";
+import { insertLocationMedia, savedFromUploadError, uploadToLibrary, type LibraryMedia } from "../../mediaLibraryApi";
 import type { FormMediaLibrary } from "../../useFormMediaLibrary";
-import { libraryItemToMedia } from "../../utils/formMediaLibrary";
+import { appendUnique, libraryItemToMedia } from "../../utils/formMediaLibrary";
 import { MediaThumb } from "../../../components/MediaThumb";
 import EmbedPasteField from "./EmbedPasteField";
 import MediaPicker from "./MediaPicker";
+
+export type MediaListUpdate = MediaItem[] | ((current: MediaItem[]) => MediaItem[]);
 
 interface Props {
   open: boolean;
@@ -14,7 +16,7 @@ interface Props {
   title: string;
   media: MediaItem[];
   library: FormMediaLibrary;
-  onChange: (next: MediaItem[]) => void;
+  onChange: (next: MediaListUpdate) => void;
   orgId: string | null;
   locationId: string | null;
   slug: string;
@@ -57,17 +59,25 @@ export default function VenueGalleryEditor({
   if (!open) return null;
 
   function remove(index: number) {
-    onChange(media.filter((_, i) => i !== index));
+    onChange((current) => current.filter((_, i) => i !== index));
   }
 
   function setAsThumbnail(index: number) {
-    if (index <= 0 || index >= media.length) return;
-    const item = media[index];
-    if (!item) return;
-    const next = [...media];
-    next.splice(index, 1);
-    next.unshift(item);
-    onChange(next);
+    onChange((current) => {
+      if (index <= 0 || index >= current.length) return current;
+      const item = current[index];
+      if (!item) return current;
+      const next = [...current];
+      next.splice(index, 1);
+      next.unshift(item);
+      return next;
+    });
+  }
+
+  function addUploaded(saved: LibraryMedia[]) {
+    if (saved.length === 0) return;
+    library.remember(saved);
+    onChange((current) => appendUnique(current, saved.map(libraryItemToMedia)));
   }
 
   async function handleFiles(files: FileList | null) {
@@ -78,15 +88,9 @@ export default function VenueGalleryEditor({
     }
     setUploading(true);
     try {
-      const saved = await uploadToLibrary(orgId, slug, locationId, Array.from(files));
-      library.remember(saved);
-      onChange([...media, ...saved.map(libraryItemToMedia)]);
+      addUploaded(await uploadToLibrary(orgId, slug, locationId, Array.from(files)));
     } catch (err) {
-      const saved = savedFromUploadError(err);
-      if (saved.length > 0) {
-        library.remember(saved);
-        onChange([...media, ...saved.map(libraryItemToMedia)]);
-      }
+      addUploaded(savedFromUploadError(err));
       onError(err instanceof Error ? err.message : "Upload failed.");
     } finally {
       setUploading(false);
@@ -95,8 +99,7 @@ export default function VenueGalleryEditor({
   }
 
   function addExisting(item: MediaItem) {
-    if (media.some((m) => m.src === item.src)) return;
-    onChange([...media, item]);
+    onChange((current) => appendUnique(current, [item]));
   }
 
   function handleDrop(e: DragEvent<HTMLDivElement>) {
@@ -179,21 +182,12 @@ export default function VenueGalleryEditor({
             <div className="mb-4">
               <EmbedPasteField
                 existingSrcs={media.map((m) => m.src)}
-                onAdd={(item) => {
-                  void (async () => {
-                    if (!locationId) {
-                      onError("Cannot upload before the form has loaded.");
-                      return;
-                    }
-                    try {
-                      const saved = await insertLocationMedia(locationId, item);
-                      library.remember([saved]);
-                      addExisting(libraryItemToMedia(saved));
-                      setEmbedOpen(false);
-                    } catch (err) {
-                      onError(err instanceof Error ? err.message : "Could not add embed.");
-                    }
-                  })();
+                onAdd={async (item) => {
+                  if (!locationId) throw new Error("Cannot upload before the form has loaded.");
+                  const saved = await insertLocationMedia(locationId, item);
+                  library.remember([saved]);
+                  addExisting(libraryItemToMedia(saved));
+                  setEmbedOpen(false);
                 }}
                 onError={onError}
               />
@@ -301,9 +295,10 @@ export default function VenueGalleryEditor({
                 className="adm-input w-full py-2 text-sm"
                 placeholder="Describe this photo..."
                 value={thumbnail.alt}
-                onChange={(e) =>
-                  onChange(media.map((m, idx) => (idx === 0 ? { ...m, alt: e.target.value } : m)))
-                }
+                onChange={(e) => {
+                  const alt = e.target.value;
+                  onChange((current) => current.map((m, idx) => (idx === 0 ? { ...m, alt } : m)));
+                }}
               />
             </div>
           )}

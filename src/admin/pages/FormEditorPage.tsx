@@ -69,6 +69,12 @@ export interface EditableLocation {
   published: boolean;
 }
 
+export type UpdateDraft = (
+  patch: Partial<EditableLocation> | ((current: EditableLocation) => Partial<EditableLocation>),
+) => void;
+
+type SavedPlacement = Pick<EditableLocation, "gallery_media" | "venue_spaces">;
+
 const TABS = [
   { id: "builder", label: "Form Builder" },
   { id: "media", label: "Media" },
@@ -126,6 +132,7 @@ export default function FormEditorPage() {
 
   const [orgId, setOrgId] = useState<string | null>(null);
   const [draft, setDraft] = useState<EditableLocation | null>(null);
+  const [savedPlacement, setSavedPlacement] = useState<SavedPlacement | null>(null);
   const [tab, setTab] = useState<TabId>("builder");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -159,7 +166,12 @@ export default function FormEditorPage() {
           return;
         }
         setOrgId(row.org_id);
-        setDraft(toEditable(row));
+        const editable = toEditable(row);
+        setDraft(editable);
+        setSavedPlacement({
+          gallery_media: editable.gallery_media,
+          venue_spaces: editable.venue_spaces,
+        });
       })
       .catch((err) => active && setError(err instanceof Error ? err.message : String(err)))
       .finally(() => active && setLoading(false));
@@ -168,9 +180,13 @@ export default function FormEditorPage() {
     };
   }, [id]);
 
-  const update = useCallback((patch: Partial<EditableLocation>) => {
+  const update = useCallback<UpdateDraft>((patch) => {
     revisionRef.current += 1;
-    setDraft((prev) => (prev ? { ...prev, ...patch } : prev));
+    setDraft((prev) => {
+      if (!prev) return prev;
+      const next = typeof patch === "function" ? patch(prev) : patch;
+      return { ...prev, ...next };
+    });
     dirtyRef.current = true;
     setDirty(true);
   }, []);
@@ -224,6 +240,10 @@ export default function FormEditorPage() {
       ) {
         return false;
       }
+      setSavedPlacement({
+        gallery_media: current.gallery_media,
+        venue_spaces,
+      });
       if (revisionRef.current === revision) {
         dirtyRef.current = false;
         setDirty(false);
@@ -452,10 +472,11 @@ export default function FormEditorPage() {
             onError={setError}
           />
         )}
-        {tab === "media" && id && (
+        {tab === "media" && id && savedPlacement && (
           <MediaLibraryTab
             locationId={id}
             draft={draft}
+            saved={savedPlacement}
             orgId={orgId}
             library={library}
             onError={setError}

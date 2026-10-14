@@ -97,7 +97,7 @@ export default function MediaPicker({
       )}
 
       {hasMore && (
-        <LoadMoreSentinel disabled={loading || loadingMore} onVisible={onLoadMore} />
+        <LoadMoreSentinel disabled={loading || loadingMore || !!error} onVisible={onLoadMore} />
       )}
       {loadingMore && <p className="mt-2 text-xs text-zinc-400">Loading more…</p>}
     </div>

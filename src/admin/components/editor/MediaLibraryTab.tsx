@@ -8,7 +8,7 @@ import {
 } from "../../mediaLibraryApi";
 import { deleteGalleryFiles } from "../../api";
 import type { FormMediaLibrary } from "../../useFormMediaLibrary";
-import { mediaUsages } from "../../utils/formMediaLibrary";
+import { placementUsages } from "../../utils/formMediaLibrary";
 import { mediaKindLabel } from "../../../media/embeds";
 import { MediaThumb } from "../../../components/MediaThumb";
 import EmbedPasteField from "./EmbedPasteField";
@@ -17,12 +17,13 @@ import LoadMoreSentinel from "./LoadMoreSentinel";
 interface Props {
   locationId: string;
   draft: EditableLocation;
+  saved: Pick<EditableLocation, "gallery_media" | "venue_spaces">;
   orgId: string | null;
   library: FormMediaLibrary;
   onError: (msg: string) => void;
 }
 
-export default function MediaLibraryTab({ locationId, draft, orgId, library, onError }: Props) {
+export default function MediaLibraryTab({ locationId, draft, saved, orgId, library, onError }: Props) {
   const fileInput = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -36,7 +37,8 @@ export default function MediaLibraryTab({ locationId, draft, orgId, library, onE
   }, [library.ensureLoaded]);
 
   const selectedItems = library.items.filter((item) => selected.has(item.id));
-  const unusedSelected = selectedItems.filter((item) => mediaUsages(draft, item.src).length === 0);
+  const usagesFor = (src: string) => placementUsages([draft, saved], src);
+  const unusedSelected = selectedItems.filter((item) => usagesFor(item.src).length === 0);
   const loadedIds = library.items.map((item) => item.id);
   const allLoadedSelected = loadedIds.length > 0 && loadedIds.every((id) => selected.has(id));
 
@@ -86,31 +88,28 @@ export default function MediaLibraryTab({ locationId, draft, orgId, library, onE
     const kept = selectedItems.length - unusedSelected.length;
     setDeleting(true);
     setNotice(null);
-    const removedIds: string[] = [];
-    let failed = 0;
-    for (const item of unusedSelected) {
-      try {
-        await deleteGalleryFiles([item.src, item.thumb]);
-        removedIds.push(item.id);
-      } catch (err) {
-        failed += 1;
-        onError(err instanceof Error ? err.message : "Could not delete media.");
-      }
-    }
+    let removed = false;
     try {
-      if (removedIds.length > 0) await deleteLocationMedia(removedIds);
-      await library.reload();
-      setSelected(new Set());
-      const parts: string[] = [];
-      if (kept > 0) {
-        parts.push(
-          `${kept} still shown on the landing page or a venue ${kept === 1 ? "was" : "were"} kept.`,
-        );
+      await deleteLocationMedia(unusedSelected.map((item) => item.id));
+      removed = true;
+      try {
+        await deleteGalleryFiles(unusedSelected.flatMap((item) => [item.src, item.thumb]));
+      } catch (err) {
+        onError(err instanceof Error ? err.message : "Could not delete media files.");
       }
-      if (failed > 0) parts.push(`${failed} ${failed === 1 ? "file" : "files"} could not be deleted.`);
-      setNotice(parts.length > 0 ? parts.join(" ") : null);
+      try {
+        await library.reload();
+      } catch (err) {
+        onError(err instanceof Error ? err.message : "Could not refresh media.");
+      }
+      setSelected(new Set());
+      setNotice(
+        kept > 0
+          ? `${kept} still shown on the landing page or a venue ${kept === 1 ? "was" : "were"} kept.`
+          : null,
+      );
     } catch (err) {
-      onError(err instanceof Error ? err.message : "Could not delete media.");
+      if (!removed) onError(err instanceof Error ? err.message : "Could not delete media.");
     } finally {
       setDeleting(false);
     }
@@ -186,16 +185,10 @@ export default function MediaLibraryTab({ locationId, draft, orgId, library, onE
       {embedOpen && (
         <EmbedPasteField
           existingSrcs={library.items.map((item) => item.src)}
-          onAdd={(item) => {
-            void (async () => {
-              try {
-                const saved = await insertLocationMedia(locationId, item);
-                library.remember([saved]);
-                setEmbedOpen(false);
-              } catch (err) {
-                onError(err instanceof Error ? err.message : "Could not add embed.");
-              }
-            })();
+          onAdd={async (item) => {
+            const savedItem = await insertLocationMedia(locationId, item);
+            library.remember([savedItem]);
+            setEmbedOpen(false);
           }}
           onError={onError}
         />
@@ -230,7 +223,7 @@ export default function MediaLibraryTab({ locationId, draft, orgId, library, onE
         ) : (
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
             {library.items.map((item) => {
-              const usages = mediaUsages(draft, item.src);
+              const usages = usagesFor(item.src);
               const kind = mediaKindLabel(item);
               const isSelected = selected.has(item.id);
               return (
@@ -272,7 +265,7 @@ export default function MediaLibraryTab({ locationId, draft, orgId, library, onE
         )}
         {library.hasMore && (
           <LoadMoreSentinel
-            disabled={library.loading || library.loadingMore}
+            disabled={library.loading || library.loadingMore || !!library.error}
             onVisible={() => void library.loadMore()}
           />
         )}

@@ -43,6 +43,8 @@ export function useFormMediaLibrary(locationId: string | null): FormMediaLibrary
   const hasMoreRef = useRef(false);
   const fetchedCountRef = useRef(0);
   const loadingMoreRef = useRef(false);
+  const loadMoreBlockedRef = useRef(false);
+  const pendingRef = useRef<LibraryMedia[]>([]);
   const inflightRef = useRef<Promise<void> | null>(null);
   const requestGen = useRef(0);
   const [trackedId, setTrackedId] = useState(locationId);
@@ -54,6 +56,8 @@ export function useFormMediaLibrary(locationId: string | null): FormMediaLibrary
     hasMoreRef.current = false;
     fetchedCountRef.current = 0;
     loadingMoreRef.current = false;
+    loadMoreBlockedRef.current = false;
+    pendingRef.current = [];
     inflightRef.current = null;
     requestGen.current += 1;
     setItems([]);
@@ -65,11 +69,13 @@ export function useFormMediaLibrary(locationId: string | null): FormMediaLibrary
   }
 
   const applyFirstPage = useCallback((page: LibraryMedia[]) => {
+    const pending = pendingRef.current;
+    pendingRef.current = [];
     fetchedCountRef.current = page.length;
     const more = page.length === MEDIA_PAGE_SIZE;
     hasMoreRef.current = more;
     loadedRef.current = true;
-    setItems(page);
+    setItems(dedupe([...pending, ...page]));
     setHasMore(more);
     setLoaded(true);
     setError(null);
@@ -103,6 +109,7 @@ export function useFormMediaLibrary(locationId: string | null): FormMediaLibrary
 
   const loadMore = useCallback(async () => {
     if (!locationId || !loadedRef.current || !hasMoreRef.current || loadingMoreRef.current) return;
+    if (loadMoreBlockedRef.current) return;
     loadingMoreRef.current = true;
     setLoadingMore(true);
     const requestedId = locationId;
@@ -115,9 +122,11 @@ export function useFormMediaLibrary(locationId: string | null): FormMediaLibrary
       const more = page.length === MEDIA_PAGE_SIZE;
       hasMoreRef.current = more;
       setHasMore(more);
+      setError(null);
       setItems((prev) => dedupe([...prev, ...page]));
     } catch (err) {
       if (locationRef.current !== requestedId || requestGen.current !== gen) return;
+      loadMoreBlockedRef.current = true;
       setError(err instanceof Error ? err.message : "Could not load more media.");
     } finally {
       if (requestGen.current === gen) {
@@ -133,14 +142,19 @@ export function useFormMediaLibrary(locationId: string | null): FormMediaLibrary
     loadedRef.current = false;
     inflightRef.current = null;
     loadingMoreRef.current = false;
+    loadMoreBlockedRef.current = false;
     setLoadingMore(false);
     await ensureLoaded();
   }, [ensureLoaded, locationId]);
 
   const remember = useCallback((rows: LibraryMedia[]) => {
-    if (!loadedRef.current || rows.length === 0) return;
+    if (rows.length === 0 || locationId !== locationRef.current) return;
+    if (!loadedRef.current) {
+      pendingRef.current = dedupe([...rows, ...pendingRef.current]);
+      return;
+    }
     setItems((prev) => dedupe([...rows, ...prev]));
-  }, []);
+  }, [locationId]);
 
   return {
     items,

@@ -25,7 +25,7 @@ import {
 import { DEFAULT_STEP_COPY } from "../../../form/defaultStepCopy";
 import { DEFAULT_EVENT_CATEGORIES, EVENT_FORMATS } from "../../../types";
 import { isEmptyRichText } from "../../../utils/richText";
-import type { EditableLocation } from "../../pages/FormEditorPage";
+import type { EditableLocation, UpdateDraft } from "../../pages/FormEditorPage";
 import type { FormMediaLibrary } from "../../useFormMediaLibrary";
 import {
   ALL_STEP_IDS,
@@ -52,7 +52,7 @@ import IframePreview from "./IframePreview";
 
 interface Props {
   draft: EditableLocation;
-  update: (patch: Partial<EditableLocation>) => void;
+  update: UpdateDraft;
   orgId: string | null;
   locationId: string | null;
   library: FormMediaLibrary;
@@ -424,7 +424,7 @@ function LandingConfig({
   onError,
 }: {
   draft: EditableLocation;
-  update: (patch: Partial<EditableLocation>) => void;
+  update: UpdateDraft;
   orgId: string | null;
   locationId: string | null;
   library: FormMediaLibrary;
@@ -470,7 +470,7 @@ function StepConfig({
   stepId: StepId;
   steps: StepId[];
   draft: EditableLocation;
-  update: (patch: Partial<EditableLocation>) => void;
+  update: UpdateDraft;
   orgId: string | null;
   locationId: string | null;
   library: FormMediaLibrary;

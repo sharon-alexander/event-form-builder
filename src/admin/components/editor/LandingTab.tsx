@@ -1,11 +1,11 @@
-import type { EditableLocation } from "../../pages/FormEditorPage";
+import type { EditableLocation, UpdateDraft } from "../../pages/FormEditorPage";
 import type { FormMediaLibrary } from "../../useFormMediaLibrary";
 import ContentTab from "./ContentTab";
 import GalleryTab from "./GalleryTab";
 
 interface Props {
   draft: EditableLocation;
-  update: (patch: Partial<EditableLocation>) => void;
+  update: UpdateDraft;
   orgId: string | null;
   locationId: string | null;
   library: FormMediaLibrary;
