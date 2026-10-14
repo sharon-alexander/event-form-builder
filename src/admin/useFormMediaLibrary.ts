@@ -16,6 +16,7 @@ export interface FormMediaLibrary {
   loadMore: () => Promise<void>;
   reload: () => Promise<void>;
   remember: (rows: LibraryMedia[]) => void;
+  replace: (row: LibraryMedia) => void;
 }
 
 function dedupe(rows: LibraryMedia[]): LibraryMedia[] {
@@ -156,6 +157,12 @@ export function useFormMediaLibrary(locationId: string | null): FormMediaLibrary
     setItems((prev) => dedupe([...rows, ...prev]));
   }, [locationId]);
 
+  const replace = useCallback((row: LibraryMedia) => {
+    if (locationId !== locationRef.current) return;
+    pendingRef.current = pendingRef.current.map((item) => (item.id === row.id ? row : item));
+    setItems((prev) => prev.map((item) => (item.id === row.id ? row : item)));
+  }, [locationId]);
+
   return {
     items,
     loading,
@@ -167,5 +174,6 @@ export function useFormMediaLibrary(locationId: string | null): FormMediaLibrary
     loadMore,
     reload,
     remember,
+    replace,
   };
 }

@@ -99,6 +99,19 @@ export async function insertLocationMedia(
   return toLibraryMedia(existing.data);
 }
 
+export async function updateLocationMediaAlt(id: string, alt: string): Promise<LibraryMedia> {
+  const supabase = requireSupabase();
+  const { data, error } = await supabase
+    .from("location_media")
+    .update({ alt })
+    .eq("id", id)
+    .select(COLUMNS)
+    .maybeSingle<LocationMediaRow>();
+  if (error) throw error;
+  if (!data) throw new Error("Could not rename media.");
+  return toLibraryMedia(data);
+}
+
 export async function deleteLocationMedia(ids: string[]): Promise<void> {
   if (ids.length === 0) return;
   const supabase = requireSupabase();
