@@ -250,7 +250,7 @@ export default function GalleryTab({ draft, update, orgId, locationId, library, 
               : "Drop images or videos here, click upload, or add an embed."}
           </div>
         ) : (
-          <div className="flex gap-4">
+          <div className="space-y-4">
             <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
@@ -258,7 +258,7 @@ export default function GalleryTab({ draft, update, orgId, locationId, library, 
               onDragEnd={handleDragEnd}
             >
               <SortableContext items={sortableIds} strategy={rectSortingStrategy}>
-                <div className="grid flex-1 grid-cols-4 gap-1.5 sm:grid-cols-5 lg:grid-cols-6">
+                <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-5 lg:grid-cols-6">
                   {media.map((item, i) => (
                     <SortableTile
                       key={stableId(item, i)}
@@ -281,15 +281,15 @@ export default function GalleryTab({ draft, update, orgId, locationId, library, 
             </DndContext>
 
             {selectedItem && selectedIndex !== null && (
-              <div className="w-72 shrink-0 space-y-4 rounded-xl border border-zinc-200 p-4">
-                <div className="overflow-hidden rounded-lg bg-zinc-100">
+              <div className="flex gap-4 rounded-xl border border-zinc-200 p-4">
+                <div className="w-40 shrink-0 overflow-hidden rounded-lg bg-zinc-100">
                   <MediaStage
                     key={selectedItem.src}
                     item={selectedItem}
-                    className="h-48 w-full object-cover"
+                    className="aspect-square w-full object-cover"
                   />
                 </div>
-                <div>
+                <div className="min-w-0 flex-1">
                   <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-500">
                     Caption
                   </label>
@@ -392,7 +392,7 @@ function SortableTile({
           onDelete();
         }}
         onPointerDown={(e) => e.stopPropagation()}
-        className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-600"
+        className="pointer-events-none absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 hover:bg-red-600"
       >
         <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path
