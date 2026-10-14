@@ -494,6 +494,146 @@ export function dateConditionWarning(steps: StepId[], stepId: StepId): string | 
   return null;
 }
 
+const WATCHED_STEP: Record<RuleFieldRef, StepId> = {
+  guestCount: "headcount",
+  bookingType: "event_type",
+  eventDate: "event_date",
+  eventCategory: "event_format",
+  eventFormat: "event_format",
+  budget: "budget",
+  venueSpace: "venue_space",
+  mealService: "timing",
+  services: "services",
+};
+
+const CHOICE_STEP: Partial<Record<RuleFieldRef, StepId>> = {
+  budget: "budget",
+  venueSpace: "venue_space",
+  mealService: "timing",
+};
+
+const HIDE_FIELD_STEP: Record<FieldId, StepId> = {
+  bookingType: "event_type",
+  guestCount: "headcount",
+  eventCategory: "event_format",
+  eventFormat: "event_format",
+  eventDate: "event_date",
+  backupDate: "event_date",
+  preferredDays: "event_date",
+  budget: "budget",
+  venueSpace: "venue_space",
+  timing: "timing",
+  services: "services",
+  infoAcknowledged: "info_acknowledge",
+  consideringOtherVenues: "other_venues_referral",
+  otherVenuesDetails: "other_venues_referral",
+  referralSource: "other_venues_referral",
+  firstName: "contact",
+  lastName: "contact",
+  email: "contact",
+  phone: "contact",
+  company: "contact",
+  preferredSiteVisitDates: "contact",
+  additionalNotes: "contact",
+};
+
+export interface RuleOrderConflict {
+  ruleId: string;
+  draggedStep: StepId | null;
+  watchedStep: StepId;
+  affectedStep: StepId;
+  watchedField: RuleFieldRef;
+}
+
+/** First rule whose watched answer does not come before the step it affects. */
+export function ruleOrderConflict(
+  steps: StepId[],
+  rules: FormRulesDocument | null | undefined,
+): RuleOrderConflict | null {
+  const first = orderConflicts(steps, rules)[0];
+  if (!first) return null;
+  return { ...first, draggedStep: null };
+}
+
+/**
+ * First conflict in `nextSteps` that `currentSteps` does not already have.
+ * Moving the watched step back in front, or moving an unrelated step, returns null.
+ */
+export function reorderRuleConflict(
+  currentSteps: StepId[],
+  nextSteps: StepId[],
+  rules: FormRulesDocument | null | undefined,
+  draggedStep: StepId,
+): RuleOrderConflict | null {
+  const currentKeys = new Set(orderConflicts(currentSteps, rules).map(conflictKey));
+  const created = orderConflicts(nextSteps, rules).find(
+    (conflict) => !currentKeys.has(conflictKey(conflict)),
+  );
+  if (!created) return null;
+  return { ...created, draggedStep };
+}
+
+function orderConflicts(
+  steps: StepId[],
+  rules: FormRulesDocument | null | undefined,
+): Omit<RuleOrderConflict, "draggedStep">[] {
+  const doc = rules ?? EMPTY_FORM_RULES;
+  const found: Omit<RuleOrderConflict, "draggedStep">[] = [];
+  for (const rule of doc.rules) {
+    if (rule.enabled === false) continue;
+    const leaves: Extract<RuleCondition, { field: RuleFieldRef }>[] = [];
+    collectLeaves(rule.when, leaves);
+    for (const effect of rule.then) {
+      const affectedStep = affectedStepFor(effect);
+      if (!affectedStep || steps.indexOf(affectedStep) === -1) continue;
+      const fields = watchedFieldsFor(effect, leaves);
+      const seen = new Set<RuleFieldRef>();
+      for (const field of fields) {
+        if (seen.has(field)) continue;
+        seen.add(field);
+        const watchedStep = WATCHED_STEP[field];
+        const watchedIndex = steps.indexOf(watchedStep);
+        const affectedIndex = steps.indexOf(affectedStep);
+        if (watchedIndex === -1 || watchedIndex < affectedIndex) continue;
+        found.push({
+          ruleId: rule.id,
+          watchedStep,
+          affectedStep,
+          watchedField: field,
+        });
+      }
+    }
+  }
+  return found;
+}
+
+function watchedFieldsFor(
+  effect: RuleEffect,
+  leaves: Extract<RuleCondition, { field: RuleFieldRef }>[],
+): RuleFieldRef[] {
+  if (effect.kind === "hideOption") {
+    if (!CHOICE_STEP[effect.field]) return [];
+    return leaves
+      .filter((leaf) => leaf.field === "guestCount" || leaf.field === "bookingType")
+      .map((leaf) => leaf.field);
+  }
+  if (effect.kind === "hideStep" || effect.kind === "hideField") {
+    return leaves.map((leaf) => leaf.field);
+  }
+  return [];
+}
+
+function affectedStepFor(effect: RuleEffect): StepId | null {
+  if (effect.kind === "hideStep") return effect.stepId;
+  if (effect.kind === "hideField") return HIDE_FIELD_STEP[effect.field];
+  if (effect.kind === "hideOption") return CHOICE_STEP[effect.field] ?? null;
+  return null;
+}
+
+function conflictKey(conflict: Omit<RuleOrderConflict, "draggedStep">): string {
+  return `${conflict.ruleId}:${conflict.watchedField}:${conflict.affectedStep}:${conflict.watchedStep}`;
+}
+
 function newRuleId(prefix: string): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
     return `${prefix}_${crypto.randomUUID()}`;
