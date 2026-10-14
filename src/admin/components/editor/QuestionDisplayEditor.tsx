@@ -341,7 +341,6 @@ function QuestionDisplayPanel({
               optionValue={choice.optionValue}
               steps={steps}
               stepId={stepId}
-              disableInsteadOfHide={choice.disableInsteadOfHide}
             />
           ))}
         </div>
@@ -358,7 +357,6 @@ function choiceEditorsForStep(
   label: string;
   field: RuleFieldRef;
   optionValue: string;
-  disableInsteadOfHide?: boolean;
 }[] {
   if (stepId === "timing" && (draft.timing_style || "standard") === "meal_service") {
     return [
@@ -367,14 +365,12 @@ function choiceEditorsForStep(
         label: "Lunch",
         field: "mealService",
         optionValue: "lunch",
-        disableInsteadOfHide: true,
       },
       {
         id: "meal-dinner",
         label: "Dinner",
         field: "mealService",
         optionValue: "dinner",
-        disableInsteadOfHide: true,
       },
     ];
   }

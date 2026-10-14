@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { VenueSpaceOption } from "../../locations/types";
 import { useLocationConfig } from "../../context/LocationContext";
-import { evaluateRules, isFieldHidden, visibleVenueSpaces } from "../../form/conditions";
+import { evaluateRules, isFieldHidden, isOptionDisabled, visibleVenueSpaces } from "../../form/conditions";
 import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
 import { isFieldRequired, isStepValid } from "../../form/fieldCatalog";
 import RequiredMark from "../../form/RequiredMark";
@@ -28,6 +28,9 @@ export default function VenueSpaceStep({
     [location.formRules, data],
   );
   const venueSpaces = visibleVenueSpaces(location.venueSpaces, evaluation);
+  const allDisabled =
+    venueSpaces.length > 0 &&
+    venueSpaces.every((option) => isOptionDisabled(evaluation, "venueSpace", option.value));
   const allowMultiple = !!location.allowMultipleVenueSpaces;
   const selected = data.venueSpace;
   const [galleryVenue, setGalleryVenue] = useState<VenueSpaceOption | null>(null);
@@ -68,20 +71,31 @@ export default function VenueSpaceStep({
             No spaces match these event details. Go back and adjust your answers.
           </p>
         ) : (
+          <>
+          {allDisabled && (
+            <p className="mb-3 text-sm text-gray-500">
+              No spaces match these event details. Go back and adjust your answers.
+            </p>
+          )}
           <div className="gap-4 sm:columns-2 [&>*]:mb-4">
           {venueSpaces.map((v) => {
             const media = v.galleryMedia ?? [];
             const hasGallery = media.length > 0;
             const preview = media[0];
-            const isSelected = selected.includes(v.value);
+            const disabled = isOptionDisabled(evaluation, "venueSpace", v.value);
+            const isSelected = selected.includes(v.value) && !disabled;
 
             return (
               <div key={v.value} className="relative break-inside-avoid">
                 <button
                   type="button"
+                  disabled={disabled}
+                  aria-disabled={disabled}
                   onClick={() => selectSpace(v.value)}
                   aria-pressed={isSelected}
-                  className={`efb-card w-full text-left ${isSelected ? "efb-card-selected" : ""}`}
+                  className={`efb-card w-full text-left ${isSelected ? "efb-card-selected" : ""} ${
+                    disabled ? "cursor-not-allowed opacity-50" : ""
+                  }`}
                 >
                   {preview && (
                     <div className="mb-3 overflow-hidden rounded-md">
@@ -137,6 +151,7 @@ export default function VenueSpaceStep({
             );
           })}
           </div>
+          </>
         )}
         </>
         )}

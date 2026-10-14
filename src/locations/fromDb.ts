@@ -5,6 +5,7 @@ import { mergeInfoPageIntoMoreDetails } from "../utils/richText";
 import { parseFieldSettings } from "../form/fieldCatalog";
 import { parseFormRules } from "../form/conditions";
 import { hasOptionLabel } from "./presentableOptions";
+import { parseTimingHours } from "../form/timingHours";
 import type {
   BudgetOption,
   EventChoiceOption,
@@ -15,6 +16,7 @@ import type {
   LocationConfig,
   MediaItem,
   StepId,
+  TimingHours,
   TripleseatConfig,
   VenueSpaceOption,
 } from "./types";
@@ -37,6 +39,7 @@ export interface LocationRow {
   form_steps: StepId[] | null;
   step_more_details: Partial<Record<StepId, string>> | null;
   timing_style: string | null;
+  timing_hours?: TimingHours | null;
   allow_multiple_venue_spaces: boolean | null;
   show_multi_day_rental: boolean | null;
   show_additional_load_in_out: boolean | null;
@@ -73,6 +76,7 @@ export function locationConfigFromRow(row: LocationRow): LocationConfig {
     ),
     timingStyle:
       (row.timing_style as LocationConfig["timingStyle"]) || "standard",
+    timingHours: parseTimingHours(row.timing_hours),
     infoPage: row.info_page ? { title: row.info_page.title } : undefined,
     fieldSettings: parseFieldSettings(row.field_settings),
     formRules: parseFormRules(row.form_rules),

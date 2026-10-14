@@ -1,36 +1,42 @@
-import {
-  MEAL_SERVICE_OPTIONS,
-  LUNCH_START_TIMES,
-  DINNER_START_TIMES,
-} from "../../types";
+import { MEAL_SERVICE_OPTIONS } from "../../types";
 import { useLocationConfig } from "../../context/LocationContext";
 import {
   evaluateRules,
   isMealServiceDisabled,
+  isOptionHidden,
   mealServiceDayNote,
 } from "../../form/conditions";
 import { DEFAULT_STEP_COPY } from "../../form/defaultStepCopy";
 import { isFieldRequired, isStepValid } from "../../form/fieldCatalog";
+import {
+  endTimeOptions,
+  mealStartOptions,
+  resolveTimingSlots,
+} from "../../form/timingHours";
 import RequiredMark from "../../form/RequiredMark";
 import FormStep from "../FormStep";
 import type { StepProps } from "./stepProps";
 
 const copy = DEFAULT_STEP_COPY.timing;
 
-const TIME_OPTIONS: string[] = [];
-for (let h = 9; h <= 23; h++) {
-  for (const m of ["00", "30"]) {
-    const suffix = h >= 12 ? "PM" : "AM";
-    const display = h > 12 ? h - 12 : h === 0 ? 12 : h;
-    TIME_OPTIONS.push(`${display}:${m} ${suffix}`);
-  }
-}
+const CLOSED_MESSAGE =
+  "This venue is closed that day. Choose another date.";
 
 function StandardTiming({
   data,
   onChange,
   required,
-}: Pick<StepProps, "data" | "onChange"> & { required: boolean }) {
+  slots,
+  closed,
+}: Pick<StepProps, "data" | "onChange"> & {
+  required: boolean;
+  slots: string[];
+  closed: boolean;
+}) {
+  if (closed) {
+    return <p className="text-sm text-gray-500">{CLOSED_MESSAGE}</p>;
+  }
+  const ends = endTimeOptions(slots, data.startTime);
   return (
     <>
       {!data.timingFlexible && (
@@ -47,7 +53,7 @@ function StandardTiming({
               className="efb-input"
             >
               <option value="">Select start time</option>
-              {TIME_OPTIONS.map((t) => (
+              {slots.map((t) => (
                 <option key={t} value={t}>{t}</option>
               ))}
             </select>
@@ -64,7 +70,7 @@ function StandardTiming({
               className="efb-input"
             >
               <option value="">Select end time</option>
-              {TIME_OPTIONS.map((t) => (
+              {ends.map((t) => (
                 <option key={t} value={t}>{t}</option>
               ))}
             </select>
@@ -82,19 +88,23 @@ function MealServiceTiming({
 }: Pick<StepProps, "data" | "onChange"> & { required: boolean }) {
   const location = useLocationConfig();
   const evaluation = evaluateRules(location.formRules, data);
-  const options = MEAL_SERVICE_OPTIONS.map((option) => ({
-    ...option,
-    note: mealServiceDayNote(location.formRules, option.value),
-    disabled: isMealServiceDisabled(evaluation, option.value),
-  }));
+  const options = MEAL_SERVICE_OPTIONS.filter(
+    (option) => !isOptionHidden(evaluation, "mealService", option.value),
+  ).map((option) => {
+    const times = mealStartOptions(option.value, location.timingHours, data);
+    return {
+      ...option,
+      note: mealServiceDayNote(location.formRules, option.value),
+      disabled:
+        isMealServiceDisabled(evaluation, option.value) ||
+        (!!location.timingHours && times.length === 0),
+    };
+  });
   const allDisabled = options.every((option) => option.disabled);
   const selected = options.find((option) => option.value === data.mealService);
-  const timeOptions =
-    selected?.value === "lunch"
-      ? LUNCH_START_TIMES
-      : selected?.value === "dinner"
-        ? DINNER_START_TIMES
-        : [];
+  const timeOptions = selected
+    ? mealStartOptions(selected.value, location.timingHours, data)
+    : [];
 
   return (
     <div className="space-y-6">
@@ -103,11 +113,11 @@ function MealServiceTiming({
           Meal Service
           <RequiredMark required={required} />
         </p>
-        {allDisabled && (
+        {options.length === 0 || allDisabled ? (
           <p className="mb-3 text-sm text-gray-500">
             No meal services match these event details. Go back and adjust your answers.
           </p>
-        )}
+        ) : null}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {options.map((option) => {
             const chosen = selected?.value === option.value && !option.disabled;
@@ -165,6 +175,7 @@ export default function TimingStep(props: StepProps) {
   const location = useLocationConfig();
   const isMeal = location.timingStyle === "meal_service";
   const required = isFieldRequired(location, "timing");
+  const resolved = resolveTimingSlots(location.timingHours, props.data);
   const showCheckboxes =
     !isMeal || location.showAdditionalLoadInOut || location.showFullDayRental;
 
@@ -195,6 +206,8 @@ export default function TimingStep(props: StepProps) {
             data={props.data}
             onChange={props.onChange}
             required={required}
+            slots={resolved.slots}
+            closed={resolved.closed}
           />
         )}
         {showCheckboxes && (

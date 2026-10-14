@@ -1,7 +1,9 @@
+import { useEffect, useState } from "react";
 import type { EventBookingType } from "../../../types";
 import { DAYS_OF_WEEK } from "../../../types";
 import type { RuleFieldRef, StepId } from "../../../locations/types";
 import {
+  availabilityBehavior,
   availabilitySummary,
   availabilityUsesWeekdays,
   dateConditionWarning,
@@ -27,8 +29,6 @@ interface Props {
   steps: StepId[];
   stepId: StepId;
   label?: string;
-  /** Meal choices stay visible and are disabled outside these days. */
-  disableInsteadOfHide?: boolean;
 }
 
 export default function AvailabilityEditor({
@@ -40,25 +40,36 @@ export default function AvailabilityEditor({
   steps,
   stepId,
   label,
-  disableInsteadOfHide = false,
 }: Props) {
   const rules = draft.form_rules ?? EMPTY_FORM_RULES;
   const value = draftFromAvailabilityRules(rules, field, optionValue);
+  const savedBehavior = availabilityBehavior(rules, field, optionValue);
+  const [mode, setMode] = useState(savedBehavior);
   const summary = availabilitySummary(value);
   const dayWarning =
     availabilityUsesWeekdays(rules, field, optionValue)
       ? dateConditionWarning(steps, stepId)
       : null;
 
-  function commit(next: OptionAvailabilityDraft | undefined) {
+  useEffect(() => {
+    setMode(savedBehavior);
+  }, [savedBehavior]);
+
+  function commit(next: OptionAvailabilityDraft | undefined, behavior = mode) {
     update({
       form_rules: setAvailabilityRules(
         rules,
         field,
         optionValue,
         normalizeAvailabilityDraft(next),
+        behavior,
       ),
     });
+  }
+
+  function chooseMode(next: "hide" | "disable") {
+    setMode(next);
+    if (normalizeAvailabilityDraft(value)) commit(value, next);
   }
 
   function setGuestBound(key: "minGuests" | "maxGuests", raw: string) {
@@ -92,20 +103,41 @@ export default function AvailabilityEditor({
     <details className="rounded-lg border border-zinc-200 bg-zinc-50">
       <summary className="cursor-pointer list-none px-3 py-2 text-xs font-medium text-zinc-700">
         <span>
-          {label
-            ? `${label} — ${disableInsteadOfHide ? "available when" : "show when"}`
-            : disableInsteadOfHide
-              ? "Available when"
-              : "Show when"}
+          {label ? `${label} — ` : ""}
+          {summary ? (mode === "disable" ? "disable when" : "show when") : mode === "disable" ? "Always available" : "Always shown"}
         </span>
-        <span className="ml-2 font-normal text-zinc-500">
-          {summary || (disableInsteadOfHide ? "Always available" : "Always shown")}
-        </span>
+        {summary && (
+          <span className="ml-2 font-normal text-zinc-500">
+            {mode === "disable" ? `outside ${summary}` : summary}
+          </span>
+        )}
       </summary>
       <div className="space-y-3 border-t border-zinc-200 px-3 py-3">
+        <div className="flex gap-1" role="group" aria-label="What happens outside these rules">
+          {(
+            [
+              ["hide", "Show when"],
+              ["disable", "Disable when"],
+            ] as const
+          ).map(([value, text]) => (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={mode === value}
+              onClick={() => chooseMode(value)}
+              className={`rounded-md border px-2.5 py-1 text-[11px] font-medium ${
+                mode === value
+                  ? "border-zinc-900 bg-white text-zinc-900"
+                  : "border-transparent text-zinc-500 hover:text-zinc-800"
+              }`}
+            >
+              {text}
+            </button>
+          ))}
+        </div>
         <p className="text-[11px] leading-snug text-zinc-500">
-          {disableInsteadOfHide
-            ? "The choice stays on the form and is disabled when these rules do not match. Days apply only after an exact date."
+          {mode === "disable"
+            ? "The choice stays on the form and is disabled outside these rules. Days apply only after an exact date."
             : "Leave blank to always show this option. Guests only see it when every rule you set matches their answers."}
         </p>
         <div className="grid grid-cols-2 gap-2">

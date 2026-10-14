@@ -1,4 +1,5 @@
 import { DAYS_OF_WEEK } from "../types";
+import { clearedTimingFields, weekdayFromEventDate } from "./timingHours";
 import type { EventBookingType, FormData, MealService } from "../types";
 import type {
   BudgetOption,
@@ -77,15 +78,7 @@ const OPS = new Set<RuleConditionOp>([
 
 const DAY_SET = new Set<string>(DAYS_OF_WEEK);
 
-const WEEKDAY_FROM_INDEX = [
-  "Sunday",
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-];
+export { weekdayFromEventDate };
 
 const BOOKING_LABELS: Record<EventBookingType, string> = {
   private_event: "Private event",
@@ -103,6 +96,7 @@ export interface RuleMessage {
 
 export interface RuleEvaluation {
   hiddenOptions: Map<RuleFieldRef, Set<string>>;
+  disabledOptions: Map<RuleFieldRef, Set<string>>;
   hiddenFields: Set<FieldId>;
   hiddenSteps: Set<StepId>;
   messages: RuleMessage[];
@@ -112,6 +106,7 @@ export interface RuleEvaluation {
 function emptyEvaluation(): RuleEvaluation {
   return {
     hiddenOptions: new Map(),
+    disabledOptions: new Map(),
     hiddenFields: new Set(),
     hiddenSteps: new Set(),
     messages: [],
@@ -176,7 +171,14 @@ function parseEffect(raw: unknown): RuleEffect | null {
     if (!isFieldRef(rec.field) || typeof rec.optionValue !== "string" || !rec.optionValue) {
       return null;
     }
-    return { kind: "hideOption", field: rec.field, optionValue: rec.optionValue };
+    const behavior =
+      rec.behavior === "hide" || rec.behavior === "disable" ? rec.behavior : undefined;
+    return {
+      kind: "hideOption",
+      field: rec.field,
+      optionValue: rec.optionValue,
+      ...(behavior ? { behavior } : {}),
+    };
   }
   if (rec.kind === "hideField") {
     if (typeof rec.field !== "string" || !FIELD_IDS.has(rec.field as FieldId)) return null;
@@ -224,24 +226,6 @@ export function parseFormRules(raw: unknown): FormRulesDocument {
     version: 1,
     rules: rec.rules.map(parseRule).filter((r): r is FormRule => !!r),
   };
-}
-
-/** Local calendar day for a `YYYY-MM-DD` value. */
-export function weekdayFromEventDate(eventDate: string): string | null {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(eventDate);
-  if (!match) return null;
-  const year = Number(match[1]);
-  const month = Number(match[2]);
-  const day = Number(match[3]);
-  const date = new Date(year, month - 1, day);
-  if (
-    date.getFullYear() !== year ||
-    date.getMonth() !== month - 1 ||
-    date.getDate() !== day
-  ) {
-    return null;
-  }
-  return WEEKDAY_FROM_INDEX[date.getDay()] ?? null;
 }
 
 function fieldValue(field: RuleFieldRef, data: FormData): unknown {
@@ -357,6 +341,7 @@ export function evaluateRules(
   if (doc.rules.length === 0) return emptyEvaluation();
 
   const hiddenOptions = new Map<RuleFieldRef, Set<string>>();
+  const disabledOptions = new Map<RuleFieldRef, Set<string>>();
   const hiddenFields = new Set<FieldId>();
   const hiddenSteps = new Set<StepId>();
   const messages: RuleMessage[] = [];
@@ -368,10 +353,12 @@ export function evaluateRules(
 
     for (const effect of rule.then) {
       if (effect.kind === "hideOption") {
-        let set = hiddenOptions.get(effect.field);
+        const bucket =
+          optionEffectBehavior(effect) === "disable" ? disabledOptions : hiddenOptions;
+        let set = bucket.get(effect.field);
         if (!set) {
           set = new Set();
-          hiddenOptions.set(effect.field, set);
+          bucket.set(effect.field, set);
         }
         set.add(effect.optionValue);
       } else if (effect.kind === "hideField") {
@@ -392,7 +379,7 @@ export function evaluateRules(
     }
   }
 
-  return { hiddenOptions, hiddenFields, hiddenSteps, messages, blockedFields };
+  return { hiddenOptions, disabledOptions, hiddenFields, hiddenSteps, messages, blockedFields };
 }
 
 export function isOptionHidden(
@@ -401,6 +388,22 @@ export function isOptionHidden(
   optionValue: string,
 ): boolean {
   return evaluation.hiddenOptions.get(field)?.has(optionValue) ?? false;
+}
+
+export function isOptionDisabled(
+  evaluation: RuleEvaluation,
+  field: RuleFieldRef,
+  optionValue: string,
+): boolean {
+  return evaluation.disabledOptions.get(field)?.has(optionValue) ?? false;
+}
+
+/** Saved choice rules with no behavior keep the previous guest behavior. */
+function optionEffectBehavior(
+  effect: Extract<RuleEffect, { kind: "hideOption" }>,
+): "hide" | "disable" {
+  if (effect.behavior === "hide" || effect.behavior === "disable") return effect.behavior;
+  return effect.field === "mealService" ? "disable" : "hide";
 }
 
 export function messagesForField(
@@ -733,12 +736,13 @@ function collectLeaves(
   out.push(condition);
 }
 
-/** Compile show-when settings into a single hide rule for that option. */
+/** Compile show-when settings into a single hide or disable rule for that option. */
 export function setAvailabilityRules(
   rules: FormRulesDocument,
   field: RuleFieldRef,
   optionValue: string,
   draft: OptionAvailabilityDraft | undefined,
+  behavior: "hide" | "disable" = "hide",
 ): FormRulesDocument {
   const kept = rules.rules.filter(
     (rule) => !isOwnedAvailabilityRule(rule, field, optionValue),
@@ -794,14 +798,32 @@ export function setAvailabilityRules(
     id: newRuleId("avail"),
     enabled: true,
     when,
-    then: [{ kind: "hideOption", field, optionValue }],
+    then: [{ kind: "hideOption", field, optionValue, behavior }],
   };
   return { version: 1, rules: [...kept, rule] };
 }
 
+/** How an owned choice rule treats a guest who falls outside it. */
+export function availabilityBehavior(
+  rules: FormRulesDocument | null | undefined,
+  field: RuleFieldRef,
+  optionValue: string,
+): "hide" | "disable" {
+  const doc = rules ?? EMPTY_FORM_RULES;
+  const owned = doc.rules.find((rule) => isOwnedAvailabilityRule(rule, field, optionValue));
+  const effect = owned?.then.find(
+    (item): item is Extract<RuleEffect, { kind: "hideOption" }> =>
+      item.kind === "hideOption" &&
+      item.field === field &&
+      item.optionValue === optionValue,
+  );
+  if (!effect) return field === "mealService" ? "disable" : "hide";
+  return optionEffectBehavior(effect);
+}
+
 type PruneLocation = Pick<
   LocationConfig,
-  "budgetOptions" | "venueSpaces" | "formRules"
+  "budgetOptions" | "venueSpaces" | "formRules" | "timingHours" | "timingStyle"
 >;
 
 export function pruneUnavailableSelections(
@@ -811,13 +833,15 @@ export function pruneUnavailableSelections(
   const evaluation = evaluateRules(location.formRules, data);
   let next = data;
 
-  if (data.budget && isOptionHidden(evaluation, "budget", data.budget)) {
+  if (data.budget && (isOptionHidden(evaluation, "budget", data.budget) || isOptionDisabled(evaluation, "budget", data.budget))) {
     next = { ...next, budget: null };
   }
 
   if (data.venueSpace.length > 0) {
     const kept = data.venueSpace.filter(
-      (value) => !isOptionHidden(evaluation, "venueSpace", value),
+      (value) =>
+        !isOptionHidden(evaluation, "venueSpace", value) &&
+        !isOptionDisabled(evaluation, "venueSpace", value),
     );
     if (kept.length !== data.venueSpace.length) {
       next = { ...next, venueSpace: kept };
@@ -826,10 +850,18 @@ export function pruneUnavailableSelections(
 
   if (
     data.mealService &&
-    isMealServiceDisabled(evaluation, data.mealService)
+    (isOptionHidden(evaluation, "mealService", data.mealService) ||
+      isMealServiceDisabled(evaluation, data.mealService))
   ) {
     next = { ...next, mealService: null, startTime: "" };
   }
+
+  const timingPatch = clearedTimingFields(
+    location.timingHours,
+    next,
+    location.timingStyle,
+  );
+  if (timingPatch) next = { ...next, ...timingPatch };
 
   return next;
 }
@@ -852,15 +884,12 @@ export function visibleVenueSpaces(
   );
 }
 
-/** Meal choices stay on screen. Disable whenever a hide rule matches.
- *  Weekday rules use passIfEmpty, so they stay enabled until an exact date is set.
- *  Guest-count and booking-type rules still disable the choice without a date.
- */
+/** Meal, budget, and venue choices can stay on screen and be disabled. */
 export function isMealServiceDisabled(
   evaluation: RuleEvaluation,
   meal: MealService,
 ): boolean {
-  return isOptionHidden(evaluation, "mealService", meal);
+  return isOptionDisabled(evaluation, "mealService", meal);
 }
 
 /** Day chips shown under Lunch/Dinner when an owned availability rule lists them. */

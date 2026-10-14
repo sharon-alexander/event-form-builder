@@ -34,6 +34,7 @@ export function draftToLocationConfig(draft: EditableLocation): LocationConfig {
     ),
     timingStyle:
       (draft.timing_style as LocationConfig["timingStyle"]) || "standard",
+    timingHours: draft.timing_hours,
     infoPage: draft.info_page ? { title: draft.info_page.title } : undefined,
     fieldSettings: draft.field_settings,
     formRules: parseFormRules(draft.form_rules ?? EMPTY_FORM_RULES),
