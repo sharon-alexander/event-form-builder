@@ -26,7 +26,10 @@ export default function EventFormatStep({
     () => evaluateRules(location.formRules, data),
     [location.formRules, data],
   );
-  const categories = location.eventCategories ?? DEFAULT_EVENT_CATEGORIES;
+  const categories = useMemo(() => {
+    const source = location.eventCategories ?? DEFAULT_EVENT_CATEGORIES;
+    return [...source].sort((a, b) => a.label.localeCompare(b.label));
+  }, [location.eventCategories]);
   const formats = location.eventFormats ?? EVENT_FORMATS;
   const showFormats = isFieldShown(location, "eventFormat");
   const resolvedTitle = title ?? (showFormats ? copy.title : "Event type");
