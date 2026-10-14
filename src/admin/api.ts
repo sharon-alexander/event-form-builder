@@ -76,6 +76,57 @@ export async function uploadGalleryFile(
   return supabase.storage.from(GALLERY_BUCKET).getPublicUrl(path).data.publicUrl;
 }
 
+/** Upload a generated thumbnail next to gallery originals. */
+export async function uploadGalleryBlob(
+  orgId: string,
+  slug: string,
+  blob: Blob,
+  fileName: string,
+  contentType: string,
+): Promise<string> {
+  const supabase = requireSupabase();
+  const safeName = sanitizeFileName(fileName);
+  const path = `org/${orgId}/${slug}/thumbs/${Date.now()}-${safeName}`;
+  const { error } = await supabase.storage.from(GALLERY_BUCKET).upload(path, blob, {
+    contentType,
+    upsert: false,
+  });
+  if (error) throw error;
+  return supabase.storage.from(GALLERY_BUCKET).getPublicUrl(path).data.publicUrl;
+}
+
+const GALLERY_PUBLIC_MARKER = "/object/public/gallery/";
+
+/** Storage path for a public gallery URL, or null when the URL is not in this bucket. */
+export function galleryObjectPath(url: string): string | null {
+  const index = url.indexOf(GALLERY_PUBLIC_MARKER);
+  if (index === -1) return null;
+  const path = url.slice(index + GALLERY_PUBLIC_MARKER.length).split("?")[0] ?? "";
+  if (!path) return null;
+  try {
+    return decodeURIComponent(path);
+  } catch {
+    return path;
+  }
+}
+
+/** Delete gallery objects. URLs outside the bucket are ignored. */
+export async function deleteGalleryFiles(urls: Array<string | null | undefined>): Promise<void> {
+  const paths = [
+    ...new Set(
+      urls.flatMap((url) => {
+        if (!url) return [];
+        const path = galleryObjectPath(url);
+        return path ? [path] : [];
+      }),
+    ),
+  ];
+  if (paths.length === 0) return;
+  const supabase = requireSupabase();
+  const { error } = await supabase.storage.from(GALLERY_BUCKET).remove(paths);
+  if (error) throw error;
+}
+
 function sanitizeFileName(name: string): string {
   return name
     .toLowerCase()

@@ -1,4 +1,4 @@
-import { type DragEvent, useRef, useState } from "react";
+import { type DragEvent, useEffect, useRef, useState } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -21,8 +21,9 @@ import type { MediaItem } from "../../../locations/types";
 import { mediaKindLabel } from "../../../media/embeds";
 import { MediaThumb } from "../../../components/MediaThumb";
 import MediaStage from "../../../components/MediaStage";
-import { uploadGalleryFile } from "../../api";
-import { collectFormMedia } from "../../utils/formMediaLibrary";
+import { insertLocationMedia, savedFromUploadError, uploadToLibrary } from "../../mediaLibraryApi";
+import type { FormMediaLibrary } from "../../useFormMediaLibrary";
+import { libraryItemToMedia } from "../../utils/formMediaLibrary";
 import type { EditableLocation } from "../../pages/FormEditorPage";
 import EmbedPasteField from "./EmbedPasteField";
 import MediaPicker from "./MediaPicker";
@@ -31,6 +32,8 @@ interface Props {
   draft: EditableLocation;
   update: (patch: Partial<EditableLocation>) => void;
   orgId: string | null;
+  locationId: string | null;
+  library: FormMediaLibrary;
   onError: (msg: string) => void;
 }
 
@@ -38,7 +41,7 @@ function stableId(item: MediaItem, index: number) {
   return `${item.src}::${index}`;
 }
 
-export default function GalleryTab({ draft, update, orgId, onError }: Props) {
+export default function GalleryTab({ draft, update, orgId, locationId, library, onError }: Props) {
   const fileInput = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -48,7 +51,10 @@ export default function GalleryTab({ draft, update, orgId, onError }: Props) {
   const [dragOver, setDragOver] = useState(false);
 
   const media = draft.gallery_media;
-  const libraryMedia = collectFormMedia(draft);
+
+  useEffect(() => {
+    if (pickerOpen) void library.ensureLoaded();
+  }, [pickerOpen, library.ensureLoaded]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -103,23 +109,21 @@ export default function GalleryTab({ draft, update, orgId, onError }: Props) {
 
   async function handleFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
-    if (!orgId) {
+    if (!orgId || !locationId) {
       onError("Cannot upload before the form has loaded.");
       return;
     }
     setUploading(true);
     try {
-      const uploaded: MediaItem[] = [];
-      for (const file of Array.from(files)) {
-        const url = await uploadGalleryFile(orgId, draft.slug, file);
-        uploaded.push({
-          type: file.type.startsWith("video") ? "video" : "image",
-          src: url,
-          alt: file.name.replace(/\.[^.]+$/, ""),
-        });
-      }
-      setMedia([...media, ...uploaded]);
+      const saved = await uploadToLibrary(orgId, draft.slug, locationId, Array.from(files));
+      library.remember(saved);
+      setMedia([...media, ...saved.map(libraryItemToMedia)]);
     } catch (err) {
+      const saved = savedFromUploadError(err);
+      if (saved.length > 0) {
+        library.remember(saved);
+        setMedia([...media, ...saved.map(libraryItemToMedia)]);
+      }
       onError(err instanceof Error ? err.message : "Upload failed.");
     } finally {
       setUploading(false);
@@ -159,15 +163,13 @@ export default function GalleryTab({ draft, update, orgId, onError }: Props) {
           </p>
         </div>
         <div className="flex gap-2">
-          {libraryMedia.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setPickerOpen((v) => !v)}
-              className="adm-btn-secondary px-3 py-1.5 text-xs"
-            >
-              {pickerOpen ? "Cancel" : "Choose existing"}
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => setPickerOpen((v) => !v)}
+            className="adm-btn-secondary px-3 py-1.5 text-xs"
+          >
+            {pickerOpen ? "Cancel" : "Choose existing"}
+          </button>
           <button
             type="button"
             onClick={() => setEmbedOpen((v) => !v)}
@@ -204,8 +206,20 @@ export default function GalleryTab({ draft, update, orgId, onError }: Props) {
         <EmbedPasteField
           existingSrcs={media.map((m) => m.src)}
           onAdd={(item) => {
-            addExisting(item);
-            setEmbedOpen(false);
+            void (async () => {
+              if (!locationId) {
+                onError("Cannot upload before the form has loaded.");
+                return;
+              }
+              try {
+                const saved = await insertLocationMedia(locationId, item);
+                library.remember([saved]);
+                addExisting(libraryItemToMedia(saved));
+                setEmbedOpen(false);
+              } catch (err) {
+                onError(err instanceof Error ? err.message : "Could not add embed.");
+              }
+            })();
           }}
           onError={onError}
         />
@@ -213,7 +227,13 @@ export default function GalleryTab({ draft, update, orgId, onError }: Props) {
 
       {pickerOpen && (
         <MediaPicker
-          library={libraryMedia}
+          library={library.items}
+          loading={library.loading}
+          loadingMore={library.loadingMore}
+          hasMore={library.hasMore}
+          error={library.error}
+          onRetry={() => void library.reload()}
+          onLoadMore={() => void library.loadMore()}
           selected={media}
           onSelect={addExisting}
           onClose={() => setPickerOpen(false)}
@@ -319,7 +339,7 @@ function TileContent({
             : ""
       }`}
     >
-      <MediaThumb item={item} className="h-full w-full object-cover" />
+      <MediaThumb item={item} preferThumb className="h-full w-full object-cover" />
       {kind && (
         <div className="absolute bottom-1 left-1 rounded bg-black/60 px-1 py-0.5 text-[9px] font-medium uppercase text-white">
           {kind}
@@ -365,7 +385,7 @@ function SortableTile({
       }`}
       onClick={onClick}
     >
-      <MediaThumb item={item} className="h-full w-full object-cover" />
+      <MediaThumb item={item} preferThumb className="h-full w-full object-cover" />
 
       {kind && (
         <div className="absolute bottom-1 left-1 rounded bg-black/60 px-1 py-0.5 text-[9px] font-medium uppercase text-white">

@@ -1,4 +1,5 @@
 import type { EditableLocation } from "../../pages/FormEditorPage";
+import type { FormMediaLibrary } from "../../useFormMediaLibrary";
 import ContentTab from "./ContentTab";
 import GalleryTab from "./GalleryTab";
 
@@ -6,10 +7,12 @@ interface Props {
   draft: EditableLocation;
   update: (patch: Partial<EditableLocation>) => void;
   orgId: string | null;
+  locationId: string | null;
+  library: FormMediaLibrary;
   onError: (msg: string) => void;
 }
 
-export default function LandingTab({ draft, update, orgId, onError }: Props) {
+export default function LandingTab({ draft, update, orgId, locationId, library, onError }: Props) {
   return (
     <div className="space-y-10">
       <div>
@@ -29,7 +32,14 @@ export default function LandingTab({ draft, update, orgId, onError }: Props) {
       <hr className="border-zinc-100" />
 
       <section>
-        <GalleryTab draft={draft} update={update} orgId={orgId} onError={onError} />
+        <GalleryTab
+          draft={draft}
+          update={update}
+          orgId={orgId}
+          locationId={locationId}
+          library={library}
+          onError={onError}
+        />
       </section>
     </div>
   );

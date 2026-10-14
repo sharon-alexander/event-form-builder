@@ -1,7 +1,9 @@
 import { type DragEvent, useEffect, useRef, useState } from "react";
 import type { MediaItem } from "../../../locations/types";
 import { mediaKindLabel } from "../../../media/embeds";
-import { uploadGalleryFile } from "../../api";
+import { insertLocationMedia, savedFromUploadError, uploadToLibrary } from "../../mediaLibraryApi";
+import type { FormMediaLibrary } from "../../useFormMediaLibrary";
+import { libraryItemToMedia } from "../../utils/formMediaLibrary";
 import { MediaThumb } from "../../../components/MediaThumb";
 import EmbedPasteField from "./EmbedPasteField";
 import MediaPicker from "./MediaPicker";
@@ -11,9 +13,10 @@ interface Props {
   onClose: () => void;
   title: string;
   media: MediaItem[];
-  libraryMedia: MediaItem[];
+  library: FormMediaLibrary;
   onChange: (next: MediaItem[]) => void;
   orgId: string | null;
+  locationId: string | null;
   slug: string;
   onError: (msg: string) => void;
 }
@@ -23,9 +26,10 @@ export default function VenueGalleryEditor({
   onClose,
   title,
   media,
-  libraryMedia,
+  library,
   onChange,
   orgId,
+  locationId,
   slug,
   onError,
 }: Props) {
@@ -42,12 +46,13 @@ export default function VenueGalleryEditor({
       setDragOver(false);
       return;
     }
+    if (pickerOpen) void library.ensureLoaded();
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose]);
+  }, [open, onClose, pickerOpen, library.ensureLoaded]);
 
   if (!open) return null;
 
@@ -67,23 +72,21 @@ export default function VenueGalleryEditor({
 
   async function handleFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
-    if (!orgId) {
+    if (!orgId || !locationId) {
       onError("Cannot upload before the form has loaded.");
       return;
     }
     setUploading(true);
     try {
-      const uploaded: MediaItem[] = [];
-      for (const file of Array.from(files)) {
-        const url = await uploadGalleryFile(orgId, slug, file);
-        uploaded.push({
-          type: file.type.startsWith("video") ? "video" : "image",
-          src: url,
-          alt: file.name.replace(/\.[^.]+$/, ""),
-        });
-      }
-      onChange([...media, ...uploaded]);
+      const saved = await uploadToLibrary(orgId, slug, locationId, Array.from(files));
+      library.remember(saved);
+      onChange([...media, ...saved.map(libraryItemToMedia)]);
     } catch (err) {
+      const saved = savedFromUploadError(err);
+      if (saved.length > 0) {
+        library.remember(saved);
+        onChange([...media, ...saved.map(libraryItemToMedia)]);
+      }
       onError(err instanceof Error ? err.message : "Upload failed.");
     } finally {
       setUploading(false);
@@ -140,15 +143,13 @@ export default function VenueGalleryEditor({
 
         <div className="min-h-0 flex-1 overflow-y-auto p-5">
           <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
-            {libraryMedia.length > 0 && (
-              <button
-                type="button"
-                onClick={() => setPickerOpen((v) => !v)}
-                className="adm-btn-secondary px-3 py-1.5 text-xs"
-              >
-                {pickerOpen ? "Cancel" : "Choose existing"}
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => setPickerOpen((v) => !v)}
+              className="adm-btn-secondary px-3 py-1.5 text-xs"
+            >
+              {pickerOpen ? "Cancel" : "Choose existing"}
+            </button>
             <button
               type="button"
               onClick={() => setEmbedOpen((v) => !v)}
@@ -179,8 +180,20 @@ export default function VenueGalleryEditor({
               <EmbedPasteField
                 existingSrcs={media.map((m) => m.src)}
                 onAdd={(item) => {
-                  addExisting(item);
-                  setEmbedOpen(false);
+                  void (async () => {
+                    if (!locationId) {
+                      onError("Cannot upload before the form has loaded.");
+                      return;
+                    }
+                    try {
+                      const saved = await insertLocationMedia(locationId, item);
+                      library.remember([saved]);
+                      addExisting(libraryItemToMedia(saved));
+                      setEmbedOpen(false);
+                    } catch (err) {
+                      onError(err instanceof Error ? err.message : "Could not add embed.");
+                    }
+                  })();
                 }}
                 onError={onError}
               />
@@ -190,7 +203,13 @@ export default function VenueGalleryEditor({
           {pickerOpen && (
             <div className="mb-4">
               <MediaPicker
-                library={libraryMedia}
+                library={library.items}
+                loading={library.loading}
+                loadingMore={library.loadingMore}
+                hasMore={library.hasMore}
+                error={library.error}
+                onRetry={() => void library.reload()}
+                onLoadMore={() => void library.loadMore()}
                 selected={media}
                 onSelect={addExisting}
                 onClose={() => setPickerOpen(false)}
@@ -246,6 +265,7 @@ export default function VenueGalleryEditor({
                       >
                         <MediaThumb
                           item={item}
+                          preferThumb
                           className="h-full w-full object-cover"
                         />
                         {kind && (

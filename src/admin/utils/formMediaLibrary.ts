@@ -1,21 +1,28 @@
-import type { MediaItem } from "../../locations/types";
-import type { EditableLocation } from "../pages/FormEditorPage";
+import type { MediaItem, VenueSpaceOption } from "../../locations/types";
+import type { LibraryMedia } from "../mediaLibraryApi";
 
-/** All unique media already used on this form (landing gallery + venue galleries). */
-export function collectFormMedia(draft: EditableLocation): MediaItem[] {
-  const seen = new Set<string>();
-  const items: MediaItem[] = [];
+export function libraryItemToMedia(item: LibraryMedia): MediaItem {
+  return {
+    type: item.type,
+    src: item.src,
+    alt: item.alt,
+    ...(item.thumb ? { thumb: item.thumb } : {}),
+    ...(item.poster ? { poster: item.poster } : {}),
+    ...(item.provider ? { provider: item.provider } : {}),
+  };
+}
 
-  function add(item: MediaItem) {
-    if (seen.has(item.src)) return;
-    seen.add(item.src);
-    items.push(item);
-  }
-
-  for (const item of draft.gallery_media) add(item);
+/** Where a library item is currently shown. Empty means it can be deleted. */
+export function mediaUsages(
+  draft: { gallery_media: MediaItem[]; venue_spaces: VenueSpaceOption[] },
+  src: string,
+): string[] {
+  const labels: string[] = [];
+  if (draft.gallery_media.some((item) => item.src === src)) labels.push("Landing");
   for (const venue of draft.venue_spaces) {
-    for (const item of venue.galleryMedia ?? []) add(item);
+    if ((venue.galleryMedia ?? []).some((item) => item.src === src)) {
+      labels.push(venue.label.trim() || "Untitled space");
+    }
   }
-
-  return items;
+  return labels;
 }

@@ -19,7 +19,7 @@ import { CSS } from "@dnd-kit/utilities";
 import type { VenueSpaceOption } from "../../../locations/types";
 import type { EditableLocation } from "../../pages/FormEditorPage";
 import { removeAvailabilityRules } from "../../../form/conditions";
-import { collectFormMedia } from "../../utils/formMediaLibrary";
+import type { FormMediaLibrary } from "../../useFormMediaLibrary";
 import { fieldIsRequired, RequiredCheckbox, setFieldRequired } from "./RequiredCheckbox";
 import VenueGalleryEditor from "./VenueGalleryEditor";
 
@@ -27,6 +27,8 @@ interface Props {
   draft: EditableLocation;
   update: (patch: Partial<EditableLocation>) => void;
   orgId: string | null;
+  locationId: string | null;
+  library: FormMediaLibrary;
   onError: (msg: string) => void;
 }
 
@@ -55,9 +57,15 @@ function newId(): string {
   return crypto.randomUUID();
 }
 
-export default function VenueSpacesEditor({ draft, update, orgId, onError }: Props) {
+export default function VenueSpacesEditor({
+  draft,
+  update,
+  orgId,
+  locationId,
+  library,
+  onError,
+}: Props) {
   const venues = draft.venue_spaces;
-  const libraryMedia = collectFormMedia(draft);
 
   const [spaceIds, setSpaceIds] = useState(() => venues.map(newId));
   const [focusId, setFocusId] = useState<string | null>(null);
@@ -182,8 +190,9 @@ export default function VenueSpacesEditor({ draft, update, orgId, onError }: Pro
                     index={i}
                     venue={venue}
                     inputRef={focusId === id ? focusRef : undefined}
-                    libraryMedia={libraryMedia}
+                    library={library}
                     orgId={orgId}
+                    locationId={locationId}
                     slug={draft.slug}
                     onError={onError}
                     galleryOpen={openSpaceId === id}
@@ -224,8 +233,9 @@ function SortableSpaceCard({
   index,
   venue,
   inputRef,
-  libraryMedia,
+  library,
   orgId,
+  locationId,
   slug,
   onError,
   galleryOpen,
@@ -238,8 +248,9 @@ function SortableSpaceCard({
   index: number;
   venue: VenueSpaceOption;
   inputRef?: Ref<HTMLInputElement>;
-  libraryMedia: ReturnType<typeof collectFormMedia>;
+  library: FormMediaLibrary;
   orgId: string | null;
+  locationId: string | null;
   slug: string;
   onError: (msg: string) => void;
   galleryOpen: boolean;
@@ -333,9 +344,10 @@ function SortableSpaceCard({
         onClose={onCloseGallery}
         title={venue.label}
         media={media}
-        libraryMedia={libraryMedia}
+        library={library}
         onChange={(galleryMedia) => onChange({ galleryMedia })}
         orgId={orgId}
+        locationId={locationId}
         slug={slug}
         onError={onError}
       />

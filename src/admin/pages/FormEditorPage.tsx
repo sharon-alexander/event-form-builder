@@ -33,6 +33,7 @@ import {
   type LocationUpdate,
 } from "../api";
 import FormBuilderTab from "../components/editor/FormBuilderTab";
+import MediaLibraryTab from "../components/editor/MediaLibraryTab";
 import ThemeTab from "../components/editor/ThemeTab";
 import AdvancedTab from "../components/editor/AdvancedTab";
 import EmbedTab from "../components/editor/EmbedTab";
@@ -40,6 +41,7 @@ import PublishToggle from "../components/PublishToggle";
 import UnsavedChangesDialog from "../components/UnsavedChangesDialog";
 import { buildPreviewUrl } from "../embedCode";
 import { useRegisterLeaveGuard, type LeaveAction } from "../unsavedGuard";
+import { useFormMediaLibrary } from "../useFormMediaLibrary";
 
 export interface EditableLocation {
   slug: string;
@@ -69,6 +71,7 @@ export interface EditableLocation {
 
 const TABS = [
   { id: "builder", label: "Form Builder" },
+  { id: "media", label: "Media" },
   { id: "theme", label: "Theme" },
   { id: "embed", label: "Embed" },
   { id: "advanced", label: "Advanced" },
@@ -119,6 +122,7 @@ function toEditable(row: LocationRow): EditableLocation {
 
 export default function FormEditorPage() {
   const { id } = useParams<{ id: string }>();
+  const library = useFormMediaLibrary(id ?? null);
 
   const [orgId, setOrgId] = useState<string | null>(null);
   const [draft, setDraft] = useState<EditableLocation | null>(null);
@@ -439,7 +443,23 @@ export default function FormEditorPage() {
 
       <div className={`rounded-2xl border border-zinc-200 bg-white shadow-sm ${tab === "builder" ? "p-4 lg:p-6" : "p-6"}`}>
         {tab === "builder" && (
-          <FormBuilderTab draft={draft} update={update} orgId={orgId} onError={setError} />
+          <FormBuilderTab
+            draft={draft}
+            update={update}
+            orgId={orgId}
+            locationId={id ?? null}
+            library={library}
+            onError={setError}
+          />
+        )}
+        {tab === "media" && id && (
+          <MediaLibraryTab
+            locationId={id}
+            draft={draft}
+            orgId={orgId}
+            library={library}
+            onError={setError}
+          />
         )}
         {tab === "theme" && (
           <ThemeTab draft={draft} update={update} orgId={orgId} onError={setError} />

@@ -26,6 +26,7 @@ import { DEFAULT_STEP_COPY } from "../../../form/defaultStepCopy";
 import { DEFAULT_EVENT_CATEGORIES, EVENT_FORMATS } from "../../../types";
 import { isEmptyRichText } from "../../../utils/richText";
 import type { EditableLocation } from "../../pages/FormEditorPage";
+import type { FormMediaLibrary } from "../../useFormMediaLibrary";
 import {
   ALL_STEP_IDS,
   DEFAULT_FORM_STEPS,
@@ -53,6 +54,8 @@ interface Props {
   draft: EditableLocation;
   update: (patch: Partial<EditableLocation>) => void;
   orgId: string | null;
+  locationId: string | null;
+  library: FormMediaLibrary;
   onError: (msg: string) => void;
 }
 
@@ -134,7 +137,14 @@ function needsSetupBanner(
   }
 }
 
-export default function FormBuilderTab({ draft, update, orgId, onError }: Props) {
+export default function FormBuilderTab({
+  draft,
+  update,
+  orgId,
+  locationId,
+  library,
+  onError,
+}: Props) {
   const steps =
     draft.form_steps.length > 0 ? draft.form_steps : DEFAULT_FORM_STEPS;
   const moreDetails = draft.step_more_details ?? {};
@@ -316,6 +326,8 @@ export default function FormBuilderTab({ draft, update, orgId, onError }: Props)
                   draft={draft}
                   update={update}
                   orgId={orgId}
+                  locationId={locationId}
+                  library={library}
                   onError={onError}
                 />
               ) : (
@@ -325,6 +337,8 @@ export default function FormBuilderTab({ draft, update, orgId, onError }: Props)
                   draft={draft}
                   update={update}
                   orgId={orgId}
+                  locationId={locationId}
+                  library={library}
                   onError={onError}
                   moreDetails={moreDetails}
                   setMoreDetails={setMoreDetails}
@@ -405,11 +419,15 @@ function LandingConfig({
   draft,
   update,
   orgId,
+  locationId,
+  library,
   onError,
 }: {
   draft: EditableLocation;
   update: (patch: Partial<EditableLocation>) => void;
   orgId: string | null;
+  locationId: string | null;
+  library: FormMediaLibrary;
   onError: (msg: string) => void;
 }) {
   return (
@@ -423,7 +441,14 @@ function LandingConfig({
       </div>
       <ContentTab draft={draft} update={update} />
       <hr className="border-zinc-100" />
-      <GalleryTab draft={draft} update={update} orgId={orgId} onError={onError} />
+      <GalleryTab
+        draft={draft}
+        update={update}
+        orgId={orgId}
+        locationId={locationId}
+        library={library}
+        onError={onError}
+      />
     </div>
   );
 }
@@ -436,6 +461,8 @@ function StepConfig({
   draft,
   update,
   orgId,
+  locationId,
+  library,
   onError,
   moreDetails,
   setMoreDetails,
@@ -445,6 +472,8 @@ function StepConfig({
   draft: EditableLocation;
   update: (patch: Partial<EditableLocation>) => void;
   orgId: string | null;
+  locationId: string | null;
+  library: FormMediaLibrary;
   onError: (msg: string) => void;
   moreDetails: Partial<Record<StepId, string>>;
   setMoreDetails: (stepId: StepId, text: string) => void;
@@ -485,6 +514,8 @@ function StepConfig({
           draft={draft}
           update={update}
           orgId={orgId}
+          locationId={locationId}
+          library={library}
           onError={onError}
         />
       )}
