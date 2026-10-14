@@ -8,7 +8,7 @@ import {
 
 interface Props {
   existingSrcs: string[];
-  onAdd: (item: MediaItem) => void;
+  onAdd: (item: MediaItem) => void | Promise<void>;
   onError: (msg: string) => void;
 }
 
@@ -36,7 +36,7 @@ export default function EmbedPasteField({ existingSrcs, onAdd, onError }: Props)
       } catch {
         poster = undefined;
       }
-      onAdd({
+      await onAdd({
         type: "embed",
         provider: parsed.provider,
         src: parsed.src,
@@ -44,6 +44,8 @@ export default function EmbedPasteField({ existingSrcs, onAdd, onError }: Props)
         alt: parsed.title ?? "",
       });
       setValue("");
+    } catch (err) {
+      onError(err instanceof Error ? err.message : "Could not add embed.");
     } finally {
       setAdding(false);
     }

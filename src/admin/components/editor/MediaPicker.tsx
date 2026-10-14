@@ -1,22 +1,42 @@
 import type { MediaItem } from "../../../locations/types";
 import { mediaKindLabel } from "../../../media/embeds";
 import { MediaThumb } from "../../../components/MediaThumb";
+import type { LibraryMedia } from "../../mediaLibraryApi";
+import { libraryItemToMedia } from "../../utils/formMediaLibrary";
+import LoadMoreSentinel from "./LoadMoreSentinel";
 
 interface Props {
-  library: MediaItem[];
+  library: LibraryMedia[];
+  loading: boolean;
+  loadingMore: boolean;
+  hasMore: boolean;
+  error: string | null;
+  onRetry: () => void;
+  onLoadMore: () => void;
   selected: MediaItem[];
   onSelect: (item: MediaItem) => void;
   onClose: () => void;
 }
 
-export default function MediaPicker({ library, selected, onSelect, onClose }: Props) {
-  const selectedSrcs = new Set(selected.map((m) => m.src));
-  const available = library.filter((m) => !selectedSrcs.has(m.src));
+export default function MediaPicker({
+  library,
+  loading,
+  loadingMore,
+  hasMore,
+  error,
+  onRetry,
+  onLoadMore,
+  selected,
+  onSelect,
+  onClose,
+}: Props) {
+  const selectedSrcs = new Set(selected.map((item) => item.src));
+  const available = library.filter((item) => !selectedSrcs.has(item.src));
 
   return (
     <div className="mt-3 rounded-lg border border-zinc-200 bg-white p-3">
       <div className="mb-2 flex items-center justify-between">
-        <p className="text-xs font-medium text-zinc-700">Choose from existing media</p>
+        <p className="text-xs font-medium text-zinc-700">Choose from the media library</p>
         <button
           type="button"
           onClick={onClose}
@@ -26,10 +46,21 @@ export default function MediaPicker({ library, selected, onSelect, onClose }: Pr
         </button>
       </div>
 
-      {available.length === 0 ? (
+      {error && (
+        <div className="mb-2 flex items-center justify-between gap-2 text-xs text-red-600">
+          <p>{error}</p>
+          <button type="button" onClick={onRetry} className="font-medium hover:underline">
+            Retry
+          </button>
+        </div>
+      )}
+
+      {loading && library.length === 0 ? (
+        <p className="text-xs text-zinc-400">Loading media…</p>
+      ) : available.length === 0 && !hasMore ? (
         <p className="text-xs text-zinc-400">
           {library.length === 0
-            ? "Upload media on the Gallery tab or to another venue first."
+            ? "Upload media on the Media tab, or upload into this gallery."
             : "All available media is already in this gallery."}
         </p>
       ) : (
@@ -38,14 +69,15 @@ export default function MediaPicker({ library, selected, onSelect, onClose }: Pr
             const kind = mediaKindLabel(item);
             return (
               <button
-                key={item.src}
+                key={item.id}
                 type="button"
-                onClick={() => onSelect(item)}
+                onClick={() => onSelect(libraryItemToMedia(item))}
                 aria-label={`Add ${item.alt || kind || "media"}`}
                 className="group relative overflow-hidden rounded-md ring-1 ring-zinc-200 transition-all hover:ring-zinc-400"
               >
                 <MediaThumb
                   item={item}
+                  preferThumb
                   className="h-14 w-full object-cover sm:h-16"
                 />
                 {kind && (
@@ -63,6 +95,11 @@ export default function MediaPicker({ library, selected, onSelect, onClose }: Pr
           })}
         </div>
       )}
+
+      {hasMore && (
+        <LoadMoreSentinel disabled={loading || loadingMore || !!error} onVisible={onLoadMore} />
+      )}
+      {loadingMore && <p className="mt-2 text-xs text-zinc-400">Loading more…</p>}
     </div>
   );
 }

@@ -19,7 +19,8 @@ import { CSS } from "@dnd-kit/utilities";
 import type { StepId } from "../../../locations/types";
 import { DEFAULT_STEP_COPY } from "../../../form/defaultStepCopy";
 import { isEmptyRichText, toDisplayHtml } from "../../../utils/richText";
-import type { EditableLocation } from "../../pages/FormEditorPage";
+import type { EditableLocation, UpdateDraft } from "../../pages/FormEditorPage";
+import type { FormMediaLibrary } from "../../useFormMediaLibrary";
 import {
   ALL_STEP_IDS,
   DEFAULT_FORM_STEPS,
@@ -36,8 +37,10 @@ import VenueSpacesEditor from "./VenueSpacesEditor";
 
 interface Props {
   draft: EditableLocation;
-  update: (patch: Partial<EditableLocation>) => void;
+  update: UpdateDraft;
   orgId: string | null;
+  locationId: string | null;
+  library: FormMediaLibrary;
   onError: (msg: string) => void;
 }
 
@@ -95,7 +98,7 @@ function needsSetupBanner(
   }
 }
 
-export default function StepsTab({ draft, update, orgId, onError }: Props) {
+export default function StepsTab({ draft, update, orgId, locationId, library, onError }: Props) {
   const steps =
     draft.form_steps.length > 0 ? draft.form_steps : DEFAULT_FORM_STEPS;
   const moreDetails = draft.step_more_details ?? {};
@@ -238,6 +241,8 @@ export default function StepsTab({ draft, update, orgId, onError }: Props) {
                   draft={draft}
                   update={update}
                   orgId={orgId}
+                  locationId={locationId}
+                  library={library}
                   onError={onError}
                 />
               )}

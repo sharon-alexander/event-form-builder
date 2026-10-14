@@ -3,6 +3,8 @@ export type MediaEmbedProvider = "vimeo";
 export interface MediaItem {
   type: "image" | "video" | "embed";
   src: string;
+  /** Small image used by admin grids. Public galleries keep using src. */
+  thumb?: string;
   poster?: string;
   alt: string;
   /** Required when type is "embed". */

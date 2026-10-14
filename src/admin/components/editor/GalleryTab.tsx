@@ -1,4 +1,4 @@
-import { type DragEvent, useRef, useState } from "react";
+import { type DragEvent, useEffect, useRef, useState } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -21,16 +21,19 @@ import type { MediaItem } from "../../../locations/types";
 import { mediaKindLabel } from "../../../media/embeds";
 import { MediaThumb } from "../../../components/MediaThumb";
 import MediaStage from "../../../components/MediaStage";
-import { uploadGalleryFile } from "../../api";
-import { collectFormMedia } from "../../utils/formMediaLibrary";
-import type { EditableLocation } from "../../pages/FormEditorPage";
+import { insertLocationMedia, savedFromUploadError, uploadToLibrary, type LibraryMedia } from "../../mediaLibraryApi";
+import type { FormMediaLibrary } from "../../useFormMediaLibrary";
+import { appendUnique, libraryItemToMedia } from "../../utils/formMediaLibrary";
+import type { EditableLocation, UpdateDraft } from "../../pages/FormEditorPage";
 import EmbedPasteField from "./EmbedPasteField";
 import MediaPicker from "./MediaPicker";
 
 interface Props {
   draft: EditableLocation;
-  update: (patch: Partial<EditableLocation>) => void;
+  update: UpdateDraft;
   orgId: string | null;
+  locationId: string | null;
+  library: FormMediaLibrary;
   onError: (msg: string) => void;
 }
 
@@ -38,7 +41,7 @@ function stableId(item: MediaItem, index: number) {
   return `${item.src}::${index}`;
 }
 
-export default function GalleryTab({ draft, update, orgId, onError }: Props) {
+export default function GalleryTab({ draft, update, orgId, locationId, library, onError }: Props) {
   const fileInput = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -48,7 +51,10 @@ export default function GalleryTab({ draft, update, orgId, onError }: Props) {
   const [dragOver, setDragOver] = useState(false);
 
   const media = draft.gallery_media;
-  const libraryMedia = collectFormMedia(draft);
+
+  useEffect(() => {
+    if (pickerOpen) void library.ensureLoaded();
+  }, [pickerOpen, library.ensureLoaded]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -57,16 +63,18 @@ export default function GalleryTab({ draft, update, orgId, onError }: Props) {
 
   const sortableIds = media.map((item, i) => stableId(item, i));
 
-  function setMedia(next: MediaItem[]) {
-    update({ gallery_media: next });
+  function setMedia(next: MediaItem[] | ((current: MediaItem[]) => MediaItem[])) {
+    update((current) => ({
+      gallery_media: typeof next === "function" ? next(current.gallery_media) : next,
+    }));
   }
 
   function patchItem(index: number, patch: Partial<MediaItem>) {
-    setMedia(media.map((m, i) => (i === index ? { ...m, ...patch } : m)));
+    setMedia((current) => current.map((m, i) => (i === index ? { ...m, ...patch } : m)));
   }
 
   function remove(index: number) {
-    setMedia(media.filter((_, i) => i !== index));
+    setMedia((current) => current.filter((_, i) => i !== index));
     if (selectedIndex === index) setSelectedIndex(null);
     else if (selectedIndex !== null && selectedIndex > index) {
       setSelectedIndex(selectedIndex - 1);
@@ -84,8 +92,7 @@ export default function GalleryTab({ draft, update, orgId, onError }: Props) {
     const oldIndex = sortableIds.indexOf(active.id as string);
     const newIndex = sortableIds.indexOf(over.id as string);
     if (oldIndex === -1 || newIndex === -1) return;
-    const next = arrayMove(media, oldIndex, newIndex);
-    setMedia(next);
+    setMedia((current) => arrayMove(current, oldIndex, newIndex));
     if (selectedIndex === oldIndex) setSelectedIndex(newIndex);
     else if (selectedIndex !== null) {
       if (oldIndex < selectedIndex && newIndex >= selectedIndex) {
@@ -97,29 +104,26 @@ export default function GalleryTab({ draft, update, orgId, onError }: Props) {
   }
 
   function addExisting(item: MediaItem) {
-    if (media.some((m) => m.src === item.src)) return;
-    setMedia([...media, item]);
+    setMedia((current) => appendUnique(current, [item]));
+  }
+
+  function addUploaded(saved: LibraryMedia[]) {
+    if (saved.length === 0) return;
+    library.remember(saved);
+    setMedia((current) => appendUnique(current, saved.map(libraryItemToMedia)));
   }
 
   async function handleFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
-    if (!orgId) {
+    if (!orgId || !locationId) {
       onError("Cannot upload before the form has loaded.");
       return;
     }
     setUploading(true);
     try {
-      const uploaded: MediaItem[] = [];
-      for (const file of Array.from(files)) {
-        const url = await uploadGalleryFile(orgId, draft.slug, file);
-        uploaded.push({
-          type: file.type.startsWith("video") ? "video" : "image",
-          src: url,
-          alt: file.name.replace(/\.[^.]+$/, ""),
-        });
-      }
-      setMedia([...media, ...uploaded]);
+      addUploaded(await uploadToLibrary(orgId, draft.slug, locationId, Array.from(files)));
     } catch (err) {
+      addUploaded(savedFromUploadError(err));
       onError(err instanceof Error ? err.message : "Upload failed.");
     } finally {
       setUploading(false);
@@ -159,15 +163,13 @@ export default function GalleryTab({ draft, update, orgId, onError }: Props) {
           </p>
         </div>
         <div className="flex gap-2">
-          {libraryMedia.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setPickerOpen((v) => !v)}
-              className="adm-btn-secondary px-3 py-1.5 text-xs"
-            >
-              {pickerOpen ? "Cancel" : "Choose existing"}
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => setPickerOpen((v) => !v)}
+            className="adm-btn-secondary px-3 py-1.5 text-xs"
+          >
+            {pickerOpen ? "Cancel" : "Choose existing"}
+          </button>
           <button
             type="button"
             onClick={() => setEmbedOpen((v) => !v)}
@@ -203,8 +205,11 @@ export default function GalleryTab({ draft, update, orgId, onError }: Props) {
       {embedOpen && (
         <EmbedPasteField
           existingSrcs={media.map((m) => m.src)}
-          onAdd={(item) => {
-            addExisting(item);
+          onAdd={async (item) => {
+            if (!locationId) throw new Error("Cannot upload before the form has loaded.");
+            const saved = await insertLocationMedia(locationId, item);
+            library.remember([saved]);
+            addExisting(libraryItemToMedia(saved));
             setEmbedOpen(false);
           }}
           onError={onError}
@@ -213,7 +218,13 @@ export default function GalleryTab({ draft, update, orgId, onError }: Props) {
 
       {pickerOpen && (
         <MediaPicker
-          library={libraryMedia}
+          library={library.items}
+          loading={library.loading}
+          loadingMore={library.loadingMore}
+          hasMore={library.hasMore}
+          error={library.error}
+          onRetry={() => void library.reload()}
+          onLoadMore={() => void library.loadMore()}
           selected={media}
           onSelect={addExisting}
           onClose={() => setPickerOpen(false)}
@@ -239,7 +250,7 @@ export default function GalleryTab({ draft, update, orgId, onError }: Props) {
               : "Drop images or videos here, click upload, or add an embed."}
           </div>
         ) : (
-          <div className="flex gap-4">
+          <div className="space-y-4">
             <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
@@ -247,7 +258,7 @@ export default function GalleryTab({ draft, update, orgId, onError }: Props) {
               onDragEnd={handleDragEnd}
             >
               <SortableContext items={sortableIds} strategy={rectSortingStrategy}>
-                <div className="grid flex-1 grid-cols-4 gap-1.5 sm:grid-cols-5 lg:grid-cols-6">
+                <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-5 lg:grid-cols-6">
                   {media.map((item, i) => (
                     <SortableTile
                       key={stableId(item, i)}
@@ -270,15 +281,15 @@ export default function GalleryTab({ draft, update, orgId, onError }: Props) {
             </DndContext>
 
             {selectedItem && selectedIndex !== null && (
-              <div className="w-72 shrink-0 space-y-4 rounded-xl border border-zinc-200 p-4">
-                <div className="overflow-hidden rounded-lg bg-zinc-100">
+              <div className="flex gap-4 rounded-xl border border-zinc-200 p-4">
+                <div className="w-40 shrink-0 overflow-hidden rounded-lg bg-zinc-100">
                   <MediaStage
                     key={selectedItem.src}
                     item={selectedItem}
-                    className="h-48 w-full object-cover"
+                    className="aspect-square w-full object-cover"
                   />
                 </div>
-                <div>
+                <div className="min-w-0 flex-1">
                   <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-zinc-500">
                     Caption
                   </label>
@@ -319,7 +330,7 @@ function TileContent({
             : ""
       }`}
     >
-      <MediaThumb item={item} className="h-full w-full object-cover" />
+      <MediaThumb item={item} preferThumb className="h-full w-full object-cover" />
       {kind && (
         <div className="absolute bottom-1 left-1 rounded bg-black/60 px-1 py-0.5 text-[9px] font-medium uppercase text-white">
           {kind}
@@ -365,7 +376,7 @@ function SortableTile({
       }`}
       onClick={onClick}
     >
-      <MediaThumb item={item} className="h-full w-full object-cover" />
+      <MediaThumb item={item} preferThumb className="h-full w-full object-cover" />
 
       {kind && (
         <div className="absolute bottom-1 left-1 rounded bg-black/60 px-1 py-0.5 text-[9px] font-medium uppercase text-white">
@@ -381,7 +392,7 @@ function SortableTile({
           onDelete();
         }}
         onPointerDown={(e) => e.stopPropagation()}
-        className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-600"
+        className="pointer-events-none absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 hover:bg-red-600"
       >
         <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path

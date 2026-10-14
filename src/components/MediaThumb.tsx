@@ -1,9 +1,10 @@
 import type { MediaItem } from "../locations/types";
 import { useStaticPreview } from "../context/StaticPreviewContext";
 
-type ThumbItem = Pick<MediaItem, "type" | "src" | "poster" | "alt">;
+type ThumbItem = Pick<MediaItem, "type" | "src" | "poster" | "alt" | "thumb">;
 
-export function mediaThumbSrc(item: ThumbItem): string | undefined {
+export function mediaThumbSrc(item: ThumbItem, preferThumb = false): string | undefined {
+  if (preferThumb && item.thumb) return item.thumb;
   if (item.type === "image") return item.src || undefined;
   return item.poster || undefined;
 }
@@ -13,14 +14,17 @@ export function MediaThumb({
   className,
   alt,
   loading,
+  preferThumb = false,
 }: {
   item: ThumbItem;
   className?: string;
   alt?: string;
   loading?: "lazy" | "eager";
+  /** Admin grids pass this so tiles use the small thumb instead of the original. */
+  preferThumb?: boolean;
 }) {
   const staticPreview = useStaticPreview();
-  const src = mediaThumbSrc(item);
+  const src = mediaThumbSrc(item, preferThumb);
   const label = alt ?? item.alt;
   if (src) {
     return (
@@ -28,6 +32,7 @@ export function MediaThumb({
         src={src}
         alt={label}
         className={className}
+        decoding="async"
         loading={staticPreview ? "eager" : (loading ?? "lazy")}
       />
     );

@@ -17,16 +17,18 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { VenueSpaceOption } from "../../../locations/types";
-import type { EditableLocation } from "../../pages/FormEditorPage";
+import type { EditableLocation, UpdateDraft } from "../../pages/FormEditorPage";
 import { removeAvailabilityRules } from "../../../form/conditions";
-import { collectFormMedia } from "../../utils/formMediaLibrary";
+import type { FormMediaLibrary } from "../../useFormMediaLibrary";
 import { fieldIsRequired, RequiredCheckbox, setFieldRequired } from "./RequiredCheckbox";
-import VenueGalleryEditor from "./VenueGalleryEditor";
+import VenueGalleryEditor, { type MediaListUpdate } from "./VenueGalleryEditor";
 
 interface Props {
   draft: EditableLocation;
-  update: (patch: Partial<EditableLocation>) => void;
+  update: UpdateDraft;
   orgId: string | null;
+  locationId: string | null;
+  library: FormMediaLibrary;
   onError: (msg: string) => void;
 }
 
@@ -55,11 +57,19 @@ function newId(): string {
   return crypto.randomUUID();
 }
 
-export default function VenueSpacesEditor({ draft, update, orgId, onError }: Props) {
+export default function VenueSpacesEditor({
+  draft,
+  update,
+  orgId,
+  locationId,
+  library,
+  onError,
+}: Props) {
   const venues = draft.venue_spaces;
-  const libraryMedia = collectFormMedia(draft);
 
   const [spaceIds, setSpaceIds] = useState(() => venues.map(newId));
+  const spaceIdsRef = useRef(spaceIds);
+  spaceIdsRef.current = spaceIds;
   const [focusId, setFocusId] = useState<string | null>(null);
   const [openSpaceId, setOpenSpaceId] = useState<string | null>(null);
   const focusRef = useRef<HTMLInputElement | null>(null);
@@ -86,14 +96,22 @@ export default function VenueSpacesEditor({ draft, update, orgId, onError }: Pro
     });
   }, [venues.length]);
 
-  function setVenues(next: VenueSpaceOption[], nextIds?: string[]) {
-    if (nextIds) setSpaceIds(nextIds);
-    update({ venue_spaces: withGeneratedValues(next) });
+  function setVenues(
+    reduce: (current: VenueSpaceOption[]) => VenueSpaceOption[],
+    reduceIds?: (current: string[]) => string[],
+  ) {
+    if (reduceIds) setSpaceIds(reduceIds);
+    update((current) => ({
+      venue_spaces: withGeneratedValues(reduce(current.venue_spaces)),
+    }));
   }
 
   function addSpace(space: VenueSpaceOption = { value: "", label: "", price: "" }) {
     const id = newId();
-    setVenues([...venues, space], [...spaceIds, id]);
+    setVenues(
+      (current) => [...current, space],
+      (ids) => [...ids, id],
+    );
     setFocusId(id);
   }
 
@@ -103,7 +121,10 @@ export default function VenueSpacesEditor({ draft, update, orgId, onError }: Pro
     const oldIndex = spaceIds.indexOf(active.id as string);
     const newIndex = spaceIds.indexOf(over.id as string);
     if (oldIndex === -1 || newIndex === -1) return;
-    setVenues(arrayMove(venues, oldIndex, newIndex), arrayMove(spaceIds, oldIndex, newIndex));
+    setVenues(
+      (current) => arrayMove(current, oldIndex, newIndex),
+      (ids) => arrayMove(ids, oldIndex, newIndex),
+    );
   }
 
   const allowMultiple = draft.allow_multiple_venue_spaces;
@@ -182,30 +203,63 @@ export default function VenueSpacesEditor({ draft, update, orgId, onError }: Pro
                     index={i}
                     venue={venue}
                     inputRef={focusId === id ? focusRef : undefined}
-                    libraryMedia={libraryMedia}
+                    library={library}
                     orgId={orgId}
+                    locationId={locationId}
                     slug={draft.slug}
                     onError={onError}
                     galleryOpen={openSpaceId === id}
                     onOpenGallery={() => setOpenSpaceId(id)}
                     onCloseGallery={() => setOpenSpaceId(null)}
-                    onChange={(patch) =>
-                      setVenues(
-                        venues.map((row, idx) => (idx === i ? { ...row, ...patch } : row)),
-                      )
-                    }
+                    onChange={(patch) => {
+                      const spaceId = id;
+                      update((current) => {
+                        const index = spaceIdsRef.current.indexOf(spaceId);
+                        if (index < 0 || index >= current.venue_spaces.length) return {};
+                        return {
+                          venue_spaces: withGeneratedValues(
+                            current.venue_spaces.map((row, idx) =>
+                              idx === index ? { ...row, ...patch } : row,
+                            ),
+                          ),
+                        };
+                      });
+                    }}
+                    onGalleryChange={(next) => {
+                      const spaceId = id;
+                      update((current) => {
+                        const index = spaceIdsRef.current.indexOf(spaceId);
+                        if (index < 0 || index >= current.venue_spaces.length) return {};
+                        return {
+                          venue_spaces: withGeneratedValues(
+                            current.venue_spaces.map((row, idx) => {
+                              if (idx !== index) return row;
+                              const existing = row.galleryMedia ?? [];
+                              const galleryMedia = typeof next === "function" ? next(existing) : next;
+                              return { ...row, galleryMedia };
+                            }),
+                          ),
+                        };
+                      });
+                    }}
                     onRemove={() => {
                       if (openSpaceId === id) setOpenSpaceId(null);
+                      const spaceId = id;
                       const optionValue = venue.value || `space_${i + 1}`;
-                      const next = venues.filter((_, idx) => idx !== i);
-                      setSpaceIds(spaceIds.filter((_, idx) => idx !== i));
-                      update({
-                        venue_spaces: withGeneratedValues(next),
-                        form_rules: removeAvailabilityRules(
-                          draft.form_rules,
-                          "venueSpace",
-                          optionValue,
-                        ),
+                      setSpaceIds((prev) => prev.filter((item) => item !== spaceId));
+                      update((current) => {
+                        const index = spaceIdsRef.current.indexOf(spaceId);
+                        if (index < 0) return {};
+                        return {
+                          venue_spaces: withGeneratedValues(
+                            current.venue_spaces.filter((_, idx) => idx !== index),
+                          ),
+                          form_rules: removeAvailabilityRules(
+                            current.form_rules,
+                            "venueSpace",
+                            optionValue,
+                          ),
+                        };
                       });
                     }}
                   />
@@ -224,28 +278,32 @@ function SortableSpaceCard({
   index,
   venue,
   inputRef,
-  libraryMedia,
+  library,
   orgId,
+  locationId,
   slug,
   onError,
   galleryOpen,
   onOpenGallery,
   onCloseGallery,
   onChange,
+  onGalleryChange,
   onRemove,
 }: {
   id: string;
   index: number;
   venue: VenueSpaceOption;
   inputRef?: Ref<HTMLInputElement>;
-  libraryMedia: ReturnType<typeof collectFormMedia>;
+  library: FormMediaLibrary;
   orgId: string | null;
+  locationId: string | null;
   slug: string;
   onError: (msg: string) => void;
   galleryOpen: boolean;
   onOpenGallery: () => void;
   onCloseGallery: () => void;
   onChange: (patch: Partial<VenueSpaceOption>) => void;
+  onGalleryChange: (next: MediaListUpdate) => void;
   onRemove: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -333,9 +391,10 @@ function SortableSpaceCard({
         onClose={onCloseGallery}
         title={venue.label}
         media={media}
-        libraryMedia={libraryMedia}
-        onChange={(galleryMedia) => onChange({ galleryMedia })}
+        library={library}
+        onChange={onGalleryChange}
         orgId={orgId}
+        locationId={locationId}
         slug={slug}
         onError={onError}
       />

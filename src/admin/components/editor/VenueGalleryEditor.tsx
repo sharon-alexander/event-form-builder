@@ -1,19 +1,24 @@
 import { type DragEvent, useEffect, useRef, useState } from "react";
 import type { MediaItem } from "../../../locations/types";
 import { mediaKindLabel } from "../../../media/embeds";
-import { uploadGalleryFile } from "../../api";
+import { insertLocationMedia, savedFromUploadError, uploadToLibrary, type LibraryMedia } from "../../mediaLibraryApi";
+import type { FormMediaLibrary } from "../../useFormMediaLibrary";
+import { appendUnique, libraryItemToMedia } from "../../utils/formMediaLibrary";
 import { MediaThumb } from "../../../components/MediaThumb";
 import EmbedPasteField from "./EmbedPasteField";
 import MediaPicker from "./MediaPicker";
+
+export type MediaListUpdate = MediaItem[] | ((current: MediaItem[]) => MediaItem[]);
 
 interface Props {
   open: boolean;
   onClose: () => void;
   title: string;
   media: MediaItem[];
-  libraryMedia: MediaItem[];
-  onChange: (next: MediaItem[]) => void;
+  library: FormMediaLibrary;
+  onChange: (next: MediaListUpdate) => void;
   orgId: string | null;
+  locationId: string | null;
   slug: string;
   onError: (msg: string) => void;
 }
@@ -23,9 +28,10 @@ export default function VenueGalleryEditor({
   onClose,
   title,
   media,
-  libraryMedia,
+  library,
   onChange,
   orgId,
+  locationId,
   slug,
   onError,
 }: Props) {
@@ -42,48 +48,49 @@ export default function VenueGalleryEditor({
       setDragOver(false);
       return;
     }
+    if (pickerOpen) void library.ensureLoaded();
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose]);
+  }, [open, onClose, pickerOpen, library.ensureLoaded]);
 
   if (!open) return null;
 
   function remove(index: number) {
-    onChange(media.filter((_, i) => i !== index));
+    onChange((current) => current.filter((_, i) => i !== index));
   }
 
   function setAsThumbnail(index: number) {
-    if (index <= 0 || index >= media.length) return;
-    const item = media[index];
-    if (!item) return;
-    const next = [...media];
-    next.splice(index, 1);
-    next.unshift(item);
-    onChange(next);
+    onChange((current) => {
+      if (index <= 0 || index >= current.length) return current;
+      const item = current[index];
+      if (!item) return current;
+      const next = [...current];
+      next.splice(index, 1);
+      next.unshift(item);
+      return next;
+    });
+  }
+
+  function addUploaded(saved: LibraryMedia[]) {
+    if (saved.length === 0) return;
+    library.remember(saved);
+    onChange((current) => appendUnique(current, saved.map(libraryItemToMedia)));
   }
 
   async function handleFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
-    if (!orgId) {
+    if (!orgId || !locationId) {
       onError("Cannot upload before the form has loaded.");
       return;
     }
     setUploading(true);
     try {
-      const uploaded: MediaItem[] = [];
-      for (const file of Array.from(files)) {
-        const url = await uploadGalleryFile(orgId, slug, file);
-        uploaded.push({
-          type: file.type.startsWith("video") ? "video" : "image",
-          src: url,
-          alt: file.name.replace(/\.[^.]+$/, ""),
-        });
-      }
-      onChange([...media, ...uploaded]);
+      addUploaded(await uploadToLibrary(orgId, slug, locationId, Array.from(files)));
     } catch (err) {
+      addUploaded(savedFromUploadError(err));
       onError(err instanceof Error ? err.message : "Upload failed.");
     } finally {
       setUploading(false);
@@ -92,8 +99,7 @@ export default function VenueGalleryEditor({
   }
 
   function addExisting(item: MediaItem) {
-    if (media.some((m) => m.src === item.src)) return;
-    onChange([...media, item]);
+    onChange((current) => appendUnique(current, [item]));
   }
 
   function handleDrop(e: DragEvent<HTMLDivElement>) {
@@ -140,15 +146,13 @@ export default function VenueGalleryEditor({
 
         <div className="min-h-0 flex-1 overflow-y-auto p-5">
           <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
-            {libraryMedia.length > 0 && (
-              <button
-                type="button"
-                onClick={() => setPickerOpen((v) => !v)}
-                className="adm-btn-secondary px-3 py-1.5 text-xs"
-              >
-                {pickerOpen ? "Cancel" : "Choose existing"}
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => setPickerOpen((v) => !v)}
+              className="adm-btn-secondary px-3 py-1.5 text-xs"
+            >
+              {pickerOpen ? "Cancel" : "Choose existing"}
+            </button>
             <button
               type="button"
               onClick={() => setEmbedOpen((v) => !v)}
@@ -178,8 +182,11 @@ export default function VenueGalleryEditor({
             <div className="mb-4">
               <EmbedPasteField
                 existingSrcs={media.map((m) => m.src)}
-                onAdd={(item) => {
-                  addExisting(item);
+                onAdd={async (item) => {
+                  if (!locationId) throw new Error("Cannot upload before the form has loaded.");
+                  const saved = await insertLocationMedia(locationId, item);
+                  library.remember([saved]);
+                  addExisting(libraryItemToMedia(saved));
                   setEmbedOpen(false);
                 }}
                 onError={onError}
@@ -190,7 +197,13 @@ export default function VenueGalleryEditor({
           {pickerOpen && (
             <div className="mb-4">
               <MediaPicker
-                library={libraryMedia}
+                library={library.items}
+                loading={library.loading}
+                loadingMore={library.loadingMore}
+                hasMore={library.hasMore}
+                error={library.error}
+                onRetry={() => void library.reload()}
+                onLoadMore={() => void library.loadMore()}
                 selected={media}
                 onSelect={addExisting}
                 onClose={() => setPickerOpen(false)}
@@ -246,6 +259,7 @@ export default function VenueGalleryEditor({
                       >
                         <MediaThumb
                           item={item}
+                          preferThumb
                           className="h-full w-full object-cover"
                         />
                         {kind && (
@@ -281,9 +295,10 @@ export default function VenueGalleryEditor({
                 className="adm-input w-full py-2 text-sm"
                 placeholder="Describe this photo..."
                 value={thumbnail.alt}
-                onChange={(e) =>
-                  onChange(media.map((m, idx) => (idx === 0 ? { ...m, alt: e.target.value } : m)))
-                }
+                onChange={(e) => {
+                  const alt = e.target.value;
+                  onChange((current) => current.map((m, idx) => (idx === 0 ? { ...m, alt } : m)));
+                }}
               />
             </div>
           )}
