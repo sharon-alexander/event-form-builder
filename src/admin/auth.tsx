@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import type { Session } from "@supabase/supabase-js";
@@ -78,6 +79,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [org, setOrg] = useState<Organization | null>(null);
   const [passwordSetup, setPasswordSetup] = useState<PasswordSetup | null>(null);
   const [authCallbackError, setAuthCallbackError] = useState<string | null>(null);
+  // User id whose profile fetch may still be applied. Sign-out clears it so
+  // an in-flight query cannot repopulate state after the session is gone.
+  const profileUserIdRef = useRef<string | null>(null);
 
   const loadProfile = useCallback(async (uid: string) => {
     if (!supabase) return;
@@ -86,6 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .select("id, org_id, role, email, joined_at, onboarding_complete")
       .eq("id", uid)
       .maybeSingle<Profile>();
+    if (profileUserIdRef.current !== uid) return;
     setProfile(prof ?? null);
 
     if (prof?.org_id) {
@@ -94,6 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .select("id, name, slug")
         .eq("id", prof.org_id)
         .maybeSingle<Organization>();
+      if (profileUserIdRef.current !== uid) return;
       setOrg(organization ?? null);
     } else {
       setOrg(null);
@@ -133,7 +139,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // by onAuthStateChange (e.g. SIGNED_IN from consumeAuthCallback).
         if (session !== undefined && !(callback.didAuthenticate && !session)) {
           setSession(session);
-          if (session?.user) await loadProfile(session.user.id);
+          if (session?.user) {
+            profileUserIdRef.current = session.user.id;
+            await loadProfile(session.user.id);
+          } else {
+            profileUserIdRef.current = null;
+          }
         }
       } finally {
         if (active) setLoading(false);
@@ -142,21 +153,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     void init();
 
-    const { data: sub } = client.auth.onAuthStateChange(async (event, next) => {
+    let profileTimer: ReturnType<typeof setTimeout> | undefined;
+    const { data: sub } = client.auth.onAuthStateChange((event, next) => {
       if (event === "PASSWORD_RECOVERY") {
         setPasswordSetup({ isRecovery: true });
       }
       setSession(next);
-      if (next?.user) {
-        await loadProfile(next.user.id);
-      } else {
+      clearTimeout(profileTimer);
+      if (!next?.user) {
+        profileUserIdRef.current = null;
         setProfile(null);
         setOrg(null);
+        return;
       }
+      const userId = next.user.id;
+      profileUserIdRef.current = userId;
+      // supabase-js awaits auth callbacks before initialize() resolves.
+      // A profile query from here calls getSession(), which waits on that
+      // same promise, so the first signed-in load deadlocks on "Loading…".
+      // A reload then works because initialization has already finished.
+      // Defer the query until the callback has returned.
+      profileTimer = setTimeout(() => {
+        if (!active || profileUserIdRef.current !== userId) return;
+        void loadProfile(userId);
+      }, 0);
     });
 
     return () => {
       active = false;
+      clearTimeout(profileTimer);
       sub.subscription.unsubscribe();
     };
   }, [loadProfile]);
@@ -167,7 +192,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshProfile = useCallback(async () => {
     if (!supabase) return;
     const { data } = await supabase.auth.getSession();
-    if (data.session?.user) await loadProfile(data.session.user.id);
+    if (data.session?.user) {
+      profileUserIdRef.current = data.session.user.id;
+      await loadProfile(data.session.user.id);
+    }
   }, [loadProfile]);
 
   const signIn = useCallback(async (email: string, password: string) => {
