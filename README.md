@@ -157,11 +157,11 @@ Requires a Squarespace **Core plan or higher** (custom JavaScript isn't allowed 
 Add a **Code Block** to the page (Add Block → Code → set the dropdown to **HTML**) with:
 
 ```html
-<div id="roscioli-event-form" data-location="pearl-box"></div>
+<div id="roscioli-event-form-pearl-box" data-location="pearl-box"></div>
 <script src="https://event-form-builder.vercel.app/event-form.iife.js"></script>
 ```
 
-Change `data-location` to `roscioli` or `tokyo-record-bar` for the other venues.
+The mount `id` is unique per form (`roscioli-event-form-<slug>`), so more than one form can sit on the same page. Copy the snippet from the admin Embed tab — it fills in the slug for you.
 
 > Note: Squarespace often blocks scripts while you're logged into the editor. Test in an **incognito window** or via **Preview in Safe Mode**, not the editor preview.
 
