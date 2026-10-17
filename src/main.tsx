@@ -9,9 +9,10 @@ import { getSupabase } from "./lib/supabase";
 import { applyTheme, type ThemeTokens } from "./theme/theme";
 import { withTimeout } from "./lib/withTimeout";
 import { waitForAuthSession } from "./lib/waitForAuthSession";
+import { MOUNT_ID } from "./mountId";
 import "./index.css";
 
-const MOUNT_ID = "roscioli-event-form";
+const MOUNTED_ATTR = "data-efb-mounted";
 
 const CSS_GLOBAL = "__ROSCIOLI_EFB_CSS__";
 
@@ -83,9 +84,20 @@ function PreviewBanner() {
   );
 }
 
-async function mount() {
-  const container = document.getElementById(MOUNT_ID);
-  if (!container) return;
+function findMounts(): HTMLElement[] {
+  return Array.from(
+    document.querySelectorAll<HTMLElement>(
+      `#${MOUNT_ID}, [id^="${MOUNT_ID}-"]`,
+    ),
+  ).filter((el) => !el.hasAttribute(MOUNTED_ATTR));
+}
+
+async function mountAll() {
+  await Promise.all(findMounts().map((container) => mount(container)));
+}
+
+async function mount(container: HTMLElement) {
+  container.setAttribute(MOUNTED_ATTR, "");
 
   const slug = resolveLocationId(container);
   const previewMode = isPreviewPath();
@@ -209,7 +221,7 @@ async function mount() {
 }
 
 if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", mount);
+  document.addEventListener("DOMContentLoaded", mountAll);
 } else {
-  mount();
+  mountAll();
 }

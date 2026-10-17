@@ -1,4 +1,5 @@
-const MOUNT_ID = "roscioli-event-form";
+import { embedMountId } from "../mountId";
+
 const WIDGET_PATH = "/event-form.iife.js";
 const DEFAULT_PRODUCTION_URL = "https://event-form-builder.vercel.app";
 
@@ -12,7 +13,14 @@ export function getPublicSiteUrl(): string {
 
 export function buildEmbedCode(slug: string): string {
   const base = getPublicSiteUrl();
-  return `<div id="${MOUNT_ID}" data-location="${slug}"></div>\n<script src="${base}${WIDGET_PATH}"></script>`;
+  return `<div id="${escapeAttr(embedMountId(slug))}" data-location="${escapeAttr(slug)}"></div>\n<script src="${base}${WIDGET_PATH}"></script>`;
+}
+
+function escapeAttr(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;");
 }
 
 /** Published standalone form URL (public). */

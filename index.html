@@ -35,8 +35,11 @@
       No default — standalone pages show "Form not found" without a slug.
 
       Examples:
-        <div id="roscioli-event-form" data-location="roscioli"></div>
+        <div id="roscioli-event-form-roscioli" data-location="roscioli"></div>
         http://localhost:5173/form/tokyo-record-bar
+
+      Embed ids are unique per form (`roscioli-event-form-<slug>`). This page
+      keeps a single `#roscioli-event-form` mount; the slug comes from the URL.
 
       Valid bundled location IDs: pearl-box, roscioli, tokyo-record-bar
     -->
