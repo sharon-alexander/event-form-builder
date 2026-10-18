@@ -4,6 +4,7 @@ import {
   useBeforeUnload,
   useBlocker,
   useParams,
+  useSearchParams,
   type BlockerFunction,
 } from "react-router-dom";
 import type { ThemeTokens } from "../../theme/theme";
@@ -85,6 +86,10 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]["id"];
 
+function isTabId(value: string | null): value is TabId {
+  return TABS.some((tab) => tab.id === value);
+}
+
 const AUTOSAVE_DELAY_MS = 800;
 
 function formatAutosaveTime(date: Date): string {
@@ -128,12 +133,14 @@ function toEditable(row: LocationRow): EditableLocation {
 
 export default function FormEditorPage() {
   const { id } = useParams<{ id: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const library = useFormMediaLibrary(id ?? null);
 
   const [orgId, setOrgId] = useState<string | null>(null);
   const [draft, setDraft] = useState<EditableLocation | null>(null);
   const [savedPlacement, setSavedPlacement] = useState<SavedPlacement | null>(null);
-  const [tab, setTab] = useState<TabId>("builder");
+  const tabParam = searchParams.get("tab");
+  const tab: TabId = isTabId(tabParam) ? tabParam : "builder";
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -449,7 +456,17 @@ export default function FormEditorPage() {
           <button
             key={t.id}
             type="button"
-            onClick={() => setTab(t.id)}
+            onClick={() => {
+              setSearchParams(
+                (current) => {
+                  const next = new URLSearchParams(current);
+                  if (t.id === "builder") next.delete("tab");
+                  else next.set("tab", t.id);
+                  return next;
+                },
+                { replace: true },
+              );
+            }}
             className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
               tab === t.id
                 ? "border-zinc-900 text-zinc-900"

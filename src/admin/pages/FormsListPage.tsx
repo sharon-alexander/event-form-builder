@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import type { LocationRow } from "../../locations/fromDb";
 import { useAuth } from "../auth";
 import { createLocation, deleteLocation, listLocations, updateLocation } from "../api";
-import { buildPreviewUrl } from "../embedCode";
+import { buildPreviewUrl, buildPublicFormUrl } from "../embedCode";
 import CreateFormModal from "../components/CreateFormModal";
 import { DEFAULT_FORM_STEPS } from "../constants/defaultFormSteps";
 
@@ -155,6 +155,7 @@ export default function FormsListPage() {
               key={form.id}
               form={form}
               onNavigate={() => navigate(`/forms/${form.id}`)}
+              onEmbed={() => navigate(`/forms/${form.id}?tab=embed`)}
               onPreview={() => window.open(buildPreviewUrl(form.slug), "_blank")}
               onTogglePublish={() => handleTogglePublish(form)}
               onDelete={() => handleDelete(form)}
@@ -177,12 +178,14 @@ export default function FormsListPage() {
 function FormListRow({
   form,
   onNavigate,
+  onEmbed,
   onPreview,
   onTogglePublish,
   onDelete,
 }: {
   form: LocationRow;
   onNavigate: () => void;
+  onEmbed: () => void;
   onPreview: () => void;
   onTogglePublish: () => void;
   onDelete: () => void;
@@ -217,6 +220,7 @@ function FormListRow({
         open={menuOpen}
         onOpenChange={setMenuOpen}
         onEdit={onNavigate}
+        onEmbed={onEmbed}
         onPreview={onPreview}
         onTogglePublish={onTogglePublish}
         onDelete={onDelete}
@@ -230,6 +234,7 @@ function RowMenu({
   open,
   onOpenChange,
   onEdit,
+  onEmbed,
   onPreview,
   onTogglePublish,
   onDelete,
@@ -238,11 +243,45 @@ function RowMenu({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onEdit: () => void;
+  onEmbed: () => void;
   onPreview: () => void;
   onTogglePublish: () => void;
   onDelete: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const copyTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (open) return;
+    setLinkCopied(false);
+  }, [open]);
+
+  useEffect(() => {
+    return () => {
+      if (copyTimer.current) window.clearTimeout(copyTimer.current);
+    };
+  }, []);
+
+  async function copyPublicLink() {
+    const url = buildPublicFormUrl(form.slug);
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = url;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    }
+    setLinkCopied(true);
+    if (copyTimer.current) window.clearTimeout(copyTimer.current);
+    copyTimer.current = window.setTimeout(() => {
+      setLinkCopied(false);
+      onOpenChange(false);
+    }, 1200);
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -274,7 +313,24 @@ function RowMenu({
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-1 w-44 overflow-hidden rounded-xl border border-zinc-200 bg-white py-1 shadow-lg ring-1 ring-black/5">
+        <div className="absolute right-0 top-full z-50 mt-1 w-52 overflow-hidden rounded-xl border border-zinc-200 bg-white py-1 shadow-lg ring-1 ring-black/5">
+          <MenuButton
+            icon={<PencilIcon />}
+            onClick={() => {
+              onOpenChange(false);
+              onEdit();
+            }}
+          >
+            Edit
+          </MenuButton>
+          <MenuButton
+            icon={linkCopied ? <CheckIcon /> : <LinkIcon />}
+            onClick={() => {
+              void copyPublicLink();
+            }}
+          >
+            {linkCopied ? "Copied" : "Copy public link"}
+          </MenuButton>
           <MenuButton
             icon={<EyeIcon />}
             onClick={() => {
@@ -285,13 +341,13 @@ function RowMenu({
             Preview
           </MenuButton>
           <MenuButton
-            icon={<PencilIcon />}
+            icon={<CodeIcon />}
             onClick={() => {
               onOpenChange(false);
-              onEdit();
+              onEmbed();
             }}
           >
-            Edit
+            View embed code
           </MenuButton>
           <MenuButton
             icon={form.published ? <EyeOffIcon /> : <UpIcon />}
@@ -395,6 +451,34 @@ function FormLogoAvatar({ name, logoUrl }: { name: string; logoUrl?: string }) {
     >
       {initial}
     </div>
+  );
+}
+
+function CodeIcon() {
+  return (
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8 8l-4 4 4 4M16 8l4 4-4 4" />
+    </svg>
+  );
+}
+
+function LinkIcon() {
+  return (
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M13.5 10.5a3.5 3.5 0 010 5l-1.5 1.5a3.5 3.5 0 01-5-5l1-1M10.5 13.5a3.5 3.5 0 010-5l1.5-1.5a3.5 3.5 0 015 5l-1 1"
+      />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg className="h-4 w-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+    </svg>
   );
 }
 
