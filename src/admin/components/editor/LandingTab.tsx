@@ -18,7 +18,7 @@ export default function LandingTab({ draft, update, orgId, locationId, library, 
       <div>
         <h2 className="text-sm font-semibold text-zinc-900">Landing page</h2>
         <p className="mt-0.5 text-xs text-zinc-400">
-          Shown before the form starts — venue name, about copy, and hero gallery.
+          Shown before the form starts — venue name, about copy, and gallery folders.
         </p>
       </div>
 

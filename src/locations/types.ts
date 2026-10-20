@@ -11,6 +11,13 @@ export interface MediaItem {
   provider?: MediaEmbedProvider;
 }
 
+/** A named folder of landing-page photos or videos. */
+export interface GalleryAlbum {
+  id: string;
+  title: string;
+  media: MediaItem[];
+}
+
 export interface VenueSpaceOption {
   value: string;
   label: string;
@@ -183,7 +190,7 @@ export interface LocationConfig {
   aboutBlurb: string;
   /** Public URL of the venue logo, if set on the form theme. */
   logoUrl?: string;
-  galleryMedia: MediaItem[];
+  galleryAlbums: GalleryAlbum[];
   venueSpaces: VenueSpaceOption[];
   /** When true, guests can pick more than one space of interest. */
   allowMultipleVenueSpaces?: boolean;

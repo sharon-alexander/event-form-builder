@@ -14,8 +14,8 @@ import type {
   FieldId,
   FieldSettings,
   FormRulesDocument,
+  GalleryAlbum,
   InfoPageConfig,
-  MediaItem,
   StepId,
   TimingHours,
   TripleseatConfig,
@@ -25,6 +25,7 @@ import { DEFAULT_EVENT_CATEGORIES, EVENT_FORMATS } from "../../types";
 import { EMPTY_FORM_RULES, parseFormRules } from "../../form/conditions";
 import { parseTimingHours } from "../../form/timingHours";
 import type { LocationRow } from "../../locations/fromDb";
+import { parseGalleryAlbums } from "../../locations/galleryAlbums";
 import { hasOptionLabel } from "../../locations/presentableOptions";
 import { parseFieldSettings } from "../../form/fieldCatalog";
 import { mergeInfoPageIntoMoreDetails } from "../../utils/richText";
@@ -49,7 +50,7 @@ export interface EditableLocation {
   name: string;
   form_title: string;
   about_blurb: string;
-  gallery_media: MediaItem[];
+  gallery_media: GalleryAlbum[];
   venue_spaces: VenueSpaceOption[];
   allow_multiple_venue_spaces: boolean;
   show_multi_day_rental: boolean;
@@ -105,7 +106,7 @@ function toEditable(row: LocationRow): EditableLocation {
     name: row.name,
     form_title: row.form_title,
     about_blurb: row.about_blurb,
-    gallery_media: row.gallery_media ?? [],
+    gallery_media: parseGalleryAlbums(row.gallery_media),
     venue_spaces: row.venue_spaces ?? [],
     allow_multiple_venue_spaces: row.allow_multiple_venue_spaces ?? false,
     show_multi_day_rental: row.show_multi_day_rental ?? false,

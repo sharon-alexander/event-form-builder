@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useLocationConfig } from "../context/LocationContext";
-import type { MediaItem } from "../locations/types";
+import type { GalleryAlbum, MediaItem } from "../locations/types";
 import { mediaKindLabel } from "../media/embeds";
 import { toDisplayHtml } from "../utils/richText";
 import MediaStage from "./MediaStage";
@@ -17,15 +17,25 @@ function Gallery({
   items,
   activeIndex,
   onSelect,
+  albums,
+  albumIndex,
+  onSelectAlbum,
 }: {
   active: MediaItem;
   items: MediaItem[];
   activeIndex: number;
   onSelect: (index: number) => void;
+  albums: GalleryAlbum[];
+  albumIndex: number;
+  onSelectAlbum: (index: number) => void;
 }) {
+  const galleryId = useId();
   const stripRef = useRef<HTMLDivElement>(null);
   const thumbRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const multiple = items.length > 1;
+  const showAlbums = albums.length > 1;
+  const albumTitle = albums[albumIndex]?.title.trim() ?? "";
 
   useEffect(() => {
     if (!multiple) return;
@@ -51,7 +61,7 @@ function Gallery({
     const target = e.target;
     if (
       target instanceof HTMLElement &&
-      target.closest("video, iframe")
+      target.closest("video, iframe, [role='tablist']")
     ) {
       return;
     }
@@ -64,16 +74,31 @@ function Gallery({
     }
   }
 
+  function onAlbumKeyDown(e: React.KeyboardEvent) {
+    if (!showAlbums) return;
+    let next = albumIndex;
+    if (e.key === "ArrowRight") next = (albumIndex + 1) % albums.length;
+    else if (e.key === "ArrowLeft") next = (albumIndex - 1 + albums.length) % albums.length;
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = albums.length - 1;
+    else return;
+    e.preventDefault();
+    e.stopPropagation();
+    onSelectAlbum(next);
+    tabRefs.current[next]?.focus();
+  }
+
   return (
     <div
+      id={galleryId}
       role="region"
       aria-roledescription="carousel"
-      aria-label="Gallery"
+      aria-label={albumTitle ? `${albumTitle} gallery` : "Gallery"}
       tabIndex={multiple ? 0 : undefined}
       onKeyDown={onKeyDown}
       className="flex h-full min-h-0 flex-col rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2"
     >
-      <div className="relative min-h-40 flex-1 overflow-hidden rounded-2xl bg-brand-100 shadow-sm">
+      <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl bg-brand-100 shadow-sm">
         <div className="absolute inset-0">
           <MediaStage
             key={active.src}
@@ -111,7 +136,49 @@ function Gallery({
 
       {multiple && (
         <div className="sr-only" aria-live="polite">
+          {albumTitle ? `${albumTitle}. ` : ""}
           {activeIndex + 1} of {items.length}
+        </div>
+      )}
+
+      {showAlbums && (
+        <div
+          role="tablist"
+          aria-label="Photo folders"
+          onKeyDown={onAlbumKeyDown}
+          className="mt-3 flex shrink-0 gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {albums.map((entry, i) => {
+            const cover = entry.media[0];
+            if (!cover) return null;
+            const selected = i === albumIndex;
+            const title = entry.title.trim() || "Untitled folder";
+            return (
+              <button
+                key={entry.id}
+                ref={(node) => {
+                  tabRefs.current[i] = node;
+                }}
+                id={`${galleryId}-album-${entry.id}`}
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                aria-controls={galleryId}
+                tabIndex={selected ? 0 : -1}
+                onClick={() => onSelectAlbum(i)}
+                className={`flex max-w-[11rem] shrink-0 items-center gap-2 rounded-full border py-1 pl-1 pr-3 text-left text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 ${
+                  selected
+                    ? "border-brand-600 bg-brand-50 text-gray-900"
+                    : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
+                }`}
+              >
+                <span aria-hidden className="h-8 w-8 shrink-0 overflow-hidden rounded-full">
+                  <MediaThumb item={cover} alt="" className="h-full w-full object-cover" />
+                </span>
+                <span className="truncate font-medium">{title}</span>
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -188,11 +255,23 @@ function visibleBlurbLength(html: string): number {
 
 export default function LandingPage({ onStart }: LandingPageProps) {
   const location = useLocationConfig();
+  const visibleAlbums = location.galleryAlbums.filter((album) => album.media.length > 0);
+  const [albumIndex, setAlbumIndex] = useState(0);
   const [activeIndex, setActiveIndex] = useState(0);
-  const active = location.galleryMedia[activeIndex];
+  const albumIndexSafe =
+    visibleAlbums.length === 0 ? 0 : Math.min(albumIndex, visibleAlbums.length - 1);
+  const album = visibleAlbums[albumIndexSafe];
+  const items = album?.media ?? [];
+  const activeIndexSafe = items.length === 0 ? 0 : Math.min(activeIndex, items.length - 1);
+  const active = items[activeIndexSafe];
   const aboutHtml = toDisplayHtml(location.aboutBlurb);
   const splitLayout =
     visibleBlurbLength(aboutHtml) > SPLIT_BLURB_CHARS && Boolean(active);
+
+  function selectAlbum(index: number) {
+    setAlbumIndex(index);
+    setActiveIndex(0);
+  }
 
   const copyClass =
     "efb-rich-text efb-landing-copy min-h-0 overflow-y-auto text-left text-sm leading-relaxed text-gray-600";
@@ -229,9 +308,12 @@ export default function LandingPage({ onStart }: LandingPageProps) {
           <div className="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-8 md:grid-cols-2 md:grid-rows-1 md:gap-10">
             <Gallery
               active={active}
-              items={location.galleryMedia}
-              activeIndex={activeIndex}
+              items={items}
+              activeIndex={activeIndexSafe}
               onSelect={setActiveIndex}
+              albums={visibleAlbums}
+              albumIndex={albumIndexSafe}
+              onSelectAlbum={selectAlbum}
             />
             <div
               className={`${copyClass} h-full pr-2`}
@@ -250,9 +332,12 @@ export default function LandingPage({ onStart }: LandingPageProps) {
               <div className="min-h-0 flex-1">
                 <Gallery
                   active={active}
-                  items={location.galleryMedia}
-                  activeIndex={activeIndex}
+                  items={items}
+                  activeIndex={activeIndexSafe}
                   onSelect={setActiveIndex}
+                  albums={visibleAlbums}
+                  albumIndex={albumIndexSafe}
+                  onSelectAlbum={selectAlbum}
                 />
               </div>
             ) : null}

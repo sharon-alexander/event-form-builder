@@ -18,7 +18,7 @@ export function draftToLocationConfig(draft: EditableLocation): LocationConfig {
     formTitle: draft.form_title,
     aboutBlurb: draft.about_blurb,
     logoUrl: draft.theme?.logoUrl,
-    galleryMedia: draft.gallery_media,
+    galleryAlbums: draft.gallery_media,
     venueSpaces: draft.venue_spaces.filter(hasOptionLabel),
     allowMultipleVenueSpaces: draft.allow_multiple_venue_spaces,
     showMultiDayRental: draft.show_multi_day_rental,
