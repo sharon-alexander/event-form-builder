@@ -6,6 +6,7 @@ import { parseFieldSettings } from "../form/fieldCatalog";
 import { parseFormRules } from "../form/conditions";
 import { hasOptionLabel } from "./presentableOptions";
 import { parseTimingHours } from "../form/timingHours";
+import { parseGalleryAlbums } from "./galleryAlbums";
 import type {
   BudgetOption,
   EventChoiceOption,
@@ -14,7 +15,6 @@ import type {
   FormRulesDocument,
   InfoPageConfig,
   LocationConfig,
-  MediaItem,
   StepId,
   TimingHours,
   TripleseatConfig,
@@ -28,7 +28,8 @@ export interface LocationRow {
   name: string;
   form_title: string;
   about_blurb: string;
-  gallery_media: MediaItem[] | null;
+  /** Folders, or a legacy flat media list. Parse with parseGalleryAlbums. */
+  gallery_media: unknown;
   venue_spaces: VenueSpaceOption[] | null;
   budget_options: BudgetOption[] | null;
   event_categories: EventChoiceOption[] | null;
@@ -60,7 +61,7 @@ export function locationConfigFromRow(row: LocationRow): LocationConfig {
     formTitle: row.form_title,
     aboutBlurb: row.about_blurb,
     logoUrl: row.theme?.logoUrl,
-    galleryMedia: row.gallery_media ?? [],
+    galleryAlbums: parseGalleryAlbums(row.gallery_media),
     venueSpaces: (row.venue_spaces ?? []).filter(hasOptionLabel),
     allowMultipleVenueSpaces: row.allow_multiple_venue_spaces ?? false,
     showMultiDayRental: row.show_multi_day_rental ?? false,

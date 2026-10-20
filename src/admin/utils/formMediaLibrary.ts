@@ -1,4 +1,4 @@
-import type { MediaItem, VenueSpaceOption } from "../../locations/types";
+import type { GalleryAlbum, MediaItem, VenueSpaceOption } from "../../locations/types";
 import type { LibraryMedia } from "../mediaLibraryApi";
 
 export function libraryItemToMedia(item: LibraryMedia): MediaItem {
@@ -14,11 +14,15 @@ export function libraryItemToMedia(item: LibraryMedia): MediaItem {
 
 /** Where a library item is currently shown. Empty means it can be deleted. */
 export function mediaUsages(
-  draft: { gallery_media: MediaItem[]; venue_spaces: VenueSpaceOption[] },
+  draft: { gallery_media: GalleryAlbum[]; venue_spaces: VenueSpaceOption[] },
   src: string,
 ): string[] {
   const labels: string[] = [];
-  if (draft.gallery_media.some((item) => item.src === src)) labels.push("Landing");
+  for (const album of draft.gallery_media) {
+    if (!album.media.some((item) => item.src === src)) continue;
+    const title = album.title.trim() || "Untitled folder";
+    labels.push(`Landing · ${title}`);
+  }
   for (const venue of draft.venue_spaces) {
     if ((venue.galleryMedia ?? []).some((item) => item.src === src)) {
       labels.push(venue.label.trim() || "Untitled space");
@@ -29,7 +33,7 @@ export function mediaUsages(
 
 /** Usages across the dirty draft and the last saved form. Either one blocks delete. */
 export function placementUsages(
-  placements: Array<{ gallery_media: MediaItem[]; venue_spaces: VenueSpaceOption[] }>,
+  placements: Array<{ gallery_media: GalleryAlbum[]; venue_spaces: VenueSpaceOption[] }>,
   src: string,
 ): string[] {
   const labels: string[] = [];

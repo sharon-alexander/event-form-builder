@@ -14,10 +14,12 @@ import {
   SortableContext,
   arrayMove,
   rectSortingStrategy,
+  verticalListSortingStrategy,
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { MediaItem } from "../../../locations/types";
+import type { GalleryAlbum, MediaItem } from "../../../locations/types";
+import { createGalleryAlbum } from "../../../locations/galleryAlbums";
 import { mediaKindLabel } from "../../../media/embeds";
 import { MediaThumb } from "../../../components/MediaThumb";
 import MediaStage from "../../../components/MediaStage";
@@ -41,7 +43,258 @@ function stableId(item: MediaItem, index: number) {
   return `${item.src}::${index}`;
 }
 
+function mediaCountLabel(count: number) {
+  return count === 1 ? "1 item" : `${count} items`;
+}
+
 export default function GalleryTab({ draft, update, orgId, locationId, library, onError }: Props) {
+  const albums = draft.gallery_media;
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const titleRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const focusAlbumId = useRef<string | null>(null);
+
+  const selectedAlbumId = albums.some((album) => album.id === selectedId)
+    ? selectedId
+    : (albums[0]?.id ?? null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor),
+  );
+
+  const albumIds = albums.map((album) => album.id);
+
+  useEffect(() => {
+    const id = focusAlbumId.current;
+    if (!id) return;
+    titleRefs.current[id]?.focus();
+    focusAlbumId.current = null;
+  }, [albums]);
+
+  function setAlbums(next: GalleryAlbum[] | ((current: GalleryAlbum[]) => GalleryAlbum[])) {
+    update((current) => ({
+      gallery_media: typeof next === "function" ? next(current.gallery_media) : next,
+    }));
+  }
+
+  function patchAlbum(id: string, patch: Partial<Pick<GalleryAlbum, "title">>) {
+    setAlbums((current) => current.map((album) => (album.id === id ? { ...album, ...patch } : album)));
+  }
+
+  function setAlbumMedia(id: string, next: MediaItem[] | ((current: MediaItem[]) => MediaItem[])) {
+    setAlbums((current) =>
+      current.map((album) => {
+        if (album.id !== id) return album;
+        const media = typeof next === "function" ? next(album.media) : next;
+        return { ...album, media };
+      }),
+    );
+  }
+
+  function addAlbum() {
+    const album = createGalleryAlbum();
+    focusAlbumId.current = album.id;
+    setSelectedId(album.id);
+    setAlbums((current) => [...current, album]);
+  }
+
+  function removeAlbum(id: string) {
+    const index = albums.findIndex((album) => album.id === id);
+    setAlbums((current) => current.filter((album) => album.id !== id));
+    if (selectedAlbumId !== id) return;
+    const next = albums[index + 1] ?? albums[index - 1];
+    setSelectedId(next?.id ?? null);
+  }
+
+  function handleAlbumDragStart() {
+    if (selectedId !== null) return;
+    const currentId = albums[0]?.id;
+    if (currentId) setSelectedId(currentId);
+  }
+
+  function handleAlbumDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = albumIds.indexOf(active.id as string);
+    const newIndex = albumIds.indexOf(over.id as string);
+    if (oldIndex === -1 || newIndex === -1) return;
+    setAlbums((current) => arrayMove(current, oldIndex, newIndex));
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-sm font-semibold text-zinc-900">Gallery</h2>
+          <p className="mt-0.5 text-xs text-zinc-400">
+            Group photos and videos into folders. Each folder has a title.
+          </p>
+        </div>
+        <button type="button" onClick={addAlbum} className="adm-btn-primary shrink-0 px-3 py-1.5 text-xs">
+          Add folder
+        </button>
+      </div>
+
+      {albums.length === 0 ? (
+        <div className="rounded-xl border-2 border-dashed border-zinc-300 px-6 py-10 text-center">
+          <p className="text-sm font-medium text-zinc-800">No folders yet</p>
+          <p className="mx-auto mt-1 max-w-sm text-xs text-zinc-400">
+            Add one for each space guests should recognize, such as Main dining room or Garden.
+          </p>
+        </div>
+      ) : (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleAlbumDragStart}
+          onDragEnd={handleAlbumDragEnd}
+        >
+          <SortableContext items={albumIds} strategy={verticalListSortingStrategy}>
+            <div className="space-y-3">
+              {albums.map((album) => (
+                <AlbumCard
+                  key={album.id}
+                  album={album}
+                  expanded={album.id === selectedAlbumId}
+                  titleRef={(node) => {
+                    titleRefs.current[album.id] = node;
+                  }}
+                  onSelect={() => setSelectedId(album.id)}
+                  onChange={(patch) => patchAlbum(album.id, patch)}
+                  onRemove={() => removeAlbum(album.id)}
+                  orgId={orgId}
+                  locationId={locationId}
+                  slug={draft.slug}
+                  library={library}
+                  onMediaChange={(next) => setAlbumMedia(album.id, next)}
+                  onError={onError}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
+      )}
+    </div>
+  );
+}
+
+function AlbumCard({
+  album,
+  expanded,
+  titleRef,
+  onSelect,
+  onChange,
+  onRemove,
+  orgId,
+  locationId,
+  slug,
+  library,
+  onMediaChange,
+  onError,
+}: {
+  album: GalleryAlbum;
+  expanded: boolean;
+  titleRef: (node: HTMLInputElement | null) => void;
+  onSelect: () => void;
+  onChange: (patch: Partial<Pick<GalleryAlbum, "title">>) => void;
+  onRemove: () => void;
+  orgId: string | null;
+  locationId: string | null;
+  slug: string;
+  library: FormMediaLibrary;
+  onMediaChange: (next: MediaItem[] | ((current: MediaItem[]) => MediaItem[])) => void;
+  onError: (msg: string) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: album.id,
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={`rounded-xl border bg-white p-3 ${
+        expanded ? "border-blue-200 ring-1 ring-blue-200" : "border-zinc-200"
+      } ${isDragging ? "relative z-10 shadow-md" : ""}`}
+      onClick={onSelect}
+    >
+      <div className="flex items-start gap-2">
+        <button
+          type="button"
+          aria-label="Reorder folder"
+          className="mt-6 flex h-9 w-7 shrink-0 cursor-grab items-center justify-center rounded-md text-zinc-300 hover:bg-zinc-50 hover:text-zinc-500 active:cursor-grabbing"
+          {...attributes}
+          {...listeners}
+        >
+          <GripIcon />
+        </button>
+        <div className="min-w-0 flex-1 space-y-3" onFocus={onSelect}>
+          <div>
+            <label className="adm-label" htmlFor={`album-title-${album.id}`}>
+              Title
+            </label>
+            <input
+              id={`album-title-${album.id}`}
+              ref={titleRef}
+              className="adm-input py-2"
+              placeholder="e.g. Main dining room"
+              value={album.title}
+              onChange={(e) => onChange({ title: e.target.value })}
+              onFocus={onSelect}
+            />
+          </div>
+        </div>
+        <div className="flex shrink-0 flex-col items-end gap-2">
+          <button
+            type="button"
+            aria-label={`Remove ${album.title.trim() || "folder"}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove();
+            }}
+            className="flex h-9 w-9 items-center justify-center rounded-md border border-red-200 text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
+          >
+            <TrashIcon />
+          </button>
+          <span className="text-[11px] text-zinc-400">{mediaCountLabel(album.media.length)}</span>
+        </div>
+      </div>
+
+      {expanded && (
+        <div className="mt-4 border-t border-zinc-100 pt-4">
+          <AlbumMediaEditor
+            key={album.id}
+            media={album.media}
+            onChange={onMediaChange}
+            orgId={orgId}
+            locationId={locationId}
+            slug={slug}
+            library={library}
+            onError={onError}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AlbumMediaEditor({
+  media,
+  onChange,
+  orgId,
+  locationId,
+  slug,
+  library,
+  onError,
+}: {
+  media: MediaItem[];
+  onChange: (next: MediaItem[] | ((current: MediaItem[]) => MediaItem[])) => void;
+  orgId: string | null;
+  locationId: string | null;
+  slug: string;
+  library: FormMediaLibrary;
+  onError: (msg: string) => void;
+}) {
   const fileInput = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -49,8 +302,6 @@ export default function GalleryTab({ draft, update, orgId, locationId, library, 
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [dragActiveId, setDragActiveId] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
-
-  const media = draft.gallery_media;
 
   useEffect(() => {
     if (pickerOpen) void library.ensureLoaded();
@@ -63,18 +314,12 @@ export default function GalleryTab({ draft, update, orgId, locationId, library, 
 
   const sortableIds = media.map((item, i) => stableId(item, i));
 
-  function setMedia(next: MediaItem[] | ((current: MediaItem[]) => MediaItem[])) {
-    update((current) => ({
-      gallery_media: typeof next === "function" ? next(current.gallery_media) : next,
-    }));
-  }
-
   function patchItem(index: number, patch: Partial<MediaItem>) {
-    setMedia((current) => current.map((m, i) => (i === index ? { ...m, ...patch } : m)));
+    onChange((current) => current.map((item, i) => (i === index ? { ...item, ...patch } : item)));
   }
 
   function remove(index: number) {
-    setMedia((current) => current.filter((_, i) => i !== index));
+    onChange((current) => current.filter((_, i) => i !== index));
     if (selectedIndex === index) setSelectedIndex(null);
     else if (selectedIndex !== null && selectedIndex > index) {
       setSelectedIndex(selectedIndex - 1);
@@ -92,7 +337,7 @@ export default function GalleryTab({ draft, update, orgId, locationId, library, 
     const oldIndex = sortableIds.indexOf(active.id as string);
     const newIndex = sortableIds.indexOf(over.id as string);
     if (oldIndex === -1 || newIndex === -1) return;
-    setMedia((current) => arrayMove(current, oldIndex, newIndex));
+    onChange((current) => arrayMove(current, oldIndex, newIndex));
     if (selectedIndex === oldIndex) setSelectedIndex(newIndex);
     else if (selectedIndex !== null) {
       if (oldIndex < selectedIndex && newIndex >= selectedIndex) {
@@ -104,13 +349,13 @@ export default function GalleryTab({ draft, update, orgId, locationId, library, 
   }
 
   function addExisting(item: MediaItem) {
-    setMedia((current) => appendUnique(current, [item]));
+    onChange((current) => appendUnique(current, [item]));
   }
 
   function addUploaded(saved: LibraryMedia[]) {
     if (saved.length === 0) return;
     library.remember(saved);
-    setMedia((current) => appendUnique(current, saved.map(libraryItemToMedia)));
+    onChange((current) => appendUnique(current, saved.map(libraryItemToMedia)));
   }
 
   async function handleFiles(files: FileList | null) {
@@ -121,7 +366,7 @@ export default function GalleryTab({ draft, update, orgId, locationId, library, 
     }
     setUploading(true);
     try {
-      addUploaded(await uploadToLibrary(orgId, draft.slug, locationId, Array.from(files)));
+      addUploaded(await uploadToLibrary(orgId, slug, locationId, Array.from(files)));
     } catch (err) {
       addUploaded(savedFromUploadError(err));
       onError(err instanceof Error ? err.message : "Upload failed.");
@@ -138,41 +383,25 @@ export default function GalleryTab({ draft, update, orgId, locationId, library, 
     if (files.length > 0) handleFiles(files);
   }
 
-  function handleDragOverFile(e: DragEvent<HTMLDivElement>) {
-    e.preventDefault();
-    setDragOver(true);
-  }
-
-  function handleDragLeave(e: DragEvent<HTMLDivElement>) {
-    e.preventDefault();
-    setDragOver(false);
-  }
-
-  const selectedItem = selectedIndex !== null ? media[selectedIndex] : null;
-  const dragActiveItem = dragActiveId
-    ? media[sortableIds.indexOf(dragActiveId)]
-    : null;
+  const selectedItem = selectedIndex !== null ? media[selectedIndex] : undefined;
+  const dragIndex = dragActiveId ? sortableIds.indexOf(dragActiveId) : -1;
+  const dragActiveItem = dragIndex >= 0 ? media[dragIndex] : undefined;
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-sm font-semibold text-zinc-900">Gallery</h2>
-          <p className="mt-0.5 text-xs text-zinc-400">
-            Drag to reorder. Click to edit caption.
-          </p>
-        </div>
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs text-zinc-400">Drag to reorder. Click to edit caption.</p>
         <div className="flex gap-2">
           <button
             type="button"
-            onClick={() => setPickerOpen((v) => !v)}
+            onClick={() => setPickerOpen((open) => !open)}
             className="adm-btn-secondary px-3 py-1.5 text-xs"
           >
             {pickerOpen ? "Cancel" : "Choose existing"}
           </button>
           <button
             type="button"
-            onClick={() => setEmbedOpen((v) => !v)}
+            onClick={() => setEmbedOpen((open) => !open)}
             className="adm-btn-secondary px-3 py-1.5 text-xs"
           >
             {embedOpen ? "Cancel" : "Add embed"}
@@ -185,11 +414,7 @@ export default function GalleryTab({ draft, update, orgId, locationId, library, 
             title={uploading ? "Uploading…" : "Upload media"}
             className="adm-btn-primary px-3 py-2"
           >
-            {uploading ? (
-              <span className="text-xs">Uploading…</span>
-            ) : (
-              <UploadIcon />
-            )}
+            {uploading ? <span className="text-xs">Uploading…</span> : <UploadIcon />}
           </button>
         </div>
         <input
@@ -204,7 +429,7 @@ export default function GalleryTab({ draft, update, orgId, locationId, library, 
 
       {embedOpen && (
         <EmbedPasteField
-          existingSrcs={media.map((m) => m.src)}
+          existingSrcs={media.map((item) => item.src)}
           onAdd={async (item) => {
             if (!locationId) throw new Error("Cannot upload before the form has loaded.");
             const saved = await insertLocationMedia(locationId, item);
@@ -233,21 +458,21 @@ export default function GalleryTab({ draft, update, orgId, locationId, library, 
 
       <div
         onDrop={handleDrop}
-        onDragOver={handleDragOverFile}
-        onDragLeave={handleDragLeave}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragOver(true);
+        }}
+        onDragLeave={(e) => {
+          e.preventDefault();
+          setDragOver(false);
+        }}
         className={`rounded-xl border-2 border-dashed p-2 transition-colors ${
-          dragOver
-            ? "border-blue-400 bg-blue-50"
-            : media.length === 0
-              ? "border-zinc-300"
-              : "border-transparent"
+          dragOver ? "border-blue-400 bg-blue-50" : media.length === 0 ? "border-zinc-300" : "border-transparent"
         }`}
       >
         {media.length === 0 ? (
           <div className="p-8 text-center text-sm text-zinc-400">
-            {uploading
-              ? "Uploading…"
-              : "Drop images or videos here, click upload, or add an embed."}
+            {uploading ? "Uploading…" : "Drop images or videos here, click upload, or add an embed."}
           </div>
         ) : (
           <div className="space-y-4">
@@ -265,7 +490,6 @@ export default function GalleryTab({ draft, update, orgId, locationId, library, 
                       id={stableId(item, i)}
                       item={item}
                       selected={selectedIndex === i}
-                      isDragOverlay={false}
                       onClick={() => setSelectedIndex(selectedIndex === i ? null : i)}
                       onDelete={() => remove(i)}
                     />
@@ -274,9 +498,7 @@ export default function GalleryTab({ draft, update, orgId, locationId, library, 
               </SortableContext>
 
               <DragOverlay>
-                {dragActiveItem ? (
-                  <TileContent item={dragActiveItem} selected={false} isOverlay />
-                ) : null}
+                {dragActiveItem ? <TileContent item={dragActiveItem} selected={false} isOverlay /> : null}
               </DragOverlay>
             </DndContext>
 
@@ -323,11 +545,7 @@ function TileContent({
   return (
     <div
       className={`relative aspect-square overflow-hidden rounded-lg bg-zinc-100 ring-offset-2 ${
-        isOverlay
-          ? "ring-2 ring-blue-500 shadow-lg"
-          : selected
-            ? "ring-2 ring-blue-500"
-            : ""
+        isOverlay ? "ring-2 ring-blue-500 shadow-lg" : selected ? "ring-2 ring-blue-500" : ""
       }`}
     >
       <MediaThumb item={item} preferThumb className="h-full w-full object-cover" />
@@ -350,12 +568,10 @@ function SortableTile({
   id: string;
   item: MediaItem;
   selected: boolean;
-  isDragOverlay: boolean;
   onClick: () => void;
   onDelete: () => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -406,16 +622,29 @@ function SortableTile({
   );
 }
 
+function GripIcon() {
+  return (
+    <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+      <path d="M7 4a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm0 6a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm0 6a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm9-12a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm0 6a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm0 6a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+    </svg>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+      />
+    </svg>
+  );
+}
+
 function UploadIcon() {
   return (
-    <svg
-      className="h-4 w-4"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth={2}
-      aria-hidden
-    >
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
