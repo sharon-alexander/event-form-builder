@@ -106,6 +106,12 @@ export default function GalleryTab({ draft, update, orgId, locationId, library, 
     setSelectedId(next?.id ?? null);
   }
 
+  function handleAlbumDragStart() {
+    if (selectedId !== null) return;
+    const currentId = albums[0]?.id;
+    if (currentId) setSelectedId(currentId);
+  }
+
   function handleAlbumDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
@@ -137,7 +143,12 @@ export default function GalleryTab({ draft, update, orgId, locationId, library, 
           </p>
         </div>
       ) : (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleAlbumDragEnd}>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleAlbumDragStart}
+          onDragEnd={handleAlbumDragEnd}
+        >
           <SortableContext items={albumIds} strategy={verticalListSortingStrategy}>
             <div className="space-y-3">
               {albums.map((album) => (
