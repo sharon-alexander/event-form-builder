@@ -96,9 +96,9 @@ function Gallery({
       aria-label={albumTitle ? `${albumTitle} gallery` : "Gallery"}
       tabIndex={multiple ? 0 : undefined}
       onKeyDown={onKeyDown}
-      className="flex h-full min-h-0 flex-col rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2"
+      className="flex h-full min-h-0 w-full min-w-0 flex-col rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2"
     >
-      <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl bg-brand-100 shadow-sm">
+      <div className="relative min-h-[14rem] w-full flex-1 overflow-hidden rounded-2xl bg-brand-100 shadow-sm md:min-h-0">
         <div className="absolute inset-0">
           <MediaStage
             key={active.src}
@@ -146,7 +146,7 @@ function Gallery({
           role="tablist"
           aria-label="Photo folders"
           onKeyDown={onAlbumKeyDown}
-          className="mt-3 flex shrink-0 gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="mt-3 flex w-full min-w-0 shrink-0 gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {albums.map((entry, i) => {
             const cover = entry.media[0];
@@ -185,7 +185,7 @@ function Gallery({
       {multiple && (
         <div
           ref={stripRef}
-          className="mt-3 flex shrink-0 gap-2 overflow-x-auto p-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="mt-3 hidden w-full min-w-0 shrink-0 gap-2 overflow-x-auto p-2 [scrollbar-width:none] md:flex [&::-webkit-scrollbar]:hidden"
         >
           {items.map((item, i) => {
             const kind = mediaKindLabel(item);
@@ -274,7 +274,7 @@ export default function LandingPage({ onStart }: LandingPageProps) {
   }
 
   const copyClass =
-    "efb-rich-text efb-landing-copy min-h-0 overflow-y-auto text-left text-sm leading-relaxed text-gray-600";
+    "efb-rich-text efb-landing-copy min-h-0 min-w-0 overflow-y-auto text-left text-sm leading-relaxed text-gray-600";
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-8 overflow-hidden px-4 py-6 sm:gap-10 sm:px-6 sm:py-8">
@@ -303,9 +303,9 @@ export default function LandingPage({ onStart }: LandingPageProps) {
       </div>
 
       {/* Outside text-center so inline text-align from the editor wins. */}
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto">
         {splitLayout && active ? (
-          <div className="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-8 md:grid-cols-2 md:grid-rows-1 md:gap-10">
+          <div className="grid h-full min-h-0 min-w-0 grid-rows-[minmax(14rem,1.35fr)_minmax(0,1fr)] gap-8 md:grid-cols-2 md:grid-rows-1 md:gap-10">
             <Gallery
               active={active}
               items={items}
@@ -329,7 +329,7 @@ export default function LandingPage({ onStart }: LandingPageProps) {
               />
             ) : null}
             {active ? (
-              <div className="min-h-0 flex-1">
+              <div className="min-h-0 min-w-0 flex-1">
                 <Gallery
                   active={active}
                   items={items}
